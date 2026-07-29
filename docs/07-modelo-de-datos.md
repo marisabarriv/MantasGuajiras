@@ -272,3 +272,11 @@ Una vez aprobado este documento se procederá a:
 El presente documento constituye la especificación oficial del modelo de datos del proyecto Mantas Guajiras.
 
 Toda modificación estructural deberá reflejarse primero en este documento antes de implementarse en la base de datos.
+
+## Mejoras futuras
+
+### Automatización de producción (BOM)
+
+En una versión futura se implementará un módulo de recetas de producción (Bill of Materials), que permitirá asociar a cada tipo de manta la cantidad de tela requerida para su fabricación.
+
+Con esta funcionalidad, el sistema podrá descontar automáticamente la tela del inventario al registrar una producción, reduciendo errores y agilizando el proceso.

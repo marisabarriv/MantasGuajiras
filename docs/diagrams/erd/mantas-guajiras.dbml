@@ -1,0 +1,485 @@
+//escribir esto dentro de dbdiagram.io
+
+Project "Mantas Guajiras" {
+
+  database_type: "PostgreSQL"
+
+  Note: '''
+  Sistema de gestión para el control de inventario,
+  producción y ventas de Mantas Guajiras.
+  '''
+
+}
+
+//////////////////////////////////////////////////////
+// CATÁLOGOS
+//////////////////////////////////////////////////////
+
+// Categorías de productos.
+Table product_category {
+
+  id smallint [pk]
+
+  name varchar(50) [not null, unique]
+
+  description varchar(255)
+
+  active boolean [not null, default: true]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Unidades de medida.
+Table unit {
+
+  id smallint [pk]
+
+  name varchar(20) [not null, unique]
+
+  abbreviation varchar(10) [not null]
+
+  active boolean [not null, default: true]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Tipos de movimiento del inventario.
+Table movement_type {
+
+  id smallint [pk]
+
+  name varchar(50) [not null, unique]
+
+  description varchar(255)
+
+  active boolean [not null, default: true]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Operaciones posibles dentro de una producción.
+Table production_operation {
+
+  id smallint [pk]
+
+  name varchar(20) [not null, unique]
+
+  description varchar(255)
+
+  active boolean [not null, default: true]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Origen del movimiento.
+Table source_type {
+
+  id smallint [pk]
+
+  name varchar(50) [not null, unique]
+
+  description varchar(255)
+
+  active boolean [not null, default: true]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Estados de los pedidos.
+Table order_status {
+
+  id smallint [pk]
+
+  name varchar(50) [not null, unique]
+
+  description varchar(255)
+
+  active boolean [not null, default: true]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Roles del sistema.
+Table role {
+
+  id smallint [pk]
+
+  name varchar(50) [not null, unique]
+
+  description varchar(255)
+
+  active boolean [not null, default: true]
+
+}
+
+//////////////////////////////////////////////////////
+// PRODUCTOS
+//////////////////////////////////////////////////////
+
+// Productos del negocio.
+Table product {
+
+  id uuid [pk]
+
+  category_id smallint [not null]
+
+  unit_id smallint [not null]
+
+  // Ej.: Manta 21k, Coral Fleece Lisa, Coral Fleece Estampada
+  name varchar(100) [not null]
+
+  // Precio de compra (principalmente para telas).
+  purchase_price decimal(12,2)
+
+  // Precio de venta normal.
+  unit_price decimal(12,2) [not null]
+
+  // Precio por mayor (opcional).
+  wholesale_price decimal(12,2)
+
+  // Cantidad mínima para aplicar precio por mayor.
+  minimum_wholesale_quantity smallint
+
+  // Alerta de inventario.
+  minimum_stock decimal(12,2)
+
+  // Indica si puede comprarse.
+  purchasable boolean [not null]
+
+  // Indica si puede fabricarse.
+  manufacturable boolean [not null]
+
+  active boolean [not null, default: true]
+
+  created_at timestamp [not null]
+
+  updated_at timestamp [not null]
+
+}
+
+//////////////////////////////////////////////////////
+// INVENTARIO
+//////////////////////////////////////////////////////
+
+// Inventario actual de cada producto.
+Table inventory {
+
+  // Un producto tiene un único registro de inventario.
+  product_id uuid [pk]
+
+  quantity decimal(12,2) [not null, default: 0]
+
+  updated_at timestamp [not null]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Historial de todos los movimientos del inventario.
+Table inventory_movement {
+
+  id uuid [pk]
+
+  product_id uuid [not null]
+
+  movement_type_id smallint [not null]
+
+  source_type_id smallint [not null]
+
+  // UUID del registro que originó el movimiento.
+  source_id uuid
+
+  // Positivo para entradas y negativo para salidas.
+  quantity decimal(12,2) [not null]
+
+  observations varchar(255)
+
+  created_at timestamp [not null]
+
+}
+
+//////////////////////////////////////////////////////
+// PRODUCCIÓN
+//////////////////////////////////////////////////////
+
+// Encabezado de una producción.
+Table production {
+
+  id uuid [pk]
+
+  user_id uuid [not null]
+
+  observations varchar(255)
+
+  created_at timestamp [not null]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Productos involucrados en la producción.
+Table production_item {
+
+  id uuid [pk]
+
+  production_id uuid [not null]
+
+  product_id uuid [not null]
+
+  operation_id smallint [not null]
+
+  quantity decimal(12,2) [not null]
+
+}
+
+//////////////////////////////////////////////////////
+// COMPRAS
+//////////////////////////////////////////////////////
+
+// Encabezado de una compra.
+Table purchase {
+
+  id uuid [pk]
+
+  user_id uuid [not null]
+
+  total decimal(12,2) [not null]
+
+  observations varchar(255)
+
+  created_at timestamp [not null]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Productos incluidos en una compra.
+Table purchase_item {
+
+  id uuid [pk]
+
+  purchase_id uuid [not null]
+
+  product_id uuid [not null]
+
+  quantity decimal(12,2) [not null]
+
+  unit_cost decimal(12,2) [not null]
+
+}
+
+//////////////////////////////////////////////////////
+// CLIENTES
+//////////////////////////////////////////////////////
+
+// Clientes del negocio.
+Table customer {
+
+  id uuid [pk]
+
+  full_name varchar(150) [not null]
+
+  phone varchar(20)
+
+  address varchar(255)
+
+  notes varchar(255)
+
+  active boolean [not null, default: true]
+
+  created_at timestamp [not null]
+
+  updated_at timestamp [not null]
+
+}
+
+//////////////////////////////////////////////////////
+// VENTAS
+//////////////////////////////////////////////////////
+
+// Encabezado de una venta.
+Table sale {
+
+  id uuid [pk]
+
+  customer_id uuid
+
+  user_id uuid [not null]
+
+  total decimal(12,2) [not null]
+
+  observations varchar(255)
+
+  created_at timestamp [not null]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Productos vendidos.
+Table sale_item {
+
+  id uuid [pk]
+
+  sale_id uuid [not null]
+
+  product_id uuid [not null]
+
+  quantity decimal(12,2) [not null]
+
+  unit_price decimal(12,2) [not null]
+
+}
+
+//////////////////////////////////////////////////////
+// PEDIDOS PERSONALIZADOS
+//////////////////////////////////////////////////////
+
+// Encabezado de un pedido por encargo.
+Table custom_order {
+
+  id uuid [pk]
+
+  customer_id uuid [not null]
+
+  user_id uuid [not null]
+
+  status_id smallint [not null]
+
+  total decimal(12,2) [not null]
+
+  delivery_date date
+
+  observations varchar(255)
+
+  created_at timestamp [not null]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Productos solicitados en un pedido.
+Table custom_order_item {
+
+  id uuid [pk]
+
+  custom_order_id uuid [not null]
+
+  product_id uuid [not null]
+
+  quantity decimal(12,2) [not null]
+
+  unit_price decimal(12,2) [not null]
+
+}
+
+//////////////////////////////////////////////////////
+
+// Abonos realizados por el cliente.
+Table custom_order_payment {
+
+  id uuid [pk]
+
+  custom_order_id uuid [not null]
+
+  user_id uuid [not null]
+
+  amount decimal(12,2) [not null]
+
+  observations varchar(255)
+
+  created_at timestamp [not null]
+
+}
+
+//////////////////////////////////////////////////////
+// SEGURIDAD
+//////////////////////////////////////////////////////
+
+// Usuarios del sistema.
+Table app_user {
+
+  id uuid [pk]
+
+  role_id smallint [not null]
+
+  full_name varchar(150) [not null]
+
+  username varchar(50) [not null, unique]
+
+  password varchar(255) [not null]
+
+  active boolean [not null, default: true]
+
+  created_at timestamp [not null]
+
+  updated_at timestamp [not null]
+
+}
+
+//////////////////////////////////////////////////////
+// RELACIONES
+//////////////////////////////////////////////////////
+
+// PRODUCTOS
+
+Ref: product.category_id > product_category.id
+Ref: product.unit_id > unit.id
+
+//////////////////////////////////////////////////////
+// INVENTARIO
+
+Ref: inventory.product_id > product.id
+
+Ref: inventory_movement.product_id > product.id
+Ref: inventory_movement.movement_type_id > movement_type.id
+Ref: inventory_movement.source_type_id > source_type.id
+
+//////////////////////////////////////////////////////
+// PRODUCCIÓN
+
+Ref: production.user_id > app_user.id
+
+Ref: production_item.production_id > production.id
+Ref: production_item.product_id > product.id
+Ref: production_item.operation_id > production_operation.id
+
+//////////////////////////////////////////////////////
+// COMPRAS
+
+Ref: purchase.user_id > app_user.id
+
+Ref: purchase_item.purchase_id > purchase.id
+Ref: purchase_item.product_id > product.id
+
+//////////////////////////////////////////////////////
+// CLIENTES
+
+Ref: sale.customer_id > customer.id
+Ref: sale.user_id > app_user.id
+
+Ref: sale_item.sale_id > sale.id
+Ref: sale_item.product_id > product.id
+
+//////////////////////////////////////////////////////
+// PEDIDOS
+
+Ref: custom_order.customer_id > customer.id
+Ref: custom_order.user_id > app_user.id
+Ref: custom_order.status_id > order_status.id
+
+Ref: custom_order_item.custom_order_id > custom_order.id
+Ref: custom_order_item.product_id > product.id
+
+Ref: custom_order_payment.custom_order_id > custom_order.id
+Ref: custom_order_payment.user_id > app_user.id
+//////////////////////////////////////////////////////
+// SEGURIDAD
+
+Ref: app_user.role_id > role.id
