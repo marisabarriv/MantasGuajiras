@@ -17,9 +17,9 @@ Content-Type: application/json
 ###
 GET http://localhost:8080/api/products
 ###
-GET http://localhost:8080/api/products/4e11437e-cb7b-43bf-8281-ffdce6389da2
+GET http://localhost:8080/api/products/11111111-1111-1111-1111-111111111111
 ###
-PUT http://localhost:8080/api/products/4e11437e-cb7b-43bf-8281-ffdce6389da2
+PUT http://localhost:8080/api/products/aec79b40-d1ec-412e-89bf-921c9425f8f1
 Content-Type: application/json
 
 {
