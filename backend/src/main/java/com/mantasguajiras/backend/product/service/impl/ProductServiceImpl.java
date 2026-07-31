@@ -8,6 +8,7 @@ import com.mantasguajiras.backend.product.repository.ProductRepository;
 import com.mantasguajiras.backend.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.mantasguajiras.backend.common.exception.ResourceNotFoundException;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,12 +22,16 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductResponse> findAll() {
-        return List.of();
+        return productRepository.findAll().stream()
+                .map(productMapper::toResponse)
+                .toList();
     }
 
     @Override
     public ProductResponse findById(UUID id) {
-        return null;
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
+        return productMapper.toResponse(product);
     }
 
     @Override
@@ -38,11 +43,17 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponse update(UUID id, ProductRequest request) {
-        return null;
+        Product product = productRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
+        productMapper.updateEntity(request, product);
+        Product updatedProduct = productRepository.save(product);
+        return productMapper.toResponse(updatedProduct);
     }
 
     @Override
     public void delete(UUID id) {
-
+        if (!productRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Producto no encontrado con id: " + id);
+        }
+        productRepository.deleteById(id);
     }
 }
