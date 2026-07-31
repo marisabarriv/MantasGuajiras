@@ -1,0 +1,39 @@
+POST http://localhost:8080/api/products
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "unitId": 1,
+  "name": "Hilo Blanco",
+  "purchasePrice": 5000,
+  "unitPrice": 7000,
+  "wholesalePrice": 6500,
+  "minimumWholesaleQuantity": 10,
+  "minimumStock": 20,
+  "purchasable": true,
+  "manufacturable": false,
+  "active": true
+}
+###
+GET http://localhost:8080/api/products
+###
+GET http://localhost:8080/api/products/4e11437e-cb7b-43bf-8281-ffdce6389da2
+###
+PUT http://localhost:8080/api/products/4e11437e-cb7b-43bf-8281-ffdce6389da2
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "unitId": 1,
+  "name": "Hilo Blanco Actualizado",
+  "purchasePrice": 5500,
+  "unitPrice": 7500,
+  "wholesalePrice": 7000,
+  "minimumWholesaleQuantity": 10,
+  "minimumStock": 20,
+  "purchasable": true,
+  "manufacturable": false,
+  "active": true
+}
+###
+DELETE http://localhost:8080/api/products/4e11437e-cb7b-43bf-8281-ffdce6389da2

@@ -22,9 +22,10 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductResponse> findAll() {
-        return productRepository.findAll().stream()
-                .map(productMapper::toResponse)
-                .toList();
+        return productRepository.findByActiveTrue()
+            .stream()
+            .map(productMapper::toResponse)
+            .toList();
     }
 
     @Override
@@ -51,9 +52,10 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void delete(UUID id) {
-        if (!productRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Producto no encontrado con id: " + id);
-        }
-        productRepository.deleteById(id);
+        Product product = productRepository.findById(id)
+        .orElseThrow(() ->
+                new ResourceNotFoundException("Producto no encontrado con id: " + id));
+        product.setActive(false);
+        productRepository.save(product);
     }
 }
