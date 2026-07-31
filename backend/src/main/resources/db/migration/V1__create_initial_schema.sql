@@ -73,8 +73,10 @@ CREATE TABLE public.order_status (
 );
 CREATE TABLE public.product (
     id uuid NOT NULL,
-    category_id smallint CONSTRAINT product_category_id_not_null1 NOT NULL,
+    category_id smallint NOT NULL,
     unit_id smallint NOT NULL,
+    internal_code character varying(30) NOT NULL,
+    barcode character varying(50),
     name character varying(100) NOT NULL,
     purchase_price numeric(12,2),
     unit_price numeric(12,2) NOT NULL,
@@ -91,6 +93,7 @@ CREATE TABLE public.product_category (
     id smallint NOT NULL,
     name character varying(50) NOT NULL,
     description character varying(255),
+    display_order smallint DEFAULT 0 NOT NULL,
     active boolean DEFAULT true NOT NULL
 );
 CREATE TABLE public.production (
@@ -189,6 +192,10 @@ ALTER TABLE ONLY public.product_category
     ADD CONSTRAINT product_category_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY public.product
     ADD CONSTRAINT product_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.product
+    ADD CONSTRAINT product_internal_code_key UNIQUE (internal_code);
+ALTER TABLE ONLY public.product
+    ADD CONSTRAINT product_barcode_key UNIQUE (barcode);
 ALTER TABLE ONLY public.production_item
     ADD CONSTRAINT production_item_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY public.production_operation
@@ -233,6 +240,9 @@ CREATE INDEX idx_inventory_movement_product_id ON public.inventory_movement USIN
 CREATE INDEX idx_inventory_movement_source_type_id ON public.inventory_movement USING btree (source_type_id);
 CREATE INDEX idx_inventory_movement_type_id ON public.inventory_movement USING btree (movement_type_id);
 CREATE INDEX idx_product_category_id ON public.product USING btree (category_id);
+CREATE INDEX idx_product_barcode ON public.product(barcode);
+CREATE INDEX idx_product_internal_code ON public.product(internal_code);
+CREATE INDEX idx_product_price ON public.product(unit_price);
 CREATE INDEX idx_product_unit_id ON public.product USING btree (unit_id);
 CREATE INDEX idx_production_created_at ON public.production USING btree (created_at);
 CREATE INDEX idx_production_item_product_id ON public.production_item USING btree (product_id);

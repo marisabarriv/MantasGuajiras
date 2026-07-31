@@ -1,0 +1,33 @@
+POST http://localhost:8080/api/product-categories
+Content-Type: application/json
+
+{
+  "name": "Cobijas Tejidas",
+  "description": "Cobijas tejidas",
+  "displayOrder": 2,
+  "active": true
+}
+
+###
+
+GET http://localhost:8080/api/product-categories
+
+###
+
+GET http://localhost:8080/api/product-categories/1
+
+###
+
+PUT http://localhost:8080/api/product-categories/1
+Content-Type: application/json
+
+{
+  "name": "Cobijas Premium",
+  "description": "Cobijas de alta calidad",
+  "displayOrder": 1,
+  "active": true
+}
+
+###
+
+DELETE http://localhost:8080/api/product-categories/1
