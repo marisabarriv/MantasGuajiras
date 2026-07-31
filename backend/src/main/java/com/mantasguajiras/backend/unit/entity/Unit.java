@@ -13,12 +13,13 @@ import lombok.*;
 public class Unit {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Short id;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(nullable = false, unique = true, length = 50)
     private String name;
 
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, unique = true, length = 10)
     private String abbreviation;
 
     @Builder.Default
