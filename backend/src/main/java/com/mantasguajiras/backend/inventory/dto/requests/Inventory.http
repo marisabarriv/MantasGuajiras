@@ -1,0 +1,33 @@
+### Crear inventario
+POST http://localhost:8080/api/inventory
+Content-Type: application/json
+
+{
+  "productId": "d8d9624b-2fd6-44d2-a20e-53d24e88f8df",
+  "quantity": 100.00
+}
+
+###
+
+### Obtener todos los registros
+GET http://localhost:8080/api/inventory
+
+###
+
+### Obtener inventario por producto
+GET http://localhost:8080/api/inventory/d8d9624b-2fd6-44d2-a20e-53d24e88f8df
+
+###
+
+### Actualizar inventario
+PUT http://localhost:8080/api/inventory/d8d9624b-2fd6-44d2-a20e-53d24e88f8df
+Content-Type: application/json
+
+{
+  "quantity": 75.50
+}
+
+###
+
+### Eliminar inventario
+DELETE http://localhost:8080/api/inventory/d8d9624b-2fd6-44d2-a20e-53d24e88f8df
