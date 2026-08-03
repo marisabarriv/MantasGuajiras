@@ -5,21 +5,23 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PurchaseRequest {
+public class PurchaseItemRequest {
+
+    @NotNull
+    private UUID productId;
 
     @NotNull
     @DecimalMin("0.0")
-    private BigDecimal total;
-
-    private String observations;
+    private BigDecimal quantity;
 
     @NotNull
-    private List<PurchaseItemRequest> items;
+    @DecimalMin("0.0")
+    private BigDecimal unitCost;
 }
