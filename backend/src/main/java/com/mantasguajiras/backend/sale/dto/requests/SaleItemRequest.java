@@ -1,7 +1,8 @@
 package com.mantasguajiras.backend.sale.dto.requests;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.UUID;
+
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -15,14 +16,16 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SaleRequest {
+public class SaleItemRequest {
     
     @NotNull
-    @DecimalMin(value = "0.00", inclusive = false, message = "Total must be greater than 0")
-    private BigDecimal total;
-
-    private String observations;
+    private UUID productId;
 
     @NotNull
-    private List<SaleItemRequest> items;
+    @DecimalMin(value = "0.00", inclusive = false, message = "Quantity must be greater than 0")
+    private BigDecimal quantity;
+
+    @NotNull
+    @DecimalMin(value = "0.00", inclusive = false, message = "Price must be greater than 0")
+    private BigDecimal unitPrice;
 }
