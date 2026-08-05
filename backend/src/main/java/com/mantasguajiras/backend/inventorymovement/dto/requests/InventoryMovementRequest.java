@@ -18,10 +18,10 @@ public class InventoryMovementRequest {
     private UUID productId;
 
     @NotNull(message = "El tipo de movimiento es obligatorio.")
-    private Short movementTypeId;
+    private UUID movementTypeId;
 
     @NotNull(message = "El tipo de origen es obligatorio.")
-    private Short sourceTypeId;
+    private UUID sourceTypeId;
 
     private UUID sourceId;
 

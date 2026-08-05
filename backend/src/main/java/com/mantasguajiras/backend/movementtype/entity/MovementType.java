@@ -1,5 +1,9 @@
 package com.mantasguajiras.backend.movementtype.entity;
 
+import java.util.UUID;
+
+import com.mantasguajiras.backend.common.entity.BaseEntity;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,11 +14,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MovementType {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Short id;
+public class MovementType extends BaseEntity {
 
     @Column(nullable = false, unique = true, length = 50)
     private String name;

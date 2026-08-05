@@ -1,5 +1,7 @@
 package com.mantasguajiras.backend.order.entity;
 
-public class Order {
+import com.mantasguajiras.backend.common.entity.AuditableEntity;
+
+public class Order extends AuditableEntity {
     
 }

@@ -1,5 +1,7 @@
 package com.mantasguajiras.backend.unit.dto.response;
 
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,7 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UnitResponse {
 
-    private Short id;
+    private UUID id;
 
     private String name;
 
