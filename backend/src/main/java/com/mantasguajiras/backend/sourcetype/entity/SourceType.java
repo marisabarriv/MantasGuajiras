@@ -1,7 +1,5 @@
 package com.mantasguajiras.backend.sourcetype.entity;
 
-import java.util.UUID;
-
 import com.mantasguajiras.backend.common.entity.BaseEntity;
 
 import jakarta.persistence.*;

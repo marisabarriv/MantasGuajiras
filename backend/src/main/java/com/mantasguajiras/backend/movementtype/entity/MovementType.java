@@ -1,6 +1,5 @@
 package com.mantasguajiras.backend.movementtype.entity;
 
-import java.util.UUID;
 
 import com.mantasguajiras.backend.common.entity.BaseEntity;
 
