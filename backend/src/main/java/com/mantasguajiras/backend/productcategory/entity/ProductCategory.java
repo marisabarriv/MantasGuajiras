@@ -3,12 +3,9 @@ package com.mantasguajiras.backend.productcategory.entity;
 import java.util.UUID;
 
 import com.mantasguajiras.backend.common.entity.AuditableEntity;
-import com.mantasguajiras.backend.common.entity.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +13,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import jakarta.persistence.GenerationType;
 
 @Entity
 @Table(name = "product_category")

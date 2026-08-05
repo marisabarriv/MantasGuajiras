@@ -1,6 +1,5 @@
 package com.mantasguajiras.backend.unit.entity;
 
-import java.util.UUID;
 import lombok.experimental.SuperBuilder;
 import com.mantasguajiras.backend.common.entity.BaseEntity;
 
