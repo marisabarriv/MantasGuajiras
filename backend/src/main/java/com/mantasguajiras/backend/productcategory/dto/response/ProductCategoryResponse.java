@@ -1,5 +1,7 @@
 package com.mantasguajiras.backend.productcategory.dto.response;
 
+import java.util.UUID;
+
 import lombok.*;
 
 @Getter
@@ -9,13 +11,13 @@ import lombok.*;
 @AllArgsConstructor
 public class ProductCategoryResponse {
 
-    private Short id;
+    private UUID id;
 
     private String name;
 
     private String description;
 
-    private Short displayOrder;
+    private UUID displayOrder;
 
     private Boolean active;
 }

@@ -19,9 +19,9 @@ public class ProductResponse {
 
     private UUID id;
 
-    private Short categoryId;
+    private UUID categoryId;
 
-    private Short unitId;
+    private UUID unitId;
 
     private String name;
 

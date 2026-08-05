@@ -17,11 +17,11 @@ public class InventoryMovementResponse {
 
     private UUID productId;
 
-    private Short movementTypeId;
+    private UUID movementTypeId;
 
     private String movementTypeName;
 
-    private Short sourceTypeId;
+    private UUID sourceTypeId;
 
     private String sourceTypeName;
 

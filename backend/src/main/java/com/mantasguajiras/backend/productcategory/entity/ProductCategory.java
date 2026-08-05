@@ -1,6 +1,10 @@
 package com.mantasguajiras.backend.productcategory.entity;
 
+import java.util.UUID;
+
 import com.mantasguajiras.backend.common.entity.AuditableEntity;
+import com.mantasguajiras.backend.common.entity.BaseEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -23,11 +27,6 @@ import jakarta.persistence.GenerationType;
 @AllArgsConstructor
 public class ProductCategory extends AuditableEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Short id;
-
     @Column(nullable = false, unique = true, length = 50)
     private String name;
 
@@ -36,7 +35,7 @@ public class ProductCategory extends AuditableEntity {
 
     @Builder.Default
     @Column(name = "display_order", nullable = false)
-    private Short displayOrder = 0;
+    private UUID displayOrder = UUID.randomUUID();
 
     @Builder.Default
     @Column(nullable = false)

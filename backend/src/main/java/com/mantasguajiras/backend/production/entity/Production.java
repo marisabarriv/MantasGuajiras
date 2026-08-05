@@ -1,5 +1,7 @@
 package com.mantasguajiras.backend.production.entity;
 
-public class Production {
+import com.mantasguajiras.backend.common.entity.AuditableEntity;
+
+public class Production extends AuditableEntity {
     
 }

@@ -1,5 +1,9 @@
 package com.mantasguajiras.backend.unit.entity;
 
+import java.util.UUID;
+import lombok.experimental.SuperBuilder;
+import com.mantasguajiras.backend.common.entity.BaseEntity;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -7,14 +11,10 @@ import lombok.*;
 @Table(name = "unit")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Unit {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Short id;
+public class Unit extends BaseEntity {
 
     @Column(nullable = false, unique = true, length = 50)
     private String name;

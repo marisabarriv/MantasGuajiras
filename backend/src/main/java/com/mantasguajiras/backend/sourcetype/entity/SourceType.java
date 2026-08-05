@@ -1,20 +1,21 @@
 package com.mantasguajiras.backend.sourcetype.entity;
 
+import java.util.UUID;
+
+import com.mantasguajiras.backend.common.entity.BaseEntity;
+
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "source_type")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SourceType {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Short id;
+public class SourceType extends BaseEntity {
 
     @Column(nullable = false, unique = true, length = 50)
     private String name;

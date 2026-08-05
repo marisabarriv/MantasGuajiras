@@ -14,13 +14,9 @@ import com.mantasguajiras.backend.sourcetype.repository.SourceTypeRepository;
 import com.mantasguajiras.backend.inventory.entity.Inventory;
 import com.mantasguajiras.backend.inventory.repository.InventoryRepository;
 import com.mantasguajiras.backend.inventorymovement.entity.InventoryMovement;
-import com.mantasguajiras.backend.inventorymovement.repository.InventoryMovementRepository;
 import com.mantasguajiras.backend.movementtype.entity.MovementType;
-import com.mantasguajiras.backend.movementtype.repository.MovementTypeRepository;
 import com.mantasguajiras.backend.product.entity.Product;
-import com.mantasguajiras.backend.product.repository.ProductRepository;
 import com.mantasguajiras.backend.sourcetype.entity.SourceType;
-import com.mantasguajiras.backend.sourcetype.repository.SourceTypeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,12 +62,11 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         Purchase saved = purchaseRepository.save(purchase);
 
-        MovementType movementType = movementTypeRepository.findById((short) 1)
-            .orElseThrow(() -> new ResourceNotFoundException("Tipo de movimiento no encontrado"));
+        MovementType movementType = movementTypeRepository.findByName("ENTRADA")
+    .orElseThrow(() -> new ResourceNotFoundException("Tipo de movimiento no encontrado"));
 
-        SourceType sourceType = sourceTypeRepository.findById((short) 1)
-            .orElseThrow(() -> new ResourceNotFoundException("Tipo de origen no encontrado"));
-
+SourceType sourceType = sourceTypeRepository.findByName("COMPRA")
+    .orElseThrow(() -> new ResourceNotFoundException("Tipo de origen no encontrado"));
         for (PurchaseItemRequest item : request.getItems()) {
 
             Product product = productRepository.findById(item.getProductId())

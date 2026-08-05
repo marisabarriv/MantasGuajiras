@@ -8,6 +8,7 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring")
 public interface InventoryMapper {
 
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Inventory toEntity(InventoryRequest request);
@@ -16,6 +17,7 @@ public interface InventoryMapper {
     InventoryResponse toResponse(Inventory inventory);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     void updateEntity(InventoryRequest request, @MappingTarget Inventory inventory);

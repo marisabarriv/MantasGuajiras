@@ -13,6 +13,7 @@ public interface InventoryMovementMapper {
     @Mapping(target = "movementType", ignore = true)
     @Mapping(target = "sourceType", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     InventoryMovement toEntity(InventoryMovementRequest request);
 
     @Mapping(target = "productId", source = "product.id")
@@ -28,6 +29,7 @@ public interface InventoryMovementMapper {
     @Mapping(target = "movementType", ignore = true)
     @Mapping(target = "sourceType", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     void updateEntity(
             InventoryMovementRequest request,
             @MappingTarget InventoryMovement entity
