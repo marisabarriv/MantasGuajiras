@@ -3,6 +3,8 @@ package com.mantasguajiras.backend.inventory.entity;
 import com.mantasguajiras.backend.product.entity.Product;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+
 import java.util.UUID;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,7 +13,7 @@ import java.time.LocalDateTime;
 @Table(name = "inventory")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Inventory {
@@ -21,12 +23,12 @@ public class Inventory {
     private UUID id;
 
     @MapsId
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id")
     private Product product;
 
     @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal quantity;
+    private BigDecimal quantity = BigDecimal.ZERO;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;

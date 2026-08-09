@@ -1,7 +1,5 @@
 package com.mantasguajiras.backend.productcategory.dto.requests;
 
-import java.util.UUID;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -22,7 +20,7 @@ public class ProductCategoryRequest {
     private String description;
 
     @NotNull(message = "El orden de visualización es obligatorio.")
-    private UUID displayOrder;
+    private int displayOrder;
 
     @NotNull(message = "Debe indicar si la categoría está activa.")
     private Boolean active;

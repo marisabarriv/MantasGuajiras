@@ -17,7 +17,7 @@ public class ProductCategoryResponse {
 
     private String description;
 
-    private UUID displayOrder;
+    private int displayOrder;
 
     private Boolean active;
 }
