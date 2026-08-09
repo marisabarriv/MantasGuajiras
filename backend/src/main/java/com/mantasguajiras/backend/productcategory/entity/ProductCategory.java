@@ -1,6 +1,5 @@
 package com.mantasguajiras.backend.productcategory.entity;
 
-import java.util.UUID;
 
 import com.mantasguajiras.backend.common.entity.AuditableEntity;
 
@@ -31,7 +30,7 @@ public class ProductCategory extends AuditableEntity {
 
     @Builder.Default
     @Column(name = "display_order", nullable = false)
-    private UUID displayOrder = UUID.randomUUID();
+    private int displayOrder = 0;
 
     @Builder.Default
     @Column(nullable = false)

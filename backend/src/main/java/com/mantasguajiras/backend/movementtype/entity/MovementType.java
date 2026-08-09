@@ -2,7 +2,7 @@ package com.mantasguajiras.backend.movementtype.entity;
 
 
 import com.mantasguajiras.backend.common.entity.BaseEntity;
-
+import lombok.experimental.SuperBuilder;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,7 +10,7 @@ import lombok.*;
 @Table(name = "movement_type")
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 public class MovementType extends BaseEntity {
