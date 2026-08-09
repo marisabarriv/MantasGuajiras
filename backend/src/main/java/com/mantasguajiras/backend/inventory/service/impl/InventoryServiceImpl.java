@@ -1,5 +1,6 @@
 package com.mantasguajiras.backend.inventory.service.impl;
 
+import com.mantasguajiras.backend.common.exception.DuplicateResourceException;
 import com.mantasguajiras.backend.common.exception.ResourceNotFoundException;
 import com.mantasguajiras.backend.inventory.dto.requests.InventoryRequest;
 import com.mantasguajiras.backend.inventory.dto.response.InventoryResponse;
@@ -30,6 +31,11 @@ public class InventoryServiceImpl implements InventoryService {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Producto no encontrado."));
+        
+        
+        if (inventoryRepository.existsByProductId(request.getProductId())) {
+            throw new DuplicateResourceException("Inventario ya existe para este producto.");
+        }
 
         Inventory inventory = inventoryMapper.toEntity(request);
 

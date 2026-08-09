@@ -27,6 +27,7 @@ public class Inventory {
     @JoinColumn(name = "product_id")
     private Product product;
 
+    @Builder.Default
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal quantity = BigDecimal.ZERO;
 
