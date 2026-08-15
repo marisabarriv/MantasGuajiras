@@ -5,10 +5,10 @@
 | **Proyecto** | Mantas Guajiras |
 | **Documento** | Diseño de Base de Datos |
 | **Código** | DOC-04 |
-| **Versión** | v0.1.0 |
+| **Versión** | v0.3.0 |
 | **Estado** | En desarrollo |
 | **Responsable** | Equipo de Desarrollo |
-| **Última actualización** | 29/07/2026 |
+| **Última actualización** | 14/06/2026 |
 
 ---
 
