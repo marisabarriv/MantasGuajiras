@@ -2,6 +2,7 @@ package com.mantasguajiras.backend.sale.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -21,4 +22,5 @@ public class SaleResponse {
     private String observations;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<SaleItemResponse> items;
 }

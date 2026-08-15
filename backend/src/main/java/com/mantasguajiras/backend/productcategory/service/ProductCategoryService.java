@@ -4,20 +4,21 @@ import com.mantasguajiras.backend.productcategory.dto.requests.ProductCategoryRe
 import com.mantasguajiras.backend.productcategory.dto.response.ProductCategoryResponse;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface ProductCategoryService {
 
     List<ProductCategoryResponse> findAll();
 
-    ProductCategoryResponse findById(Short id);
+    ProductCategoryResponse findById(UUID id);
 
     ProductCategoryResponse create(ProductCategoryRequest request);
 
     ProductCategoryResponse update(
-            Short id,
+            UUID id,
             ProductCategoryRequest request
     );
 
-    void delete(Short id);
+    void delete(UUID id);
 
 }

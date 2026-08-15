@@ -16,10 +16,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SaleRequest {
-    
-    @NotNull
-    @DecimalMin(value = "0.00", inclusive = false, message = "Total must be greater than 0")
-    private BigDecimal total;
 
     private String observations;
 

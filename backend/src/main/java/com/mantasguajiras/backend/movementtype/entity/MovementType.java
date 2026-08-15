@@ -1,10 +1,9 @@
 package com.mantasguajiras.backend.movementtype.entity;
 
-
-import com.mantasguajiras.backend.common.entity.BaseEntity;
-import lombok.experimental.SuperBuilder;
+import com.mantasguajiras.backend.common.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "movement_type")
@@ -13,7 +12,7 @@ import lombok.*;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MovementType extends BaseEntity {
+public class MovementType extends AuditableEntity {
 
     @Column(nullable = false, unique = true, length = 50)
     private String name;

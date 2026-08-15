@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,7 +45,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
             @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
         })
         @GetMapping("/{id}")
-        public ProductCategoryResponse findById(@PathVariable Short id) {
+        public ProductCategoryResponse findById(@PathVariable UUID id) {
             return service.findById(id);
         }
 
@@ -69,7 +71,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
         })
         @PutMapping("/{id}")
         public ProductCategoryResponse update(
-        @PathVariable Short id,
+        @PathVariable UUID id,
         @Valid @RequestBody ProductCategoryRequest request) {
 
             return service.update(id, request);
@@ -82,7 +84,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
         })
         @DeleteMapping("/{id}")
         @ResponseStatus(HttpStatus.NO_CONTENT)
-        public void delete(@PathVariable Short id) {
+        public void delete(@PathVariable UUID id) {
             service.delete(id);
         }
     }

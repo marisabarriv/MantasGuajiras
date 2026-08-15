@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/unit")
@@ -29,14 +30,14 @@ public class UnitController {
     }
 
     @GetMapping("/{id}")
-    public UnitResponse findById(@PathVariable Short id) {
+    public UnitResponse findById(@PathVariable UUID id) {
         return unitService.findById(id);
     }
 
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public UnitResponse update(
-            @PathVariable Short id,
+            @PathVariable UUID id,
             @Valid @RequestBody UnitRequest request) {
 
         return unitService.update(id, request);
@@ -44,7 +45,7 @@ public class UnitController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Short id) {
+    public void delete(@PathVariable UUID id) {
         unitService.delete(id);
     }
 }

@@ -13,8 +13,4 @@ public interface InventoryMovementService {
     InventoryMovementResponse findById(UUID id);
 
     InventoryMovementResponse create(InventoryMovementRequest request);
-
-    InventoryMovementResponse update(UUID id, InventoryMovementRequest request);
-
-    void delete(UUID id);
 }

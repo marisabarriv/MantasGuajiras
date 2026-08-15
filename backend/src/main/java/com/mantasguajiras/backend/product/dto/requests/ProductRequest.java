@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -19,38 +20,43 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class ProductRequest {
 
-    @NotNull
-    private Short categoryId;
+    @NotNull(message = "La categoría es obligatoria.")
+    private UUID categoryId;
 
-    @NotNull
-    private Short unitId;
+    @NotNull(message = "La unidad es obligatoria.")
+    private UUID unitId;
 
-    @NotBlank
+    @NotBlank(message = "El código interno es obligatorio.")
+    private String internalCode;
+
+    private String barcode;
+
+    @NotBlank(message = "El nombre es obligatorio.")
     private String name;
 
-    @NotNull
-    @PositiveOrZero
+    @PositiveOrZero(message = "El precio de compra no puede ser negativo.")
     private BigDecimal purchasePrice;
 
-    @NotNull
-    @Positive
+    @NotNull(message = "El precio unitario es obligatorio.")
+    @Positive(message = "El precio unitario debe ser mayor que cero.")
     private BigDecimal unitPrice;
 
-    @PositiveOrZero
+    @PositiveOrZero(message = "El precio mayorista no puede ser negativo.")
     private BigDecimal wholesalePrice;
 
-    @PositiveOrZero
-    private Short minimumWholesaleQuantity;
+    @Builder.Default
+    @NotNull(message = "La cantidad mínima mayorista es obligatoria.")
+    @PositiveOrZero(message = "La cantidad mínima mayorista no puede ser negativa.")
+    private Short minimumWholesaleQuantity = 0;
 
-    @PositiveOrZero
+    @PositiveOrZero(message = "El stock mínimo no puede ser negativo.")
     private BigDecimal minimumStock;
 
-    @NotNull
+    @NotNull(message = "Debe indicar si el producto es comprable.")
     private Boolean purchasable;
 
-    @NotNull
+    @NotNull(message = "Debe indicar si el producto es fabricable.")
     private Boolean manufacturable;
 
-    @NotNull
     private Boolean active;
 }

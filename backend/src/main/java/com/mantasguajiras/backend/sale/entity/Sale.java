@@ -6,6 +6,8 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "sale")
@@ -21,4 +23,12 @@ public class Sale extends AuditableEntity {
 
     @Column(length = 255)
     private String observations;
+
+    @OneToMany(
+    mappedBy = "sale",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true
+    )
+    @Builder.Default
+    private List<SaleItem> items = new ArrayList<>();
 }

@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +31,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
     }
 
     @Override
-    public ProductCategoryResponse findById(Short id) {
+    public ProductCategoryResponse findById(UUID id) {
         ProductCategory category = repository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Categoría no encontrada con id: " + id));
@@ -53,7 +54,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
     }
 
     @Override
-    public ProductCategoryResponse update(Short id, ProductCategoryRequest request) {
+    public ProductCategoryResponse update(UUID id, ProductCategoryRequest request) {
 
         ProductCategory category = repository.findById(id)
                 .orElseThrow(() ->
@@ -71,7 +72,7 @@ public class ProductCategoryServiceImpl implements ProductCategoryService {
     }
 
     @Override
-    public void delete(Short id) {
+    public void delete(UUID id) {
 
         ProductCategory category = repository.findById(id)
             .orElseThrow(() ->

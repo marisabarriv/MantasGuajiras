@@ -32,20 +32,7 @@ public class InventoryMovementController {
     @ResponseStatus(HttpStatus.CREATED)
     public InventoryMovementResponse create(
             @Valid @RequestBody InventoryMovementRequest request) {
+
         return inventoryMovementService.create(request);
-    }
-
-    @PutMapping("/{id}")
-    public InventoryMovementResponse update(
-            @PathVariable UUID id,
-            @Valid @RequestBody InventoryMovementRequest request) {
-
-        return inventoryMovementService.update(id, request);
-    }
-
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable UUID id) {
-        inventoryMovementService.delete(id);
     }
 }
