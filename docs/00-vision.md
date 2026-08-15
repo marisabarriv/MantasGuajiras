@@ -5,10 +5,10 @@
 | **Proyecto** | Mantas Guajiras |
 | **Documento** | Visión del Proyecto |
 | **Código** | DOC-00 |
-| **Versión** | v0.1.0 |
+| **Versión** | v0.3.0 |
 | **Estado** | En desarrollo |
 | **Responsable** | Equipo de Desarrollo |
-| **Última actualización** | 29/07/2026 |
+| **Última actualización** | 14/08/2026 |
 
 ---
 
