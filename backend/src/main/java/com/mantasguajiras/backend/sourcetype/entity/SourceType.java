@@ -1,7 +1,6 @@
 package com.mantasguajiras.backend.sourcetype.entity;
 
-import com.mantasguajiras.backend.common.entity.BaseEntity;
-
+import com.mantasguajiras.backend.common.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -13,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SourceType extends BaseEntity {
+public class SourceType extends AuditableEntity {
 
     @Column(nullable = false, unique = true, length = 50)
     private String name;

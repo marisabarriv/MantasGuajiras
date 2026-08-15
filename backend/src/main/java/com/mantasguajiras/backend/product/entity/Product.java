@@ -38,8 +38,9 @@ public class Product extends AuditableEntity {
     @Column(name = "wholesale_price", precision = 12, scale = 2)
     private BigDecimal wholesalePrice;
 
+    @Builder.Default
     @Column(name = "minimum_wholesale_quantity")
-    private Short minimumWholesaleQuantity;
+    private Short minimumWholesaleQuantity = 0;
 
     @Column(name = "minimum_stock", precision = 12, scale = 2)
     private BigDecimal minimumStock;
@@ -53,4 +54,10 @@ public class Product extends AuditableEntity {
     @Builder.Default
     @Column(nullable = false)
     private Boolean active = true;
+
+    @Column(name = "internal_code", nullable = false, unique = true, length = 30)
+    private String internalCode;
+
+    @Column(length = 50, unique = true)
+    private String barcode;
 }

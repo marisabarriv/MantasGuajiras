@@ -1,8 +1,6 @@
 package com.mantasguajiras.backend.sale.dto.response;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -16,11 +14,21 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SaleResponse {
+public class SaleItemResponse {
+
     private UUID id;
-    private BigDecimal total;
-    private String observations;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private List<SaleItemResponse> items;
+
+    private UUID productId;
+
+    private String productName;
+
+    private BigDecimal quantity;
+
+    private BigDecimal unitPrice;
+
+    private BigDecimal discountPercentage;
+
+    private BigDecimal finalUnitPrice;
+
+    private BigDecimal subtotal;
 }

@@ -17,15 +17,31 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SaleItemRequest {
-    
+
     @NotNull
     private UUID productId;
 
     @NotNull
-    @DecimalMin(value = "0.00", inclusive = false, message = "Quantity must be greater than 0")
+    @DecimalMin(
+        value = "0.00",
+        inclusive = false,
+        message = "Quantity must be greater than 0"
+    )
     private BigDecimal quantity;
 
-    @NotNull
-    @DecimalMin(value = "0.00", inclusive = false, message = "Price must be greater than 0")
-    private BigDecimal unitPrice;
+    private Boolean specialPrice;
+
+    @DecimalMin(
+        value = "0.00",
+        inclusive = true,
+        message = "Discount percentage cannot be negative"
+    )
+    private BigDecimal discountPercentage;
+
+    @DecimalMin(
+        value = "0.00",
+        inclusive = false,
+        message = "Final unit price must be greater than 0"
+    )
+    private BigDecimal finalUnitPrice;
 }

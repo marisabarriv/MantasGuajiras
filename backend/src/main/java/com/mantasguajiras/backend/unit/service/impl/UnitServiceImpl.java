@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +45,7 @@ public class UnitServiceImpl implements UnitService {
     }
 
     @Override
-    public UnitResponse findById(Short id) {
+    public UnitResponse findById(UUID id) {
 
         Unit unit = unitRepository.findById(id)
                 .orElseThrow(() ->
@@ -54,7 +55,7 @@ public class UnitServiceImpl implements UnitService {
     }
 
     @Override
-    public UnitResponse update(Short id, UnitRequest request) {
+    public UnitResponse update(UUID id, UnitRequest request) {
 
         Unit unit = unitRepository.findById(id)
                 .orElseThrow(() ->
@@ -72,7 +73,7 @@ public class UnitServiceImpl implements UnitService {
     }
 
     @Override
-    public void delete(Short id) {
+    public void delete(UUID id) {
 
         Unit unit = unitRepository.findById(id)
                 .orElseThrow(() ->

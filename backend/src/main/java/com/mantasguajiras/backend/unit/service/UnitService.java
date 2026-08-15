@@ -1,7 +1,7 @@
 package com.mantasguajiras.backend.unit.service;
 
 import java.util.List;
-
+import java.util.UUID;
 import com.mantasguajiras.backend.unit.dto.requests.UnitRequest;
 import com.mantasguajiras.backend.unit.dto.response.UnitResponse;
 
@@ -11,10 +11,10 @@ public interface UnitService {
 
     List<UnitResponse> findAll();
 
-    UnitResponse findById(Short id);
+    UnitResponse findById(UUID id);
 
-    UnitResponse update(Short id, UnitRequest request);
+    UnitResponse update(UUID id, UnitRequest request);
 
-    void delete(Short id);
+    void delete(UUID id);
 }
 
