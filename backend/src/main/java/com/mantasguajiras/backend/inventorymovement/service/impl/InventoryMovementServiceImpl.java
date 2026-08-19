@@ -29,102 +29,96 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class InventoryMovementServiceImpl implements InventoryMovementService {
 
-    private final InventoryMovementRepository inventoryMovementRepository;
-    private final InventoryMovementMapper inventoryMovementMapper;
-    private final InventoryRepository inventoryRepository;
-    private final ProductRepository productRepository;
-    private final MovementTypeRepository movementTypeRepository;
-    private final SourceTypeRepository sourceTypeRepository;
+        private final InventoryMovementRepository inventoryMovementRepository;
+        private final InventoryMovementMapper inventoryMovementMapper;
+        private final InventoryRepository inventoryRepository;
+        private final ProductRepository productRepository;
+        private final MovementTypeRepository movementTypeRepository;
+        private final SourceTypeRepository sourceTypeRepository;
 
-    @Override
-    public List<InventoryMovementResponse> findAll() {
-        return inventoryMovementRepository.findAll()
-                .stream()
-                .map(inventoryMovementMapper::toResponse)
-                .toList();
-    }
-
-    @Override
-    public InventoryMovementResponse findById(UUID id) {
-        InventoryMovement movement = inventoryMovementRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Movimiento de inventario no encontrado con id: " + id));
-
-        return inventoryMovementMapper.toResponse(movement);
-    }
-
-    @Override
-    @Transactional
-    public InventoryMovementResponse create(InventoryMovementRequest request) {
-
-        Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Producto no encontrado."));
-
-        MovementType movementType = movementTypeRepository
-                .findById(request.getMovementTypeId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Tipo de movimiento no encontrado."));
-
-        SourceType sourceType = sourceTypeRepository
-                .findById(request.getSourceTypeId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Tipo de origen no encontrado."));
-
-        Inventory inventory = inventoryRepository.findById(product.getId())
-                .orElseGet(() ->
-                        Inventory.builder()
-                                .product(product)
-                                .quantity(BigDecimal.ZERO)
-                                .updatedAt(LocalDateTime.now())
-                                .build());
-
-        BigDecimal quantity = request.getQuantity();
-
-        if (movementType.getName().equalsIgnoreCase("ENTRADA")) {
-
-            inventory.setQuantity(
-                    inventory.getQuantity().add(quantity));
-
-        } else if (movementType.getName().equalsIgnoreCase("SALIDA")) {
-
-            BigDecimal newQuantity =
-                    inventory.getQuantity().subtract(quantity);
-
-            if (newQuantity.compareTo(BigDecimal.ZERO) < 0) {
-                throw new BusinessException(
-                        "No hay suficiente inventario disponible.");
-            }
-
-            inventory.setQuantity(newQuantity);
-
-        } else if (movementType.getName().equalsIgnoreCase("AJUSTE")) {
-
-            inventory.setQuantity(quantity);
-
-        } else {
-
-            throw new BusinessException(
-                    "El tipo de movimiento no permite actualizar el inventario.");
+        @Override
+        public List<InventoryMovementResponse> findAll() {
+                return inventoryMovementRepository.findAll()
+                                .stream()
+                                .map(inventoryMovementMapper::toResponse)
+                                .toList();
         }
 
-        inventory.setUpdatedAt(LocalDateTime.now());
+        @Override
+        public InventoryMovementResponse findById(UUID id) {
+                InventoryMovement movement = inventoryMovementRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Movimiento de inventario no encontrado con id: " + id));
 
-        inventoryRepository.save(inventory);
+                return inventoryMovementMapper.toResponse(movement);
+        }
 
-        InventoryMovement movement =
-                inventoryMovementMapper.toEntity(request);
+        @Override
+        @Transactional
+        public InventoryMovementResponse create(InventoryMovementRequest request) {
 
-        movement.setProduct(product);
-        movement.setMovementType(movementType);
-        movement.setSourceType(sourceType);
+                Product product = productRepository.findById(request.getProductId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado."));
 
-        InventoryMovement saved =
-                inventoryMovementRepository.save(movement);
+                MovementType movementType = movementTypeRepository
+                                .findById(request.getMovementTypeId())
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Tipo de movimiento no encontrado."));
 
-        return inventoryMovementMapper.toResponse(saved);
-    }
+                SourceType sourceType = sourceTypeRepository
+                                .findById(request.getSourceTypeId())
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Tipo de origen no encontrado."));
+
+                Inventory inventory = inventoryRepository.findById(product.getId())
+                                .orElseGet(() -> Inventory.builder()
+                                                .id(product.getId())
+                                                .product(product)
+                                                .quantity(BigDecimal.ZERO)
+                                                .updatedAt(LocalDateTime.now())
+                                                .build());
+
+                BigDecimal quantity = request.getQuantity();
+
+                if (movementType.getName().equalsIgnoreCase("ENTRADA")) {
+
+                        inventory.setQuantity(
+                                        inventory.getQuantity().add(quantity));
+
+                } else if (movementType.getName().equalsIgnoreCase("SALIDA")) {
+
+                        BigDecimal newQuantity = inventory.getQuantity().subtract(quantity);
+
+                        if (newQuantity.compareTo(BigDecimal.ZERO) < 0) {
+                                throw new BusinessException(
+                                                "No hay suficiente inventario disponible.");
+                        }
+
+                        inventory.setQuantity(newQuantity);
+
+                } else if (movementType.getName().equalsIgnoreCase("AJUSTE")) {
+
+                        inventory.setQuantity(quantity);
+
+                } else {
+
+                        throw new BusinessException(
+                                        "El tipo de movimiento no permite actualizar el inventario.");
+                }
+
+                inventory.setUpdatedAt(LocalDateTime.now());
+
+                inventoryRepository.save(inventory);
+
+                InventoryMovement movement = inventoryMovementMapper.toEntity(request);
+
+                movement.setProduct(product);
+                movement.setMovementType(movementType);
+                movement.setSourceType(sourceType);
+                movement.setSourceId(request.getSourceId());
+
+                InventoryMovement saved = inventoryMovementRepository.save(movement);
+
+                return inventoryMovementMapper.toResponse(saved);
+        }
 }
