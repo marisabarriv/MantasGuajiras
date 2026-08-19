@@ -1,8 +1,9 @@
 package com.mantasguajiras.backend.production.dto.response;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.math.BigDecimal;
 import java.util.UUID;
+
+import com.mantasguajiras.backend.production.entity.ProductionItemType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,15 +16,15 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductionResponse {
+public class ProductionItemResponse {
 
     private UUID id;
 
-    private String observations;
+    private UUID productId;
 
-    private LocalDateTime createdAt;
+    private String productName;
 
-    private LocalDateTime updatedAt;
+    private ProductionItemType type;
 
-    private List<ProductionItemResponse> items;
+    private BigDecimal quantity;
 }
