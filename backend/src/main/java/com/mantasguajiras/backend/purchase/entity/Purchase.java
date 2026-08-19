@@ -21,4 +21,8 @@ public class Purchase extends AuditableEntity {
 
     @Column(length = 255)
     private String observations;
+
+    @OneToMany(mappedBy = "purchase", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<PurchaseItem> items = new java.util.ArrayList<>();
 }

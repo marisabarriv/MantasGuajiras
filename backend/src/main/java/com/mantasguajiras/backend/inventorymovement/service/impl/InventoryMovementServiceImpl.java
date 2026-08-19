@@ -121,4 +121,84 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
 
                 return inventoryMovementMapper.toResponse(saved);
         }
+
+        @Override
+        @Transactional
+        public InventoryMovementResponse registerMovement(
+                        UUID productId,
+                        String movementTypeName,
+                        String sourceTypeName,
+                        UUID sourceId,
+                        BigDecimal quantity,
+                        String observations) {
+
+                Product product = productRepository.findById(productId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Producto no encontrado."));
+
+                MovementType movementType = movementTypeRepository
+                                .findByName(movementTypeName)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Tipo de movimiento no encontrado: "
+                                                                + movementTypeName));
+
+                SourceType sourceType = sourceTypeRepository
+                                .findByName(sourceTypeName)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Tipo de origen no encontrado: "
+                                                                + sourceTypeName));
+
+                Inventory inventory = inventoryRepository.findById(productId)
+                                .orElseGet(() -> Inventory.builder()
+                                                .product(product)
+                                                .quantity(BigDecimal.ZERO)
+                                                .updatedAt(LocalDateTime.now())
+                                                .build());
+
+                BigDecimal currentQuantity = inventory.getQuantity();
+
+                if ("ENTRADA".equalsIgnoreCase(movementType.getName())) {
+
+                        inventory.setQuantity(
+                                        currentQuantity.add(quantity));
+
+                } else if ("SALIDA".equalsIgnoreCase(movementType.getName())) {
+
+                        BigDecimal newQuantity = currentQuantity.subtract(quantity);
+
+                        if (newQuantity.compareTo(BigDecimal.ZERO) < 0) {
+                                throw new BusinessException(
+                                                "No hay suficiente inventario disponible.");
+                        }
+
+                        inventory.setQuantity(newQuantity);
+
+                } else if ("AJUSTE".equalsIgnoreCase(movementType.getName())) {
+
+                        inventory.setQuantity(quantity);
+
+                } else {
+
+                        throw new BusinessException(
+                                        "El tipo de movimiento no permite actualizar "
+                                                        + "el inventario.");
+                }
+
+                inventory.setUpdatedAt(LocalDateTime.now());
+
+                inventoryRepository.save(inventory);
+
+                InventoryMovement movement = InventoryMovement.builder()
+                                .product(product)
+                                .movementType(movementType)
+                                .sourceType(sourceType)
+                                .sourceId(sourceId)
+                                .quantity(quantity)
+                                .observations(observations)
+                                .build();
+
+                InventoryMovement savedMovement = inventoryMovementRepository.save(movement);
+
+                return inventoryMovementMapper.toResponse(savedMovement);
+        }
 }

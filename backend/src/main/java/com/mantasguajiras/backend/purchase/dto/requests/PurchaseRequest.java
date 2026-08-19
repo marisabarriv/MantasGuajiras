@@ -1,6 +1,8 @@
 package com.mantasguajiras.backend.purchase.dto.requests;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -14,12 +16,12 @@ import java.util.List;
 @AllArgsConstructor
 public class PurchaseRequest {
 
-    @NotNull
-    @DecimalMin("0.0")
+    @NotNull(message = "El total es obligatorio.")
+    @DecimalMin(value = "0.0", message = "El total no puede ser negativo.")
     private BigDecimal total;
 
     private String observations;
 
-    @NotNull
-    private List<PurchaseItemRequest> items;
+    @NotEmpty(message = "La compra debe tener al menos un producto.")
+    private List<@Valid PurchaseItemRequest> items;
 }

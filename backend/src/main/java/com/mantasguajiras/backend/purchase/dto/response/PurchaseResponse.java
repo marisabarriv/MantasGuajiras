@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -17,4 +18,5 @@ public class PurchaseResponse {
     private BigDecimal total;
     private String observations;
     private LocalDateTime createdAt;
+    private List<PurchaseItemResponse> items;
 }
