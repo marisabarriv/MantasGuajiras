@@ -1,27 +1,22 @@
 package com.mantasguajiras.backend.purchase.service.impl;
+
 import com.mantasguajiras.backend.common.exception.ResourceNotFoundException;
-import com.mantasguajiras.backend.inventorymovement.repository.InventoryMovementRepository;
-import com.mantasguajiras.backend.movementtype.repository.MovementTypeRepository;
+import com.mantasguajiras.backend.inventorymovement.service.InventoryMovementService;
+import com.mantasguajiras.backend.product.entity.Product;
 import com.mantasguajiras.backend.product.repository.ProductRepository;
 import com.mantasguajiras.backend.purchase.dto.requests.PurchaseItemRequest;
 import com.mantasguajiras.backend.purchase.dto.requests.PurchaseRequest;
 import com.mantasguajiras.backend.purchase.dto.response.PurchaseResponse;
 import com.mantasguajiras.backend.purchase.entity.Purchase;
+import com.mantasguajiras.backend.purchase.entity.PurchaseItem;
 import com.mantasguajiras.backend.purchase.mapper.PurchaseMapper;
+import com.mantasguajiras.backend.purchase.repository.PurchaseItemRepository;
 import com.mantasguajiras.backend.purchase.repository.PurchaseRepository;
 import com.mantasguajiras.backend.purchase.service.PurchaseService;
-import com.mantasguajiras.backend.sourcetype.repository.SourceTypeRepository;
-import com.mantasguajiras.backend.inventory.entity.Inventory;
-import com.mantasguajiras.backend.inventory.repository.InventoryRepository;
-import com.mantasguajiras.backend.inventorymovement.entity.InventoryMovement;
-import com.mantasguajiras.backend.movementtype.entity.MovementType;
-import com.mantasguajiras.backend.product.entity.Product;
-import com.mantasguajiras.backend.sourcetype.entity.SourceType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -30,12 +25,10 @@ import java.util.UUID;
 public class PurchaseServiceImpl implements PurchaseService {
 
     private final PurchaseRepository purchaseRepository;
+    private final PurchaseItemRepository purchaseItemRepository;
     private final PurchaseMapper purchaseMapper;
     private final ProductRepository productRepository;
-    private final InventoryMovementRepository inventoryMovementRepository;
-    private final MovementTypeRepository movementTypeRepository;
-    private final SourceTypeRepository sourceTypeRepository;
-    private final InventoryRepository inventoryRepository;
+    private final InventoryMovementService inventoryMovementService;
 
     @Override
     public List<PurchaseResponse> findAll() {
@@ -47,90 +40,82 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     @Override
     public PurchaseResponse findById(UUID id) {
+
         Purchase purchase = purchaseRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Compra no encontrada con id: " + id));
+                        new ResourceNotFoundException(
+                                "Compra no encontrada con id: " + id));
 
         return purchaseMapper.toResponse(purchase);
     }
 
-    @Transactional
     @Override
+    @Transactional
     public PurchaseResponse create(PurchaseRequest request) {
 
         Purchase purchase = purchaseMapper.toEntity(request);
 
-        Purchase saved = purchaseRepository.save(purchase);
+        Purchase savedPurchase = purchaseRepository.save(purchase);
 
-        MovementType movementType = movementTypeRepository.findByName("ENTRADA")
-    .orElseThrow(() -> new ResourceNotFoundException("Tipo de movimiento no encontrado"));
+        for (PurchaseItemRequest itemRequest : request.getItems()) {
 
-SourceType sourceType = sourceTypeRepository.findByName("COMPRA")
-    .orElseThrow(() -> new ResourceNotFoundException("Tipo de origen no encontrado"));
-        for (PurchaseItemRequest item : request.getItems()) {
+            Product product = productRepository.findById(
+                    itemRequest.getProductId()
+            ).orElseThrow(() ->
+                    new ResourceNotFoundException(
+                            "Producto no encontrado con id: "
+                                    + itemRequest.getProductId()));
 
-            Product product = productRepository.findById(item.getProductId())
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+            PurchaseItem purchaseItem = PurchaseItem.builder()
+                    .purchase(savedPurchase)
+                    .product(product)
+                    .quantity(itemRequest.getQuantity())
+                    .unitCost(itemRequest.getUnitCost())
+                    .build();
 
-            InventoryMovement movement = InventoryMovement.builder()
-                .product(product)
-                .movementType(movementType)
-                .sourceType(sourceType)
-                .sourceId(saved.getId())
-                .quantity(item.getQuantity())
-                .observations(request.getObservations())
-                .build();
+            purchaseItemRepository.save(purchaseItem);
 
-            inventoryMovementRepository.save(movement);
-
-            updateInventory(product, movementType, item.getQuantity());
+            inventoryMovementService.registerMovement(
+                    product.getId(),
+                    "ENTRADA",
+                    "COMPRA",
+                    savedPurchase.getId(),
+                    itemRequest.getQuantity(),
+                    request.getObservations()
+            );
         }
-        return purchaseMapper.toResponse(saved);
+
+        return purchaseMapper.toResponse(savedPurchase);
     }
 
     @Override
-    public PurchaseResponse update(UUID id, PurchaseRequest request) {
+    @Transactional
+    public PurchaseResponse update(
+            UUID id,
+            PurchaseRequest request) {
 
         Purchase purchase = purchaseRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Compra no encontrada con id: " + id));
+                        new ResourceNotFoundException(
+                                "Compra no encontrada con id: " + id));
 
         purchaseMapper.updateEntity(request, purchase);
 
-        Purchase updated = purchaseRepository.save(purchase);
+        Purchase updatedPurchase =
+                purchaseRepository.save(purchase);
 
-        return purchaseMapper.toResponse(updated);
+        return purchaseMapper.toResponse(updatedPurchase);
     }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
 
         Purchase purchase = purchaseRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Compra no encontrada con id: " + id));
+                        new ResourceNotFoundException(
+                                "Compra no encontrada con id: " + id));
 
         purchaseRepository.delete(purchase);
     }
-
-    private void updateInventory(Product product, MovementType movementType, BigDecimal quantity) {
-
-    Inventory inventory = inventoryRepository.findById(product.getId())
-            .orElse(
-                    Inventory.builder()
-                            .product(product)
-                            .quantity(BigDecimal.ZERO)
-                            .updatedAt(LocalDateTime.now())
-                            .build()
-            );
-
-    if ("ENTRADA".equalsIgnoreCase(movementType.getName())) {
-        inventory.setQuantity(inventory.getQuantity().add(quantity));
-    } else {
-        inventory.setQuantity(inventory.getQuantity().subtract(quantity));
-    }
-
-    inventory.setUpdatedAt(LocalDateTime.now());
-
-    inventoryRepository.save(inventory);
-}
 }
