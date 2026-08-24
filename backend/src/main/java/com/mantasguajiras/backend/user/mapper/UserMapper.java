@@ -6,6 +6,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
+import com.mantasguajiras.backend.user.dto.requests.UpdateUserRequest;
 import com.mantasguajiras.backend.user.dto.requests.UserRequest;
 import com.mantasguajiras.backend.user.dto.response.UserResponse;
 import com.mantasguajiras.backend.user.entity.User;
@@ -16,16 +17,21 @@ public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "role", ignore = true)
     User toEntity(UserRequest request);
 
     UserResponse toResponse(User entity);
 
     @BeanMapping(
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+        nullValuePropertyMappingStrategy =
+                NullValuePropertyMappingStrategy.IGNORE
     )
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updateEntity(UserRequest request,
-                      @MappingTarget User entity);
+    @Mapping(target = "password", ignore = true)
+    void updateEntity(
+            UpdateUserRequest request,
+            @MappingTarget User entity
+    );
 }

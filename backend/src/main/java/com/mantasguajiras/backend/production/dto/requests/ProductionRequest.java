@@ -1,9 +1,10 @@
 package com.mantasguajiras.backend.production.dto.requests;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.UUID;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,7 +20,23 @@ public class ProductionRequest {
 
     private String observations;
 
-    @NotEmpty(message = "Production must contain at least one item")
-    @Valid
-    private List<ProductionItemRequest> items;
+    @NotNull(message = "La tela es obligatoria.")
+    private UUID fabricProductId;
+
+    @NotNull(message = "La cantidad de tela por manta es obligatoria.")
+    @DecimalMin(
+        value = "0.01",
+        message = "La cantidad de tela por manta debe ser mayor que cero."
+    )
+    private BigDecimal fabricQuantityPerUnit;
+
+    @NotNull(message = "El tipo de manta es obligatorio.")
+    private UUID outputProductId;
+
+    @NotNull(message = "La cantidad de mantas es obligatoria.")
+    @DecimalMin(
+        value = "0.01",
+        message = "La cantidad de mantas debe ser mayor que cero."
+    )
+    private BigDecimal outputQuantity;
 }

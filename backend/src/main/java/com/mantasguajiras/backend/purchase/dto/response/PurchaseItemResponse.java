@@ -18,5 +18,5 @@ public class PurchaseItemResponse {
     private UUID id;
     private UUID productId;
     private BigDecimal quantity;
-    private BigDecimal unitPrice;
+    private BigDecimal unitCost;
 }

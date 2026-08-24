@@ -18,6 +18,8 @@ public class UserResponse {
 
     private String username;
 
+    private String phone;
+
     private Role role;
 
     private Boolean active;

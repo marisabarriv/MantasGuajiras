@@ -34,3 +34,6 @@ build/
 
 # Local development configuration
 application-dev.yml
+
+# Environment variables file
+.env

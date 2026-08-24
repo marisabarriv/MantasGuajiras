@@ -37,7 +37,9 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
         private final SourceTypeRepository sourceTypeRepository;
 
         @Override
+        @Transactional(readOnly = true)
         public List<InventoryMovementResponse> findAll() {
+
                 return inventoryMovementRepository.findAll()
                                 .stream()
                                 .map(inventoryMovementMapper::toResponse)
@@ -45,30 +47,50 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
         }
 
         @Override
+        @Transactional(readOnly = true)
         public InventoryMovementResponse findById(UUID id) {
+
                 InventoryMovement movement = inventoryMovementRepository.findById(id)
                                 .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Movimiento de inventario no encontrado con id: " + id));
+                                                "Movimiento de inventario no encontrado con id: "
+                                                                + id));
 
                 return inventoryMovementMapper.toResponse(movement);
         }
 
         @Override
         @Transactional
-        public InventoryMovementResponse create(InventoryMovementRequest request) {
+        public InventoryMovementResponse create(
+                        InventoryMovementRequest request) {
+
+                validateQuantity(request.getQuantity());
 
                 Product product = productRepository.findById(request.getProductId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado."));
-
-                MovementType movementType = movementTypeRepository
-                                .findById(request.getMovementTypeId())
                                 .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Tipo de movimiento no encontrado."));
+                                                "Producto no encontrado con id: "
+                                                                + request.getProductId()));
 
-                SourceType sourceType = sourceTypeRepository
-                                .findById(request.getSourceTypeId())
+                validateActiveProduct(product);
+
+                MovementType movementType = movementTypeRepository.findById(
+                                request.getMovementTypeId())
                                 .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Tipo de origen no encontrado."));
+                                                "Tipo de movimiento no encontrado con id: "
+                                                                + request.getMovementTypeId()));
+
+                validateActiveMovementType(movementType);
+
+                SourceType sourceType = sourceTypeRepository.findById(
+                                request.getSourceTypeId())
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Tipo de origen no encontrado con id: "
+                                                                + request.getSourceTypeId()));
+
+                validateActiveSourceType(sourceType);
+
+                validateMovementSource(
+                                movementType.getName(),
+                                sourceType.getName());
 
                 Inventory inventory = inventoryRepository.findById(product.getId())
                                 .orElseGet(() -> Inventory.builder()
@@ -78,33 +100,10 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                                                 .updatedAt(LocalDateTime.now())
                                                 .build());
 
-                BigDecimal quantity = request.getQuantity();
-
-                if (movementType.getName().equalsIgnoreCase("ENTRADA")) {
-
-                        inventory.setQuantity(
-                                        inventory.getQuantity().add(quantity));
-
-                } else if (movementType.getName().equalsIgnoreCase("SALIDA")) {
-
-                        BigDecimal newQuantity = inventory.getQuantity().subtract(quantity);
-
-                        if (newQuantity.compareTo(BigDecimal.ZERO) < 0) {
-                                throw new BusinessException(
-                                                "No hay suficiente inventario disponible.");
-                        }
-
-                        inventory.setQuantity(newQuantity);
-
-                } else if (movementType.getName().equalsIgnoreCase("AJUSTE")) {
-
-                        inventory.setQuantity(quantity);
-
-                } else {
-
-                        throw new BusinessException(
-                                        "El tipo de movimiento no permite actualizar el inventario.");
-                }
+                applyMovement(
+                                inventory,
+                                movementType.getName(),
+                                request.getQuantity());
 
                 inventory.setUpdatedAt(LocalDateTime.now());
 
@@ -132,9 +131,14 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                         BigDecimal quantity,
                         String observations) {
 
+                validateQuantity(quantity);
+
                 Product product = productRepository.findById(productId)
                                 .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Producto no encontrado."));
+                                                "Producto no encontrado con id: "
+                                                                + productId));
+
+                validateActiveProduct(product);
 
                 MovementType movementType = movementTypeRepository
                                 .findByName(movementTypeName)
@@ -142,47 +146,32 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                                                 "Tipo de movimiento no encontrado: "
                                                                 + movementTypeName));
 
+                validateActiveMovementType(movementType);
+
                 SourceType sourceType = sourceTypeRepository
                                 .findByName(sourceTypeName)
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Tipo de origen no encontrado: "
                                                                 + sourceTypeName));
 
+                validateActiveSourceType(sourceType);
+
+                validateMovementSource(
+                                movementType.getName(),
+                                sourceType.getName());
+
                 Inventory inventory = inventoryRepository.findById(productId)
                                 .orElseGet(() -> Inventory.builder()
+                                                .id(productId)
                                                 .product(product)
                                                 .quantity(BigDecimal.ZERO)
                                                 .updatedAt(LocalDateTime.now())
                                                 .build());
 
-                BigDecimal currentQuantity = inventory.getQuantity();
-
-                if ("ENTRADA".equalsIgnoreCase(movementType.getName())) {
-
-                        inventory.setQuantity(
-                                        currentQuantity.add(quantity));
-
-                } else if ("SALIDA".equalsIgnoreCase(movementType.getName())) {
-
-                        BigDecimal newQuantity = currentQuantity.subtract(quantity);
-
-                        if (newQuantity.compareTo(BigDecimal.ZERO) < 0) {
-                                throw new BusinessException(
-                                                "No hay suficiente inventario disponible.");
-                        }
-
-                        inventory.setQuantity(newQuantity);
-
-                } else if ("AJUSTE".equalsIgnoreCase(movementType.getName())) {
-
-                        inventory.setQuantity(quantity);
-
-                } else {
-
-                        throw new BusinessException(
-                                        "El tipo de movimiento no permite actualizar "
-                                                        + "el inventario.");
-                }
+                applyMovement(
+                                inventory,
+                                movementType.getName(),
+                                quantity);
 
                 inventory.setUpdatedAt(LocalDateTime.now());
 
@@ -200,5 +189,118 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                 InventoryMovement savedMovement = inventoryMovementRepository.save(movement);
 
                 return inventoryMovementMapper.toResponse(savedMovement);
+        }
+
+        private void applyMovement(
+                        Inventory inventory,
+                        String movementTypeName,
+                        BigDecimal quantity) {
+
+                BigDecimal currentQuantity = inventory.getQuantity() != null
+                                ? inventory.getQuantity()
+                                : BigDecimal.ZERO;
+
+                if ("IN".equalsIgnoreCase(movementTypeName)) {
+
+                        inventory.setQuantity(
+                                        currentQuantity.add(quantity));
+
+                } else if ("OUT".equalsIgnoreCase(movementTypeName)) {
+
+                        BigDecimal newQuantity = currentQuantity.subtract(quantity);
+
+                        if (newQuantity.compareTo(BigDecimal.ZERO) < 0) {
+                                throw new BusinessException(
+                                                "No hay suficiente inventario disponible.");
+                        }
+
+                        inventory.setQuantity(newQuantity);
+
+                } else {
+
+                        throw new BusinessException(
+                                        "El tipo de movimiento no permite actualizar "
+                                                        + "el inventario: "
+                                                        + movementTypeName);
+                }
+        }
+
+        private void validateQuantity(BigDecimal quantity) {
+
+                if (quantity == null ||
+                                quantity.compareTo(BigDecimal.ZERO) <= 0) {
+
+                        throw new BusinessException(
+                                        "La cantidad debe ser mayor que cero.");
+                }
+        }
+
+        private void validateActiveProduct(Product product) {
+
+                if (!Boolean.TRUE.equals(product.getActive())) {
+
+                        throw new BusinessException(
+                                        "El producto no está activo: "
+                                                        + product.getName());
+                }
+        }
+
+        private void validateActiveMovementType(
+                        MovementType movementType) {
+
+                if (!Boolean.TRUE.equals(movementType.getActive())) {
+
+                        throw new BusinessException(
+                                        "El tipo de movimiento está inactivo: "
+                                                        + movementType.getName());
+                }
+        }
+
+        private void validateActiveSourceType(
+                        SourceType sourceType) {
+
+                if (!Boolean.TRUE.equals(sourceType.getActive())) {
+
+                        throw new BusinessException(
+                                        "El tipo de origen está inactivo: "
+                                                        + sourceType.getName());
+                }
+        }
+
+        private void validateMovementSource(
+                        String movementTypeName,
+                        String sourceTypeName) {
+
+                if ("PURCHASE".equalsIgnoreCase(sourceTypeName)
+                                && !"IN".equalsIgnoreCase(movementTypeName)) {
+
+                        throw new BusinessException(
+                                        "Una compra solo puede generar una entrada de inventario.");
+                }
+
+                if ("SALE".equalsIgnoreCase(sourceTypeName)
+                                && !"OUT".equalsIgnoreCase(movementTypeName)) {
+
+                        throw new BusinessException(
+                                        "Una venta solo puede generar una salida de inventario.");
+                }
+
+                if ("PRODUCTION".equalsIgnoreCase(sourceTypeName)
+                                && !("IN".equalsIgnoreCase(movementTypeName)
+                                                || "OUT".equalsIgnoreCase(movementTypeName))) {
+
+                        throw new BusinessException(
+                                        "Una producción solo puede generar entradas "
+                                                        + "o salidas de inventario.");
+                }
+
+                if ("ADJUSTMENT".equalsIgnoreCase(sourceTypeName)
+                                && !("IN".equalsIgnoreCase(movementTypeName)
+                                                || "OUT".equalsIgnoreCase(movementTypeName))) {
+
+                        throw new BusinessException(
+                                        "Un ajuste de inventario solo puede generar "
+                                                        + "una entrada o una salida.");
+                }
         }
 }

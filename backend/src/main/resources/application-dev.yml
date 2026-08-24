@@ -10,11 +10,11 @@ spring:
     hibernate:
       ddl-auto: validate
 
-    open-in-view: false
+  open-in-view: false
 
-    properties:
-      hibernate:
-        format_sql: true
+  properties:
+    hibernate:
+      format_sql: true
 
   flyway:
     enabled: true
@@ -24,3 +24,12 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.flywaydb: INFO
+
+jwt:
+  secret: ${JWT_SECRET:mariaisabelbarrosrivera12345678923062006180920103005197809111979}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+initial-admin:
+  username: ${INITIAL_ADMIN_USERNAME:marisabarriv}
+  phone: ${INITIAL_ADMIN_PHONE:3004521235}
+  password: ${INITIAL_ADMIN_PASSWORD:mariaisabel1}

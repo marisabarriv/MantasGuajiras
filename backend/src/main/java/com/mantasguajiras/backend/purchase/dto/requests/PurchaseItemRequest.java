@@ -14,14 +14,20 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PurchaseItemRequest {
 
-    @NotNull
+    @NotNull(message = "El producto es obligatorio.")
     private UUID productId;
 
-    @NotNull
-    @DecimalMin("0.0")
+    @NotNull(message = "La cantidad es obligatoria.")
+    @DecimalMin(
+            value = "0.01",
+            message = "La cantidad debe ser mayor que cero."
+    )
     private BigDecimal quantity;
 
-    @NotNull
-    @DecimalMin("0.0")
+    @NotNull(message = "El costo unitario es obligatorio.")
+    @DecimalMin(
+            value = "0.01",
+            message = "El costo unitario debe ser mayor que cero."
+    )
     private BigDecimal unitCost;
 }

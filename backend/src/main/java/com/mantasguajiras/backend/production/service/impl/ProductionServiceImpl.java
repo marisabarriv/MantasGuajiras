@@ -1,5 +1,7 @@
 package com.mantasguajiras.backend.production.service.impl;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -7,14 +9,18 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mantasguajiras.backend.common.exception.BusinessException;
 import com.mantasguajiras.backend.common.exception.ResourceNotFoundException;
+import com.mantasguajiras.backend.inventory.entity.Inventory;
+import com.mantasguajiras.backend.inventory.repository.InventoryRepository;
+import com.mantasguajiras.backend.inventorymovement.service.InventoryMovementService;
 import com.mantasguajiras.backend.product.entity.Product;
 import com.mantasguajiras.backend.product.repository.ProductRepository;
-import com.mantasguajiras.backend.production.dto.requests.ProductionItemRequest;
 import com.mantasguajiras.backend.production.dto.requests.ProductionRequest;
 import com.mantasguajiras.backend.production.dto.response.ProductionResponse;
 import com.mantasguajiras.backend.production.entity.Production;
 import com.mantasguajiras.backend.production.entity.ProductionItem;
+import com.mantasguajiras.backend.production.entity.ProductionItemType;
 import com.mantasguajiras.backend.production.mapper.ProductionMapper;
 import com.mantasguajiras.backend.production.repository.ProductionRepository;
 import com.mantasguajiras.backend.production.service.ProductionService;
@@ -29,19 +35,96 @@ public class ProductionServiceImpl implements ProductionService {
     private final ProductionRepository productionRepository;
     private final ProductionMapper productionMapper;
     private final ProductRepository productRepository;
+    private final InventoryRepository inventoryRepository;
+    private final InventoryMovementService inventoryMovementService;
 
     @Override
     public ProductionResponse create(ProductionRequest productionRequest) {
 
-        Production production = productionMapper.toEntity(productionRequest);
+        Product fabric = findActiveProduct(
+                productionRequest.getFabricProductId()
+        );
 
-        List<ProductionItem> items =
-                buildProductionItems(productionRequest, production);
+        Product output = findActiveProduct(
+                productionRequest.getOutputProductId()
+        );
 
-        production.setItems(items);
+        validateProductionProducts(fabric, output);
+
+        BigDecimal totalFabricQuantity =
+                productionRequest.getFabricQuantityPerUnit()
+                        .multiply(productionRequest.getOutputQuantity())
+                        .setScale(2, RoundingMode.HALF_UP);
+
+        Inventory fabricInventory =
+                inventoryRepository.findById(fabric.getId())
+                        .orElseThrow(() ->
+                                new BusinessException(
+                                        "La tela seleccionada no tiene inventario."
+                                ));
+
+        if (fabricInventory.getQuantity()
+                .compareTo(totalFabricQuantity) < 0) {
+
+            throw new BusinessException(
+                    "No hay suficiente tela disponible. "
+                    + "Se necesitan "
+                    + totalFabricQuantity
+                    + " "
+                    + fabric.getUnit().getAbbreviation()
+                    + ", pero solo hay "
+                    + fabricInventory.getQuantity()
+                    + " disponibles."
+            );
+        }
+
+        Production production =
+                productionMapper.toEntity(productionRequest);
+
+        production.setItems(new ArrayList<>());
+
+        ProductionItem inputItem = ProductionItem.builder()
+                .production(production)
+                .product(fabric)
+                .type(ProductionItemType.INPUT)
+                .quantity(totalFabricQuantity)
+                .build();
+
+        ProductionItem outputItem = ProductionItem.builder()
+                .production(production)
+                .product(output)
+                .type(ProductionItemType.OUTPUT)
+                .quantity(productionRequest.getOutputQuantity())
+                .build();
+
+        production.getItems().add(inputItem);
+        production.getItems().add(outputItem);
 
         Production savedProduction =
                 productionRepository.save(production);
+
+        inventoryMovementService.registerMovement(
+                fabric.getId(),
+                "OUT",
+                "PRODUCTION",
+                savedProduction.getId(),
+                totalFabricQuantity,
+                "Tela utilizada en producción de "
+                        + productionRequest.getOutputQuantity()
+                        + " unidad(es) de "
+                        + output.getName()
+        );
+
+        inventoryMovementService.registerMovement(
+                output.getId(),
+                "IN",
+                "PRODUCTION",
+                savedProduction.getId(),
+                productionRequest.getOutputQuantity(),
+                "Producción de "
+                        + productionRequest.getOutputQuantity()
+                        + " unidad(es)"
+        );
 
         return productionMapper.toResponse(savedProduction);
     }
@@ -51,27 +134,9 @@ public class ProductionServiceImpl implements ProductionService {
             UUID id,
             ProductionRequest productionRequest) {
 
-        Production existingProduction =
-                productionRepository.findById(id)
-                        .orElseThrow(() -> new ResourceNotFoundException(
-                                "Producción no encontrada con id: " + id));
-
-        productionMapper.updateEntity(
-                productionRequest,
-                existingProduction);
-
-        List<ProductionItem> items =
-                buildProductionItems(
-                        productionRequest,
-                        existingProduction);
-
-        existingProduction.getItems().clear();
-        existingProduction.getItems().addAll(items);
-
-        Production updatedProduction =
-                productionRepository.save(existingProduction);
-
-        return productionMapper.toResponse(updatedProduction);
+        throw new BusinessException(
+                "Las producciones no pueden modificarse después de registrarse."
+        );
     }
 
     @Override
@@ -80,8 +145,11 @@ public class ProductionServiceImpl implements ProductionService {
 
         Production production =
                 productionRepository.findById(id)
-                        .orElseThrow(() -> new ResourceNotFoundException(
-                                "Producción no encontrada con id: " + id));
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Producción no encontrada con id: "
+                                                + id
+                                ));
 
         return productionMapper.toResponse(production);
     }
@@ -99,47 +167,52 @@ public class ProductionServiceImpl implements ProductionService {
     @Override
     public void delete(UUID id) {
 
-        Production production =
-                productionRepository.findById(id)
-                        .orElseThrow(() -> new ResourceNotFoundException(
-                                "Producción no encontrada con id: " + id));
-
-        productionRepository.delete(production);
+        throw new BusinessException(
+                "Las producciones no pueden eliminarse después de registrarse."
+        );
     }
 
-    private List<ProductionItem> buildProductionItems(
-            ProductionRequest productionRequest,
-            Production production) {
+    private Product findActiveProduct(UUID productId) {
 
-        List<ProductionItem> items = new ArrayList<>();
+        Product product =
+                productRepository.findById(productId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Producto no encontrado con id: "
+                                                + productId
+                                ));
 
-        for (ProductionItemRequest itemRequest :
-                productionRequest.getItems()) {
+        if (!Boolean.TRUE.equals(product.getActive())) {
 
-            Product product =
-                    productRepository.findById(
-                            itemRequest.getProductId())
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Producto no encontrado con id: "
-                                                    + itemRequest.getProductId()));
-
-            if (!Boolean.TRUE.equals(product.getActive())) {
-                throw new IllegalArgumentException(
-                        "El producto no está activo: "
-                                + product.getName());
-            }
-
-            ProductionItem item = ProductionItem.builder()
-                    .production(production)
-                    .product(product)
-                    .type(itemRequest.getType())
-                    .quantity(itemRequest.getQuantity())
-                    .build();
-
-            items.add(item);
+            throw new BusinessException(
+                    "El producto no está activo: "
+                            + product.getName()
+            );
         }
 
-        return items;
+        return product;
+    }
+
+    private void validateProductionProducts(
+            Product fabric,
+            Product output) {
+
+        if (!Boolean.TRUE.equals(fabric.getPurchasable())) {
+            throw new BusinessException(
+                    "El producto seleccionado como tela no es comprable."
+            );
+        }
+
+        if (!Boolean.TRUE.equals(output.getManufacturable())) {
+            throw new BusinessException(
+                    "El producto seleccionado como manta no es fabricable."
+            );
+        }
+
+        if (fabric.getId().equals(output.getId())) {
+            throw new BusinessException(
+                    "La tela y la manta producida no pueden ser el mismo producto."
+            );
+        }
     }
 }
