@@ -17,7 +17,10 @@ import java.util.List;
 public class PurchaseRequest {
 
     @NotNull(message = "El total es obligatorio.")
-    @DecimalMin(value = "0.0", message = "El total no puede ser negativo.")
+    @DecimalMin(
+            value = "0.01",
+            message = "El total debe ser mayor que cero."
+    )
     private BigDecimal total;
 
     private String observations;

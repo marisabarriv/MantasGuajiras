@@ -14,16 +14,21 @@ import com.mantasguajiras.backend.unit.entity.Unit;
 public interface UnitMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     Unit toEntity(UnitRequest request);
 
-    UnitResponse toResponse(Unit entity);
+    UnitResponse toResponse(Unit unit);
 
     @BeanMapping(
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+        nullValuePropertyMappingStrategy =
+                NullValuePropertyMappingStrategy.IGNORE
     )
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     void updateEntity(
             UnitRequest request,
-            @MappingTarget Unit entity
+            @MappingTarget Unit unit
     );
 }
