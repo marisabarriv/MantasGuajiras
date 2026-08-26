@@ -1,0 +1,3 @@
+CREATE SEQUENCE product_internal_code_seq
+START WITH 1
+INCREMENT BY 1;

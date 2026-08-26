@@ -1,5 +1,6 @@
 package com.mantasguajiras.backend.purchase.mapper;
 
+import com.mantasguajiras.backend.purchase.dto.requests.PurchaseItemRequest;
 import com.mantasguajiras.backend.purchase.dto.requests.PurchaseRequest;
 import com.mantasguajiras.backend.purchase.dto.response.PurchaseItemResponse;
 import com.mantasguajiras.backend.purchase.dto.response.PurchaseResponse;
@@ -21,9 +22,17 @@ public interface PurchaseMapper {
     @Mapping(target = "productId", source = "product.id")
     PurchaseItemResponse toItemResponse(PurchaseItem item);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "purchase", ignore = true)
+    @Mapping(target = "product", ignore = true)
+    PurchaseItem toItemEntity(PurchaseItemRequest request);
+
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updateEntity(PurchaseRequest request, @MappingTarget Purchase purchase);
+    void updateEntity(
+            PurchaseRequest request,
+            @MappingTarget Purchase purchase
+    );
 }
