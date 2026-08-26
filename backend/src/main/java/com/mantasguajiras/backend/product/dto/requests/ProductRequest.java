@@ -26,36 +26,51 @@ public class ProductRequest {
     @NotNull(message = "La unidad es obligatoria.")
     private UUID unitId;
 
-    @NotBlank(message = "El código interno es obligatorio.")
-    private String internalCode;
-
     private String barcode;
 
     @NotBlank(message = "El nombre es obligatorio.")
     private String name;
 
-    @PositiveOrZero(message = "El precio de compra no puede ser negativo.")
+    @PositiveOrZero(
+            message = "El precio de compra no puede ser negativo."
+    )
     private BigDecimal purchasePrice;
 
-    @NotNull(message = "El precio unitario es obligatorio.")
-    @Positive(message = "El precio unitario debe ser mayor que cero.")
+    @NotNull(
+            message = "El precio unitario es obligatorio."
+    )
+    @Positive(
+            message = "El precio unitario debe ser mayor que cero."
+    )
     private BigDecimal unitPrice;
 
-    @PositiveOrZero(message = "El precio mayorista no puede ser negativo.")
+    @PositiveOrZero(
+            message = "El precio mayorista no puede ser negativo."
+    )
     private BigDecimal wholesalePrice;
 
     @Builder.Default
-    @NotNull(message = "La cantidad mínima mayorista es obligatoria.")
-    @PositiveOrZero(message = "La cantidad mínima mayorista no puede ser negativa.")
+    @NotNull(
+            message = "La cantidad mínima mayorista es obligatoria."
+    )
+    @PositiveOrZero(
+            message = "La cantidad mínima mayorista no puede ser negativa."
+    )
     private Short minimumWholesaleQuantity = 0;
 
-    @PositiveOrZero(message = "El stock mínimo no puede ser negativo.")
+    @PositiveOrZero(
+            message = "El stock mínimo no puede ser negativo."
+    )
     private BigDecimal minimumStock;
 
-    @NotNull(message = "Debe indicar si el producto es comprable.")
+    @NotNull(
+            message = "Debe indicar si el producto es comprable."
+    )
     private Boolean purchasable;
 
-    @NotNull(message = "Debe indicar si el producto es fabricable.")
+    @NotNull(
+            message = "Debe indicar si el producto es fabricable."
+    )
     private Boolean manufacturable;
 
     private Boolean active;

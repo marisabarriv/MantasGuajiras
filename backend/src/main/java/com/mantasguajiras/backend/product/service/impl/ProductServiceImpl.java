@@ -30,6 +30,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductCategoryRepository productCategoryRepository;
     private final UnitRepository unitRepository;
 
+
     @Override
     @Transactional(readOnly = true)
     public List<ProductResponse> findAll() {
@@ -40,65 +41,10 @@ public class ProductServiceImpl implements ProductService {
                 .toList();
     }
 
+
     @Override
     @Transactional(readOnly = true)
     public ProductResponse findById(UUID id) {
-
-        Product product = productRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Producto no encontrado con id: " + id
-                        ));
-
-        return productMapper.toResponse(product);
-    }
-
-    @Override
-    public ProductResponse create(ProductRequest request) {
-
-        validateUniqueFields(request, null);
-
-        ProductCategory category =
-                productCategoryRepository.findById(request.getCategoryId())
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Categoría no encontrada."
-                                ));
-
-        if (!Boolean.TRUE.equals(category.getActive())) {
-            throw new IllegalArgumentException(
-                    "La categoría seleccionada está inactiva."
-            );
-        }
-
-        Unit unit =
-                unitRepository.findById(request.getUnitId())
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Unidad no encontrada."
-                                ));
-
-        if (!Boolean.TRUE.equals(unit.getActive())) {
-            throw new IllegalArgumentException(
-                    "La unidad seleccionada está inactiva."
-            );
-        }
-
-        Product product = productMapper.toEntity(request);
-
-        product.setCategory(category);
-        product.setUnit(unit);
-
-        Product savedProduct =
-                productRepository.save(product);
-
-        return productMapper.toResponse(savedProduct);
-    }
-
-    @Override
-    public ProductResponse update(
-            UUID id,
-            ProductRequest request) {
 
         Product product =
                 productRepository.findById(id)
@@ -107,9 +53,134 @@ public class ProductServiceImpl implements ProductService {
                                         "Producto no encontrado con id: " + id
                                 ));
 
+        return productMapper.toResponse(product);
+    }
+
+
+    @Override
+    public ProductResponse create(ProductRequest request) {
+
+        normalizeBarcode(request);
+
+        validateUniqueFields(request, null);
+
+
+        // =========================================
+        // CATEGORÍA
+        // =========================================
+
+        ProductCategory category =
+                productCategoryRepository.findById(
+                        request.getCategoryId()
+                ).orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Categoría no encontrada."
+                        ));
+
+        if (!Boolean.TRUE.equals(category.getActive())) {
+
+            throw new IllegalArgumentException(
+                    "La categoría seleccionada está inactiva."
+            );
+        }
+
+
+        // =========================================
+        // UNIDAD
+        // =========================================
+
+        Unit unit =
+                unitRepository.findById(
+                        request.getUnitId()
+                ).orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Unidad no encontrada."
+                        ));
+
+        if (!Boolean.TRUE.equals(unit.getActive())) {
+
+            throw new IllegalArgumentException(
+                    "La unidad seleccionada está inactiva."
+            );
+        }
+
+
+        // =========================================
+        // CREAR PRODUCTO
+        // =========================================
+
+        Product product =
+                productMapper.toEntity(request);
+
+
+        // =========================================
+        // GENERAR CÓDIGO INTERNO AUTOMÁTICO
+        // =========================================
+
+        Long sequence =
+                productRepository.getNextInternalCode();
+
+        String internalCode =
+                String.format(
+                        "PROD-%05d",
+                        sequence
+                );
+
+        product.setInternalCode(internalCode);
+
+
+        // =========================================
+        // ASIGNAR RELACIONES
+        // =========================================
+
+        product.setCategory(category);
+        product.setUnit(unit);
+
+
+        // =========================================
+        // GUARDAR
+        // =========================================
+
+        Product savedProduct =
+                productRepository.save(product);
+
+
+        return productMapper.toResponse(savedProduct);
+    }
+
+
+    @Override
+    public ProductResponse update(
+            UUID id,
+            ProductRequest request) {
+
+        normalizeBarcode(request);
+
+
+        Product product =
+                productRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Producto no encontrado con id: " + id
+                                ));
+
+
         validateUniqueFields(request, id);
 
-        productMapper.updateEntity(request, product);
+
+        // =========================================
+        // ACTUALIZAR DATOS
+        // =========================================
+
+        productMapper.updateEntity(
+                request,
+                product
+        );
+
+
+        // =========================================
+        // CATEGORÍA
+        // =========================================
 
         if (request.getCategoryId() != null) {
 
@@ -122,6 +193,7 @@ public class ProductServiceImpl implements ProductService {
                             ));
 
             if (!Boolean.TRUE.equals(category.getActive())) {
+
                 throw new IllegalArgumentException(
                         "La categoría seleccionada está inactiva."
                 );
@@ -130,16 +202,23 @@ public class ProductServiceImpl implements ProductService {
             product.setCategory(category);
         }
 
+
+        // =========================================
+        // UNIDAD
+        // =========================================
+
         if (request.getUnitId() != null) {
 
             Unit unit =
-                    unitRepository.findById(request.getUnitId())
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Unidad no encontrada."
-                                    ));
+                    unitRepository.findById(
+                            request.getUnitId()
+                    ).orElseThrow(() ->
+                            new ResourceNotFoundException(
+                                    "Unidad no encontrada."
+                            ));
 
             if (!Boolean.TRUE.equals(unit.getActive())) {
+
                 throw new IllegalArgumentException(
                         "La unidad seleccionada está inactiva."
                 );
@@ -148,11 +227,30 @@ public class ProductServiceImpl implements ProductService {
             product.setUnit(unit);
         }
 
+
+        // =========================================
+        // IMPORTANTE
+        // =========================================
+        //
+        // internalCode NO se modifica.
+        //
+        // El producto conserva:
+        // - su id
+        // - su código interno
+        // - su inventario
+        //
+        // aunque cambiemos nombre, precio,
+        // categoría, unidad o código de barras.
+        // =========================================
+
+
         Product updatedProduct =
                 productRepository.save(product);
 
+
         return productMapper.toResponse(updatedProduct);
     }
+
 
     @Override
     public void delete(UUID id) {
@@ -165,6 +263,7 @@ public class ProductServiceImpl implements ProductService {
                                 ));
 
         if (!Boolean.TRUE.equals(product.getActive())) {
+
             throw new IllegalArgumentException(
                     "El producto ya se encuentra inactivo."
             );
@@ -175,53 +274,63 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
+
+    // =========================================
+    // VALIDACIONES
+    // =========================================
+
     private void validateUniqueFields(
             ProductRequest request,
             UUID currentProductId) {
 
+        if (request.getBarcode() == null
+                || request.getBarcode().isBlank()) {
+
+            return;
+        }
+
+
+        // CREAR
         if (currentProductId == null) {
 
-            if (productRepository.existsByInternalCodeIgnoreCase(
-                    request.getInternalCode())) {
-
-                throw new DuplicateResourceException(
-                        "Ya existe un producto con ese código interno."
-                );
-            }
-
-            if (request.getBarcode() != null
-                    && !request.getBarcode().isBlank()
-                    && productRepository.existsByBarcodeIgnoreCase(
-                            request.getBarcode())) {
+            if (productRepository
+                    .existsByBarcodeIgnoreCase(
+                            request.getBarcode()
+                    )) {
 
                 throw new DuplicateResourceException(
                         "Ya existe un producto con ese código de barras."
                 );
             }
 
-        } else {
+            return;
+        }
 
-            if (productRepository
-                    .existsByInternalCodeIgnoreCaseAndIdNot(
-                            request.getInternalCode(),
-                            currentProductId)) {
 
-                throw new DuplicateResourceException(
-                        "Ya existe otro producto con ese código interno."
-                );
-            }
+        // EDITAR
+        if (productRepository
+                .existsByBarcodeIgnoreCaseAndIdNot(
+                        request.getBarcode(),
+                        currentProductId
+                )) {
 
-            if (request.getBarcode() != null
-                    && !request.getBarcode().isBlank()
-                    && productRepository
-                            .existsByBarcodeIgnoreCaseAndIdNot(
-                                    request.getBarcode(),
-                                    currentProductId)) {
+            throw new DuplicateResourceException(
+                    "Ya existe otro producto con ese código de barras."
+            );
+        }
+    }
 
-                throw new DuplicateResourceException(
-                        "Ya existe otro producto con ese código de barras."
-                );
-            }
+
+    // =========================================
+    // NORMALIZAR CÓDIGO DE BARRAS
+    // =========================================
+
+    private void normalizeBarcode(ProductRequest request) {
+
+        if (request.getBarcode() != null
+                && request.getBarcode().isBlank()) {
+
+            request.setBarcode(null);
         }
     }
 }

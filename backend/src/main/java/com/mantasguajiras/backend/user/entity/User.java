@@ -35,4 +35,10 @@ public class User extends AuditableEntity {
     @Builder.Default
     @Column(nullable = false)
     private Boolean active = true;
+
+    @Column(name = "profile_image_type")
+    private String profileImageType;
+
+    @Column(name = "profile_image", length = 20971520) // 20 MB
+    private byte[] profileImage;
 }

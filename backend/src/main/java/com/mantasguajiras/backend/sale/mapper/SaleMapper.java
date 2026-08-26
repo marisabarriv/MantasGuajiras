@@ -19,6 +19,7 @@ public interface SaleMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "items", ignore = true)
+    @Mapping(target = "total", ignore = true)
     Sale toEntity(SaleRequest request);
 
     @Mapping(target = "items", source = "items")
@@ -36,6 +37,7 @@ public interface SaleMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "items", ignore = true)
+    @Mapping(target = "total", ignore = true)
     void updateEntity(
         SaleRequest request,
         @MappingTarget Sale sale

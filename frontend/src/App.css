@@ -1,0 +1,368 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+
+    font-family: Arial, sans-serif;
+
+    background: #f4f1ea;
+    color: #2f2f2f;
+}
+
+#root {
+    min-height: 100vh;
+}
+
+.app-container {
+    width: 100%;
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 20px;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 420px;
+}
+
+.auth-card {
+    background: white;
+
+    padding: 30px;
+
+    border-radius: 14px;
+
+    box-shadow:
+        0 5px 20px rgba(0, 0, 0, 0.10);
+}
+
+.auth-title {
+    text-align: center;
+
+    margin-top: 0;
+    margin-bottom: 30px;
+}
+
+.auth-card h2 {
+    margin-top: 0;
+    margin-bottom: 25px;
+}
+
+.auth-card p {
+    line-height: 1.5;
+}
+
+.auth-card label {
+    display: block;
+
+    margin-top: 15px;
+    margin-bottom: 6px;
+
+    font-weight: bold;
+}
+
+.auth-input {
+    width: 100%;
+
+    padding: 12px;
+
+    border: 1px solid #ccc;
+    border-radius: 7px;
+
+    font-size: 15px;
+}
+
+.auth-input:focus {
+    outline: none;
+    border-color: #555;
+}
+
+.password-input-container {
+    position: relative;
+
+    width: 100%;
+}
+
+.password-input-container .auth-input {
+    padding-right: 45px;
+}
+
+.password-eye {
+    position: absolute;
+
+    right: 8px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 32px;
+    height: 32px;
+
+    padding: 5px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #666;
+
+    cursor: pointer;
+
+    margin: 0;
+}
+
+.password-eye:hover {
+    color: #222;
+    background: #f1f1f1;
+}
+
+.auth-button {
+    width: 100%;
+
+    margin-top: 20px;
+
+    padding: 12px;
+
+    border: none;
+    border-radius: 7px;
+
+    background: #333;
+    color: white;
+
+    font-size: 16px;
+
+    cursor: pointer;
+}
+
+.auth-button:hover {
+    background: #555;
+}
+
+.auth-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.register-question {
+    margin-top: 25px;
+
+    text-align: center;
+
+    font-size: 14px;
+}
+
+.register-question p {
+    margin-bottom: 8px;
+}
+
+.register-link {
+    margin-top: 0;
+
+    background: transparent;
+
+    color: #333;
+
+    border: 1px solid #333;
+}
+
+.register-link:hover {
+    background: #f1f1f1;
+}
+
+.result {
+    margin-top: 20px;
+
+    padding: 15px;
+
+    border-radius: 7px;
+
+    background: #f1f1f1;
+
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    font-size: 14px;
+}
+
+.result.success {
+    background: #e8f5e9;
+}
+
+.result.error {
+    background: #ffebee;
+}
+
+/* =========================================
+   LAYOUT PRINCIPAL
+========================================= */
+
+.app-layout {
+    min-height: 100vh;
+
+    display: flex;
+}
+
+
+/* =========================================
+   SIDEBAR
+========================================= */
+
+.sidebar {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 240px;
+    height: 100vh;
+
+    background: #2f2f2f;
+    color: white;
+
+    display: flex;
+    flex-direction: column;
+
+    z-index: 1000;
+}
+
+
+/* =========================================
+   MARCA
+========================================= */
+
+.sidebar-brand {
+    padding: 25px 20px;
+}
+
+.sidebar-brand h2 {
+    margin: 0;
+
+    font-size: 20px;
+}
+
+
+/* =========================================
+   NAVEGACIÓN
+========================================= */
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+
+    padding: 15px 10px;
+}
+
+.sidebar-link {
+    display: block;
+
+    padding: 13px 12px;
+
+    border-radius: 7px;
+
+    color: #f5f5f5;
+
+    text-decoration: none;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.sidebar-link:hover {
+    background: #383838;
+}
+
+.sidebar-link.active {
+    background: #444444;
+
+    color: white;
+}
+
+
+/* =========================================
+   CONTENIDO PRINCIPAL
+========================================= */
+
+.app-content {
+    width: calc(100% - 240px);
+
+    min-height: 100vh;
+
+    margin-left: 240px;
+
+    padding: 20px;
+
+    overflow: hidden;
+}
+
+.pos-layout {
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+}
+
+.pos-main {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.pos-header {
+    flex-shrink: 0;
+}
+
+.pos-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+}
+
+.cart-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 380px;
+    min-width: 320px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.cart-empty {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.cart-footer {
+    flex-shrink: 0;
+}
+
+.products-section {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.sidebar-admin {
+    margin-top: auto;
+    padding: 15px 10px;
+    border-top: 1px solid #444444;
+}
