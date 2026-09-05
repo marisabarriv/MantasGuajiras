@@ -1,30 +1,33 @@
 # Documento de Despliegue
 
-| Campo | Valor |
-|--------|-------|
-| **Proyecto** | Mantas Guajiras |
-| **Documento** | Despliegue del Sistema |
-| **Código** | DOC-06 |
-| **Versión** | v0.3.0 |
-| **Estado** | En desarrollo |
-| **Responsable** | Equipo de Desarrollo |
-| **Última actualización** | 14/08/2026 |
+| Campo                    | Valor                  |
+| ------------------------ | ---------------------- |
+| **Proyecto**             | Mantas Guajiras        |
+| **Documento**            | Despliegue del Sistema |
+| **Código**               | DOC-06                 |
+| **Versión**              | v0.4.0                 |
+| **Estado**               | En desarrollo          |
+| **Responsable**          | Equipo de Desarrollo   |
+| **Última actualización** | 05/09/2026             |
 
 ---
 
 ## Control de versiones
 
-| Versión | Fecha | Descripción | Responsable |
-|----------|--------|-------------|-------------|
-| v0.1.0 | 29/07/2026 | Creación inicial del documento. | Equipo de Desarrollo |
+| Versión | Fecha      | Descripción                                   | Responsable          |
+| ------- | ---------- | --------------------------------------------- | -------------------- |
+| v0.1.0  | 29/07/2026 | Creación inicial del documento.               | Equipo de Desarrollo |
+| v0.4.0  | 05/09/2026 | Actualización de la estrategia de despliegue. | Equipo de Desarrollo |
 
 ---
 
 # 1. Introducción
 
-Este documento describe la estrategia de despliegue del sistema **Mantas Guajiras** para las diferentes etapas del proyecto.
+Este documento describe la estrategia de despliegue del sistema **Mantas Guajiras** durante sus diferentes etapas de desarrollo.
 
-El objetivo es garantizar una implementación ordenada, estable y escalable, permitiendo que el sistema evolucione desde un entorno local hasta una solución con sincronización en la nube.
+El objetivo es establecer una forma organizada de ejecutar y mantener los componentes del sistema, considerando el frontend, backend y base de datos.
+
+Actualmente el sistema se encuentra en desarrollo y utiliza una arquitectura web con React, Spring Boot y PostgreSQL.
 
 ---
 
@@ -32,127 +35,135 @@ El objetivo es garantizar una implementación ordenada, estable y escalable, per
 
 El despliegue del sistema deberá:
 
-- Permitir un funcionamiento estable en el negocio.
-- Facilitar futuras actualizaciones.
-- Minimizar el tiempo de inactividad.
-- Mantener la integridad de la información.
-- Preparar el sistema para la sincronización en la nube.
+* Permitir ejecutar correctamente todos los componentes.
+* Mantener la integridad de la información.
+* Facilitar las actualizaciones del sistema.
+* Separar los entornos de desarrollo y producción cuando corresponda.
+* Permitir realizar respaldos de la información.
+* Facilitar futuras ampliaciones de la infraestructura.
 
 ---
 
 # 3. Entornos
 
-El proyecto contará con los siguientes entornos.
-
 ## Desarrollo
 
-Utilizado durante la programación y pruebas.
+Es el entorno utilizado durante la construcción y validación del sistema.
 
-Características:
+Características principales:
 
-- Frontend ejecutándose con Vite.
-- Backend ejecutándose con Spring Boot.
-- Base de datos PostgreSQL local.
-- Datos de prueba.
-
----
-
-## Producción local
-
-Primera versión utilizada por el negocio.
-
-Características:
-
-- Backend instalado en el computador principal.
-- Base de datos PostgreSQL local.
-- Frontend accesible desde el navegador del computador.
-- Datos reales del negocio.
+* Frontend ejecutado con Vite.
+* Backend ejecutado con Spring Boot.
+* Base de datos PostgreSQL.
+* Datos utilizados para desarrollo y pruebas.
+* Ejecución local de los componentes.
 
 ---
 
-## Producción con sincronización
+## Producción
 
-Versión futura.
+La implementación de producción se realizará cuando el sistema se encuentre preparado para su utilización por parte del negocio.
 
-Características:
+El entorno de producción deberá contar con:
 
-- Base de datos centralizada.
-- Sincronización automática entre dispositivos.
-- Funcionamiento offline con sincronización periódica.
-- Acceso desde diferentes equipos autorizados.
+* Frontend accesible mediante navegador web.
+* Backend ejecutándose de forma estable.
+* Base de datos PostgreSQL.
+* Datos reales del negocio.
+* Mecanismos de respaldo de la información.
+
+La configuración definitiva de infraestructura se establecerá cuando se realice el despliegue del sistema en el entorno de producción.
 
 ---
 
 # 4. Componentes del sistema
 
-El despliegue estará compuesto por:
+El sistema está compuesto por:
 
-- Frontend (React + Vite)
-- Backend (Spring Boot)
-- Base de datos PostgreSQL
+* Frontend web.
+* Backend.
+* Base de datos PostgreSQL.
 
-Cada componente podrá actualizarse de manera independiente.
+Las tecnologías principales son:
+
+* React + Vite para el frontend.
+* Java 21 + Spring Boot para el backend.
+* PostgreSQL para la base de datos.
+
+Los componentes se comunican mediante la API REST del backend.
 
 ---
 
 # 5. Estrategia de implementación
 
-La implementación se realizará en tres fases.
+La implementación se realizará de manera progresiva.
 
-## Fase 1
+## Desarrollo
 
-Desarrollo del sistema.
+Durante esta etapa se realizan:
 
-- Construcción de funcionalidades.
-- Pruebas unitarias.
-- Pruebas de integración.
-
----
-
-## Fase 2
-
-Implementación local.
-
-- Instalación en el negocio.
-- Configuración de PostgreSQL.
-- Carga del inventario inicial.
-- Capacitación básica a los usuarios.
-- Validación del funcionamiento.
+* Desarrollo de funcionalidades.
+* Corrección de errores.
+* Pruebas de los diferentes módulos.
+* Integración entre frontend y backend.
+* Validación de las operaciones de la base de datos.
 
 ---
 
-## Fase 3
+## Preparación para producción
 
-Implementación de sincronización.
+Antes de utilizar el sistema con información real se deberá:
 
-- Configuración de la infraestructura en la nube.
-- Conexión de los dispositivos.
-- Activación de la sincronización automática.
-- Monitoreo del funcionamiento.
+* Verificar el funcionamiento del frontend.
+* Verificar el funcionamiento del backend.
+* Configurar la base de datos de producción.
+* Realizar las migraciones correspondientes.
+* Configurar los usuarios y permisos necesarios.
+* Cargar o registrar la información inicial del negocio.
+* Realizar pruebas funcionales.
+
+---
+
+## Puesta en producción
+
+Una vez validado el sistema:
+
+* Se desplegarán los componentes necesarios.
+* Se verificará la conexión entre frontend y backend.
+* Se comprobará la conexión con PostgreSQL.
+* Se validarán las funcionalidades principales.
+* Se realizará una revisión final antes de comenzar la operación con datos reales.
 
 ---
 
 # 6. Respaldo de la información
 
-El sistema deberá permitir realizar copias de seguridad de la base de datos.
+La base de datos deberá contar con mecanismos de respaldo para proteger la información del negocio.
 
 Se recomienda:
 
-- Respaldo diario automático.
-- Respaldo manual antes de actualizaciones importantes.
-- Conservación de varias versiones recientes del respaldo.
+* Realizar respaldos periódicos.
+* Realizar un respaldo antes de actualizaciones importantes.
+* Conservar varias copias recientes.
+* Verificar periódicamente que los respaldos puedan restaurarse correctamente.
+
+La frecuencia definitiva de los respaldos se establecerá de acuerdo con las necesidades del negocio y el entorno de producción.
 
 ---
 
 # 7. Actualizaciones
 
-Las actualizaciones del sistema deberán realizarse de manera controlada.
+Las actualizaciones deberán realizarse de manera controlada.
 
-Antes de instalar una nueva versión será necesario:
+Antes de instalar una nueva versión se deberá:
 
-- Realizar un respaldo de la base de datos.
-- Verificar la compatibilidad de la nueva versión.
-- Confirmar el funcionamiento correcto después de la actualización.
+* Realizar un respaldo de la base de datos.
+* Verificar los cambios incluidos.
+* Ejecutar las migraciones necesarias.
+* Comprobar la compatibilidad entre frontend y backend.
+* Validar el funcionamiento después de la actualización.
+
+Las modificaciones estructurales de la base de datos deberán gestionarse mediante nuevas migraciones de Flyway.
 
 ---
 
@@ -160,91 +171,109 @@ Antes de instalar una nueva versión será necesario:
 
 ## Hardware
 
-- Computador con Windows 10 o superior.
-- Procesador de dos núcleos o superior.
-- 8 GB de memoria RAM.
-- 10 GB de espacio libre en disco.
+Los requisitos definitivos dependerán del entorno de producción seleccionado.
+
+Para desarrollo se requiere un equipo capaz de ejecutar:
+
+* Java 21.
+* Node.js y Vite.
+* PostgreSQL.
+* Un navegador web moderno.
 
 ---
 
 ## Software
 
-- Java 21.
-- PostgreSQL.
-- Navegador web moderno.
-- Git (solo para desarrollo).
+* Java 21.
+* PostgreSQL.
+* Node.js.
+* Navegador web moderno.
+* Git para desarrollo y control de versiones.
 
 ---
 
 # 9. Escalabilidad
 
-La arquitectura permitirá incorporar nuevos equipos sin modificar el funcionamiento principal del sistema.
+La arquitectura permite ampliar progresivamente los recursos utilizados por el sistema.
 
-La incorporación de nuevos módulos deberá realizarse manteniendo la compatibilidad con las versiones anteriores.
+La aplicación web puede ser utilizada desde diferentes tipos de dispositivos mediante un diseño responsivo.
+
+La incorporación de nuevos módulos o funcionalidades deberá realizarse manteniendo la separación entre frontend, backend y base de datos.
+
+La infraestructura podrá ampliarse posteriormente de acuerdo con las necesidades reales del negocio.
 
 ---
 
 # 10. Monitoreo
 
-Se recomienda verificar periódicamente:
+Durante la operación del sistema se deberá verificar periódicamente:
 
-- Estado del servidor.
-- Disponibilidad de la base de datos.
-- Espacio disponible en disco.
-- Correcto funcionamiento de los respaldos.
+* Disponibilidad del backend.
+* Disponibilidad de PostgreSQL.
+* Funcionamiento del frontend.
+* Espacio disponible en disco.
+* Estado de los respaldos.
+* Errores relevantes de la aplicación.
+
+Los mecanismos específicos de monitoreo se definirán cuando se establezca el entorno de producción definitivo.
 
 ---
 
 # 11. Plan de recuperación
 
-Ante una falla crítica se seguirá el siguiente procedimiento:
+Ante una falla que afecte la información o el funcionamiento del sistema se seguirá un procedimiento acorde con el tipo de incidente.
 
-1. Detener el sistema.
-2. Restaurar el respaldo más reciente.
-3. Verificar la integridad de la base de datos.
-4. Reiniciar los servicios.
-5. Validar el funcionamiento antes de reanudar la operación.
+De manera general:
+
+1. Identificar la causa de la falla.
+2. Detener las operaciones afectadas cuando sea necesario.
+3. Verificar el estado de la base de datos.
+4. Restaurar un respaldo si existe pérdida o corrupción de información.
+5. Verificar la integridad de los datos.
+6. Reiniciar los servicios afectados.
+7. Validar el funcionamiento del sistema.
+8. Reanudar la operación.
 
 ---
 
 # 12. Evolución del despliegue
 
-La evolución prevista para el sistema será:
+La evolución del sistema se realizará de forma progresiva.
 
 **Versión 0.1.0**
-- Documentación y planificación.
+
+* Documentación y planificación inicial.
 
 **Versión 0.2.0**
-- Diseño e implementación de la base de datos.
+
+* Diseño e implementación inicial de la base de datos.
 
 **Versión 0.3.0**
-- Desarrollo del backend.
+
+* Desarrollo inicial del backend.
 
 **Versión 0.4.0**
-- Desarrollo del frontend.
 
-**Versión 0.5.0**
-- Integración del sistema.
+* Desarrollo e integración progresiva del frontend.
 
-**Versión 0.6.0**
-- Pruebas funcionales.
+**Versiones posteriores**
 
-**Versión 0.7.0**
-- Implementación local en el negocio.
+* Integración completa de funcionalidades.
+* Pruebas funcionales.
+* Preparación del entorno de producción.
+* Implementación del sistema en el negocio.
+* Ajustes y mejoras posteriores.
 
-**Versión 0.8.0**
-- Conteo oficial e inventario inicial.
-
-**Versión 0.9.0**
-- Sincronización automática y despliegue en la nube.
-
-**Versión 1.0.0**
-- Sistema en producción.
+Las versiones futuras se definirán de acuerdo con el avance real del proyecto y no representan funcionalidades implementadas actualmente.
 
 ---
 
 # 13. Observaciones
 
-Este documento establece la estrategia de despliegue del proyecto y servirá como referencia para futuras implementaciones y actualizaciones del sistema.
+Este documento establece las consideraciones generales para el despliegue del sistema Mantas Guajiras.
 
-Cualquier modificación importante en la infraestructura deberá reflejarse en este documento antes de su implementación.
+La estrategia podrá adaptarse cuando se defina la infraestructura definitiva del entorno de producción.
+
+Actualmente no se considera implementado un sistema de funcionamiento offline ni una sincronización automática entre bases de datos locales y una base de datos centralizada en la nube.
+
+Cualquier modificación importante relacionada con la infraestructura o el proceso de despliegue deberá reflejarse en este documento.

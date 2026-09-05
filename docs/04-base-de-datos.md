@@ -1,264 +1,335 @@
 # Documento de Base de Datos
 
-| Campo | Valor |
-|--------|-------|
-| **Proyecto** | Mantas Guajiras |
-| **Documento** | Diseño de Base de Datos |
-| **Código** | DOC-04 |
-| **Versión** | v0.3.0 |
-| **Estado** | En desarrollo |
-| **Responsable** | Equipo de Desarrollo |
-| **Última actualización** | 14/06/2026 |
+| Campo                    | Valor                   |
+| ------------------------ | ----------------------- |
+| **Proyecto**             | Mantas Guajiras         |
+| **Documento**            | Diseño de Base de Datos |
+| **Código**               | DOC-04                  |
+| **Versión**              | v0.4.0                  |
+| **Estado**               | En desarrollo           |
+| **Responsable**          | Equipo de Desarrollo    |
+| **Última actualización** | 05/09/2026              |
 
 ---
 
 ## Control de versiones
 
-| Versión | Fecha | Descripción | Responsable |
-|----------|--------|-------------|-------------|
-| v0.1.0 | 29/07/2026 | Creación inicial del documento. | Equipo de Desarrollo |
+| Versión | Fecha      | Descripción                                | Responsable          |
+| ------- | ---------- | ------------------------------------------ | -------------------- |
+| v0.1.0  | 29/07/2026 | Creación inicial del documento.            | Equipo de Desarrollo |
+| v0.4.0  | 05/09/2026 | Actualización del modelo de base de datos. | Equipo de Desarrollo |
 
 ---
 
 # 1. Introducción
 
-Este documento describe el diseño lógico de la base de datos del sistema **Mantas Guajiras**.
+Este documento describe el diseño de la base de datos del sistema **Mantas Guajiras**.
 
-El objetivo es almacenar de manera organizada toda la información relacionada con inventarios, ventas, producción, pedidos y usuarios, garantizando la integridad y consistencia de los datos.
+El objetivo es almacenar de forma organizada y consistente la información necesaria para el funcionamiento del sistema, incluyendo usuarios, productos, categorías, unidades, inventario, movimientos de inventario, ventas y producción.
 
-La implementación física se realizará en PostgreSQL.
+La implementación de la base de datos se realiza utilizando PostgreSQL.
+
+La estructura se gestiona mediante migraciones de Flyway para mantener un historial controlado de los cambios realizados en la base de datos.
 
 ---
 
 # 2. Objetivos
 
-La base de datos deberá permitir:
+La base de datos debe permitir:
 
-- Gestionar usuarios y roles.
-- Administrar clientes.
-- Controlar inventarios de mantas y telas.
-- Registrar ventas.
-- Registrar producción.
-- Gestionar pedidos personalizados.
-- Registrar pagos y abonos.
-- Mantener trazabilidad mediante movimientos de inventario.
+* Gestionar usuarios y roles.
+* Administrar productos.
+* Clasificar productos mediante categorías.
+* Definir las unidades utilizadas por los productos.
+* Controlar las existencias actuales.
+* Registrar movimientos de inventario.
+* Registrar ventas y sus detalles.
+* Registrar operaciones de producción.
+* Mantener la trazabilidad de las operaciones relacionadas con el inventario.
+* Garantizar la integridad de las relaciones entre las entidades.
 
 ---
 
 # 3. Principios de diseño
 
-El diseño de la base de datos seguirá los siguientes principios:
+El diseño de la base de datos sigue los siguientes principios:
 
-- Evitar duplicidad de información.
-- Mantener la integridad referencial.
-- Permitir crecimiento futuro del sistema.
-- Registrar todas las operaciones importantes.
-- Facilitar la generación de reportes.
+* Evitar la duplicidad innecesaria de información.
+* Mantener la integridad referencial.
+* Separar la información del producto de su existencia en inventario.
+* Mantener trazabilidad mediante movimientos de inventario.
+* Utilizar relaciones entre entidades en lugar de duplicar información.
+* Permitir la ampliación progresiva del sistema.
+* Mantener consistencia entre las operaciones de negocio y el inventario.
 
 ---
 
 # 4. Entidades principales
 
-La primera versión del sistema estará compuesta por las siguientes entidades:
+La estructura actual del sistema utiliza entidades generales para representar los productos y su inventario.
 
 ## Seguridad
 
-- Usuario
-- Rol
+* User
+* Role
 
 ---
 
-## Clientes
+## Productos
 
-- Cliente
+* Product
+* ProductCategory
+* Unit
+
+Los productos se clasifican mediante una categoría.
+
+Actualmente las categorías principales corresponden a:
+
+* Manta.
+* Tela.
+
+La unidad se determina de acuerdo con el tipo de producto:
+
+* Las mantas se manejan en unidades enteras (#).
+* Las telas se manejan en metros.
 
 ---
 
 ## Inventario
 
-- Tipo de manta
-- Inventario de mantas
+* Inventory
+* InventoryMovement
+* MovementType
+* SourceType
 
-- Tipo de tela
-- Inventario de telas
+`Inventory` almacena la existencia actual de cada producto.
 
----
+`InventoryMovement` registra los movimientos que modifican dicha existencia.
 
-## Producción
+`MovementType` identifica si el movimiento corresponde a una entrada (`IN`) o una salida (`OUT`).
 
-- Producción
+`SourceType` identifica el origen de la operación, como compra, venta, producción o ajuste.
 
 ---
 
 ## Ventas
 
-- Venta
-- Detalle de venta
+La gestión de ventas utiliza entidades relacionadas con:
+
+* Venta.
+* Detalle de venta.
+
+El detalle conserva el producto, la cantidad y el precio aplicado en la operación.
 
 ---
 
-## Pedidos
+## Producción
 
-- Pedido
-- Pago de pedido
+La producción utiliza los productos existentes para representar tanto los materiales consumidos como los productos generados.
 
----
-
-## Auditoría
-
-- Movimiento de inventario
+Una operación de producción puede consumir tela y generar mantas.
 
 ---
 
 # 5. Relaciones principales
 
-El sistema deberá soportar las siguientes relaciones:
+El modelo de datos contempla relaciones como las siguientes:
 
-- Un rol puede tener muchos usuarios.
-- Un cliente puede realizar muchas ventas.
-- Un cliente puede tener muchos pedidos.
-- Una venta puede contener varios productos.
-- Un pedido puede registrar múltiples pagos.
-- Un movimiento de inventario pertenece a un único producto.
-- Una producción consume tela y genera mantas.
+* Un rol puede estar asociado a múltiples usuarios.
+* Una categoría puede estar asociada a múltiples productos.
+* Una unidad puede estar asociada a múltiples productos.
+* Un producto tiene un registro de inventario asociado.
+* Un producto puede tener múltiples movimientos de inventario.
+* Un movimiento de inventario pertenece a un único producto.
+* Una venta puede contener múltiples detalles de venta.
+* Cada detalle de venta corresponde a un producto.
+* Una producción puede generar movimientos de salida y entrada de inventario.
+
+La relación entre producto e inventario permite mantener separada la información descriptiva del producto de su existencia actual.
 
 ---
 
 # 6. Integridad de los datos
 
-La base de datos deberá garantizar que:
+La base de datos y el backend trabajan conjuntamente para mantener la integridad de la información.
 
-- No existan inventarios negativos.
-- Toda venta tenga al menos un detalle.
-- Todo pedido tenga un estado válido.
-- Todo pago pertenezca a un pedido existente.
-- Todo movimiento de inventario tenga una fecha y un usuario responsable.
+Las operaciones deben garantizar que:
+
+* Las referencias entre entidades correspondan a registros existentes.
+* Los productos utilizados en las operaciones sean válidos.
+* Los movimientos de inventario tengan un tipo de movimiento válido.
+* Los movimientos tengan una cantidad válida.
+* Las operaciones de inventario mantengan coherencia con la existencia actual.
+* Las operaciones transaccionales no dejen el sistema en un estado inconsistente.
+
+Las reglas de negocio que no pueden garantizarse únicamente mediante restricciones de base de datos son validadas desde el backend.
 
 ---
 
 # 7. Estrategia de inventario
 
-El inventario no dependerá únicamente de los movimientos registrados.
+La existencia actual de cada producto se almacena en la entidad `Inventory`.
 
-Cada producto almacenará su existencia actual para facilitar consultas rápidas.
+La cantidad de inventario **no corresponde al campo `minimumStock` de `Product`**.
 
-Los movimientos de inventario servirán como auditoría y trazabilidad de las operaciones realizadas.
+`minimumStock` representa un valor utilizado como referencia para el nivel mínimo de existencias y no la cantidad disponible actualmente.
 
----
+La cantidad disponible se mantiene en:
 
-# 8. Tipos de movimientos
+```text
+Inventory.quantity
+```
 
-Los movimientos de inventario podrán originarse por:
-
-- Compra de inventario.
-- Venta.
-- Producción.
-- Ajuste manual.
-- Corrección administrativa.
-
-Cada movimiento registrará:
-
-- Fecha.
-- Usuario.
-- Tipo de movimiento.
-- Producto.
-- Cantidad.
-- Observaciones.
+Los movimientos registrados en `InventoryMovement` permiten mantener la trazabilidad de las entradas y salidas realizadas.
 
 ---
 
-# 9. Estrategia de ventas
+# 8. Movimientos de inventario
 
-Cada venta almacenará:
+Los movimientos de inventario representan las operaciones que modifican las existencias.
 
-- Cliente.
-- Usuario.
-- Fecha.
-- Valor total.
-- Método de pago.
+Los tipos principales de movimiento son:
 
-El detalle de venta almacenará:
+* `IN`: entrada de inventario.
+* `OUT`: salida de inventario.
 
-- Producto.
-- Cantidad.
-- Precio unitario aplicado.
-- Subtotal.
+Los movimientos pueden estar relacionados con diferentes fuentes de operación mediante `SourceType`.
 
-Esto permitirá conservar el precio histórico aunque el precio del producto cambie posteriormente.
+Entre los orígenes contemplados se encuentran:
+
+* Compra.
+* Venta.
+* Producción.
+* Ajuste.
+
+Cada movimiento registra información relacionada con:
+
+* Producto.
+* Tipo de movimiento.
+* Tipo de origen.
+* Identificador de origen.
+* Cantidad.
+* Observaciones.
+* Fechas de registro y actualización.
+
+La cantidad registrada determina el cambio que debe aplicarse sobre el inventario del producto.
 
 ---
 
-# 10. Estrategia de pedidos
+# 9. Estrategia de productos
 
-Cada pedido almacenará:
+La entidad `Product` contiene la información propia del producto.
 
-- Cliente.
-- Precio acordado.
-- Cantidad.
-- Estado.
-- Fecha de creación.
-- Fecha estimada de entrega.
-- Observaciones.
+Entre los datos administrados se encuentran:
 
-Los pagos asociados permitirán registrar:
+* Categoría.
+* Código interno.
+* Código de barras.
+* Unidad.
+* Nombre.
+* Precio de compra.
+* Precio unitario.
+* Precio mayorista.
+* Cantidad mínima para precio mayorista.
+* Stock mínimo.
+* Estado de actividad.
 
-- Abonos parciales.
-- Pago total.
-- Fecha del pago.
-- Valor pagado.
+El precio del producto constituye el precio base utilizado por el sistema.
 
-El saldo pendiente será calculado automáticamente.
+En las ventas puede aplicarse un precio especial o personalizado específicamente para una compra determinada. Este precio aplicado a la venta no modifica permanentemente el precio base almacenado en el producto.
+
+---
+
+# 10. Estrategia de ventas
+
+Las ventas almacenan la información correspondiente a la operación y sus productos asociados.
+
+El detalle de venta permite conservar información como:
+
+* Producto.
+* Cantidad.
+* Precio unitario aplicado.
+* Subtotal.
+
+Esto permite conservar el precio utilizado en una venta aunque posteriormente cambie el precio registrado para el producto.
+
+Cuando se registra una venta, el inventario correspondiente se actualiza mediante un movimiento de salida (`OUT`).
 
 ---
 
 # 11. Producción
 
-Cada registro de producción almacenará:
+La producción relaciona un producto utilizado como materia prima con un producto generado.
 
-- Usuario responsable.
-- Tipo de manta fabricada.
-- Cantidad producida.
-- Tipo de tela utilizada.
-- Metros consumidos.
-- Fecha.
+En el caso de Mantas Guajiras, una producción puede utilizar tela para generar mantas.
 
-Al registrarse una producción:
+La operación contempla:
 
-- Aumentará el inventario de mantas.
-- Disminuirá el inventario de telas.
-- Se crearán los movimientos correspondientes.
+* Producto de tela utilizado.
+* Cantidad de tela utilizada por unidad producida.
+* Producto de manta generado.
+* Cantidad de mantas producidas.
 
----
+La cantidad total de tela consumida se obtiene a partir de la cantidad de tela utilizada por unidad y la cantidad de mantas producidas.
 
-# 12. Sincronización futura
+Al registrar una producción:
 
-La estructura de la base de datos será compatible con un modelo de sincronización entre una base local y una base central.
+* Se genera una salida (`OUT`) del producto utilizado.
+* Se genera una entrada (`IN`) del producto producido.
+* Se actualiza el inventario de ambos productos.
+* La operación se ejecuta dentro de una transacción para mantener la consistencia de los datos.
 
-Para ello, cada registro podrá incorporar en versiones futuras campos relacionados con:
-
-- Fecha de creación.
-- Fecha de modificación.
-- Estado de sincronización.
-- Identificadores globales.
-
-Estos campos no serán implementados en la primera versión, pero el diseño permitirá incorporarlos sin afectar la estructura existente.
+Las mantas se producen en cantidades enteras, mientras que el consumo de tela puede utilizar cantidades decimales expresadas en metros.
 
 ---
 
-# 13. Diagramas
+# 12. Auditoría y trazabilidad
+
+La trazabilidad del inventario se mantiene mediante `InventoryMovement`.
+
+Cada movimiento permite identificar:
+
+* Qué producto fue afectado.
+* Qué tipo de movimiento se realizó.
+* Cuál fue el origen de la operación.
+* Qué cantidad fue modificada.
+* Observaciones asociadas a la operación.
+* Información temporal del registro.
+
+De esta forma, las operaciones de inventario no dependen únicamente del valor actual almacenado en `Inventory`.
+
+---
+
+# 13. Migraciones de base de datos
+
+Los cambios estructurales de la base de datos se gestionan mediante Flyway.
+
+Las migraciones permiten mantener un historial ordenado de modificaciones sobre el esquema de PostgreSQL.
+
+Las nuevas modificaciones deben agregarse mediante una nueva migración, evitando alterar innecesariamente migraciones que ya forman parte del historial del proyecto.
+
+---
+
+# 14. Diagramas
 
 Los diagramas entidad-relación (ERD) del sistema se almacenarán en:
 
-```
+```text
 docs/
 └── diagrams/
     └── erd/
 ```
 
+Los diagramas deberán mantenerse actualizados cuando se produzcan cambios estructurales relevantes en el modelo de datos.
+
 ---
 
-# 14. Observaciones
+# 15. Observaciones
 
-Este documento define el diseño lógico de la base de datos y servirá como base para la elaboración del modelo entidad-relación y las migraciones de PostgreSQL.
+Este documento describe el modelo de base de datos de acuerdo con la arquitectura actual del sistema Mantas Guajiras.
 
-El modelo podrá ampliarse en futuras versiones conforme evolucionen las necesidades del negocio, manteniendo la compatibilidad con los datos existentes.
+El modelo utiliza una estructura generalizada de productos e inventario, evitando mantener estructuras independientes para mantas y telas.
+
+La base de datos podrá ampliarse conforme se incorporen nuevas funcionalidades, manteniendo la integridad y compatibilidad con la información existente.
+
+Los cambios futuros deberán reflejarse en las migraciones correspondientes y, cuando sean relevantes para la estructura del sistema, actualizar este documento.

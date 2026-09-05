@@ -1,66 +1,85 @@
 # Documento de Visión
 
-| Campo | Valor |
-|--------|-------|
-| **Proyecto** | Mantas Guajiras |
-| **Documento** | Visión del Proyecto |
-| **Código** | DOC-00 |
-| **Versión** | v0.3.0 |
-| **Estado** | En desarrollo |
-| **Responsable** | Equipo de Desarrollo |
-| **Última actualización** | 14/08/2026 |
+| Campo                    | Valor                |
+| ------------------------ | -------------------- |
+| **Proyecto**             | Mantas Guajiras      |
+| **Documento**            | Visión del Proyecto  |
+| **Código**               | DOC-00               |
+| **Versión**              | v0.4.0               |
+| **Estado**               | En desarrollo        |
+| **Responsable**          | Equipo de Desarrollo |
+| **Última actualización** | 05/09/2026           |
 
 ---
 
 ## Control de versiones
 
-| Versión | Fecha | Descripción | Responsable |
-|----------|--------|-------------|-------------|
-| v0.1.0 | 29/07/2026 | Creación inicial del documento. | Equipo de Desarrollo |
+| Versión | Fecha      | Descripción                              | Responsable          |
+| ------- | ---------- | ---------------------------------------- | -------------------- |
+| v0.1.0  | 29/07/2026 | Creación inicial del documento.          | Equipo de Desarrollo |
+| v0.4.0  | 05/09/2026 | Actualización de la visión del proyecto. | Equipo de Desarrollo |
 
 ---
 
 # 1. Introducción
 
-Mantas Guajiras es un sistema de gestión desarrollado para apoyar las operaciones diarias del negocio mediante la digitalización de sus procesos administrativos y operativos.
+Mantas Guajiras es un sistema de gestión desarrollado para apoyar las operaciones administrativas y operativas del negocio mediante la digitalización de sus procesos.
 
-El sistema busca reemplazar los registros manuales por una plataforma centralizada que permita administrar el inventario, registrar ventas, controlar la producción de mantas y gestionar pedidos personalizados de forma sencilla, organizada y confiable.
+El sistema busca centralizar la información relacionada con productos, inventario, ventas, producción, usuarios y demás procesos que formen parte de la operación del negocio.
 
-Desde su diseño, el sistema prioriza la facilidad de uso para personas con poca experiencia en herramientas tecnológicas, ofreciendo una interfaz intuitiva y procesos claros que faciliten el trabajo diario.
+Desde su diseño, el proyecto prioriza la facilidad de uso, la claridad de la información y la posibilidad de utilizar el sistema desde diferentes dispositivos.
+
+La aplicación será una **aplicación web responsive**, por lo que la misma interfaz deberá adaptarse a:
+
+* Computadores de escritorio.
+* Computadores portátiles.
+* Tablets.
+* Teléfonos celulares.
+
+No se contempla una aplicación móvil nativa independiente como parte de la arquitectura actual.
 
 ---
 
 # 2. Problema
 
-Actualmente la administración del negocio depende principalmente de registros manuales, lo que dificulta mantener un control preciso de la información y aumenta la posibilidad de errores.
+El negocio requiere una herramienta que permita centralizar y controlar la información de sus operaciones.
 
-Entre las principales dificultades se encuentran:
+Entre las principales necesidades se encuentran:
 
-- Desconocimiento del inventario real de mantas y telas.
-- Dificultad para controlar el consumo de tela durante la producción.
-- Riesgo de pérdida o duplicidad de información.
-- Seguimiento limitado de pedidos personalizados y sus pagos.
-- Ausencia de un historial organizado de ventas.
-- Dependencia de registros físicos para la consulta de información.
+* Mantener control sobre las existencias reales.
+* Registrar entradas y salidas de inventario.
+* Controlar el consumo de tela durante la producción.
+* Registrar las ventas realizadas.
+* Mantener un historial organizado de las operaciones.
+* Reducir errores derivados de registros manuales.
+* Facilitar el acceso a la información desde diferentes dispositivos.
 
 ---
 
 # 3. Solución propuesta
 
-Mantas Guajiras centralizará la información del negocio en una única plataforma, permitiendo administrar los procesos principales desde un solo sistema.
+Mantas Guajiras centralizará la información del negocio mediante una aplicación web conectada a un backend y una base de datos PostgreSQL.
 
-La primera versión incluirá funcionalidades para:
+El sistema permitirá administrar productos y sus categorías, controlar inventarios mediante movimientos, registrar ventas, gestionar producción y proporcionar las funcionalidades administrativas necesarias para la operación.
 
-- Administración del inventario de mantas.
-- Administración del inventario de telas.
-- Registro de ventas de mantas.
-- Registro de ventas de telas por metros.
-- Registro del consumo de tela para la fabricación de mantas.
-- Gestión de pedidos personalizados.
-- Registro de abonos y pagos pendientes.
-- Generación de reportes administrativos básicos.
+La arquitectura contempla:
 
-Posteriormente se implementará la sincronización con la nube para permitir el trabajo desde múltiples dispositivos, incluso en escenarios donde la conexión a Internet sea intermitente.
+Computador ──┐
+             │
+Laptop ──────┤
+             │
+Tablet ──────┤──► Aplicación Web Responsive
+             │          │
+Celular ─────┘          ▼
+                     REST API
+                         │
+                         ▼
+                    Spring Boot
+                         │
+                         ▼
+                     PostgreSQL
+
+La posibilidad de sincronización en la nube y funcionamiento offline corresponde a una evolución futura del proyecto y no a una característica actualmente implementada.
 
 ---
 
@@ -68,115 +87,129 @@ Posteriormente se implementará la sincronización con la nube para permitir el 
 
 ## 4.1 Objetivo general
 
-Desarrollar un sistema de gestión que permita administrar de forma eficiente el inventario, las ventas, la producción y los pedidos del negocio Mantas Guajiras.
+Desarrollar un sistema de gestión que permita administrar de manera organizada y confiable las operaciones de Mantas Guajiras.
 
-### 4.2 Objetivos específicos
+## 4.2 Objetivos específicos
 
-- Mantener un inventario actualizado.
-- Disminuir errores en el registro de información.
-- Facilitar el control del proceso de producción.
-- Registrar todas las ventas realizadas.
-- Gestionar pedidos personalizados y sus pagos.
-- Facilitar la consulta de información para la toma de decisiones.
-- Preparar la plataforma para futuras ampliaciones.
+* Mantener información actualizada de los productos.
+* Controlar el inventario real.
+* Registrar movimientos de inventario.
+* Facilitar el registro de ventas.
+* Permitir precios especiales personalizados dentro de una venta.
+* Controlar el proceso de producción.
+* Reducir errores en el registro de información.
+* Facilitar la consulta de información.
+* Proporcionar una interfaz usable desde computador y dispositivos móviles.
+* Mantener una arquitectura que permita futuras ampliaciones.
 
 ---
 
 # 5. Alcance
 
-La primera versión del sistema incluirá:
+El sistema contempla progresivamente funcionalidades relacionadas con:
 
-- Gestión de usuarios.
-- Gestión de clientes.
-- Inventario de mantas.
-- Inventario de telas.
-- Producción de mantas.
-- Ventas.
-- Pedidos personalizados.
-- Registro de pagos.
-- Reportes básicos.
+* Autenticación de usuarios.
+* Gestión de usuarios y roles.
+* Gestión de productos.
+* Gestión de categorías de productos.
+* Gestión de unidades.
+* Gestión de inventario.
+* Movimientos de inventario.
+* Compras.
+* Ventas.
+* Producción.
+* Pedidos.
+* Pagos y demás funcionalidades administrativas que correspondan al modelo del sistema.
 
-No se incluyen en esta etapa:
+El frontend y backend se desarrollarán de forma integrada.
 
-- Sincronización en la nube.
-- Facturación electrónica.
-- Integración con WhatsApp.
-- Lectores de código de barras.
-- Aplicación móvil nativa.
-
-Estas funcionalidades podrán incorporarse en versiones futuras.
+Las funcionalidades de sincronización en la nube, funcionamiento offline, facturación electrónica, integraciones externas y otras ampliaciones podrán incorporarse posteriormente.
 
 ---
 
 # 6. Usuarios del sistema
 
-El sistema contará inicialmente con dos perfiles.
+Inicialmente se contemplan dos perfiles principales.
 
 ## Administrador
 
-Tendrá acceso completo al sistema y podrá administrar:
+Tendrá permisos administrativos sobre las funcionalidades autorizadas del sistema.
 
-- Usuarios.
-- Inventario.
-- Producción.
-- Ventas.
-- Pedidos.
-- Reportes.
-- Configuración del sistema.
+Entre sus responsabilidades se encuentran:
+
+* Administrar usuarios.
+* Administrar productos y datos maestros.
+* Gestionar inventario.
+* Realizar ajustes administrativos de inventario.
+* Consultar información administrativa.
+* Gestionar las funcionalidades correspondientes a su rol.
 
 ## Vendedor
 
-Podrá:
+Tendrá acceso principalmente a las operaciones comerciales y de venta.
 
-- Registrar ventas.
-- Registrar pedidos personalizados.
-- Registrar el consumo de tela utilizado para producción.
-- Consultar inventarios.
-- Consultar pedidos.
+Entre sus responsabilidades se encuentran:
 
-No podrá modificar configuraciones críticas ni administrar usuarios.
+* Registrar ventas.
+* Consultar productos disponibles.
+* Aplicar precios especiales dentro de una venta cuando corresponda.
+* Consultar información necesaria para realizar sus operaciones.
+
+Los permisos definitivos serán controlados por el backend.
 
 ---
 
 # 7. Principios del proyecto
 
-Durante el desarrollo del sistema se adoptarán los siguientes principios:
+Durante el desarrollo se adoptan los siguientes principios:
 
-- La tecnología debe adaptarse al negocio.
-- La interfaz debe ser sencilla e intuitiva.
-- La información debe ser consistente y confiable.
-- Todo movimiento importante debe quedar registrado.
-- El sistema debe ser escalable.
-- La documentación hará parte del desarrollo del proyecto.
+* La tecnología debe adaptarse al negocio.
+* La interfaz debe ser sencilla e intuitiva.
+* La información debe ser consistente y confiable.
+* Las operaciones que afecten inventario deben quedar registradas.
+* Los cambios deben realizarse de manera controlada.
+* Se evitarán refactorizaciones innecesarias cuando la arquitectura existente funcione correctamente.
+* El sistema debe poder evolucionar sin alterar innecesariamente sus componentes existentes.
+* La documentación debe mantenerse alineada con la implementación real.
+* La aplicación debe ser usable desde computadores y dispositivos móviles.
 
 ---
 
 # 8. Visión a futuro
 
-Una vez implementada la primera versión del sistema, se evaluará la incorporación de nuevas funcionalidades como:
+Una vez consolidada la versión inicial del sistema, podrán evaluarse funcionalidades como:
 
-- Sincronización automática con la nube.
-- Acceso desde múltiples dispositivos.
-- Reportes avanzados.
-- Estadísticas de ventas.
-- Panel administrativo con indicadores.
-- Nuevos módulos según las necesidades del negocio.
+* Sincronización con la nube.
+* Funcionamiento offline con sincronización posterior.
+* Acceso desde múltiples equipos mediante infraestructura centralizada.
+* Reportes avanzados.
+* Estadísticas de ventas.
+* Dashboard administrativo.
+* Facturación electrónica.
+* Integraciones con servicios externos.
+* Nuevas funcionalidades según las necesidades del negocio.
+
+Estas funcionalidades no deben considerarse implementadas hasta que hayan sido desarrolladas y verificadas.
 
 ---
 
 # 9. Criterios de éxito
 
-Se considerará que el proyecto ha cumplido sus objetivos cuando:
+El proyecto se considerará exitoso cuando:
 
-- El inventario refleje la existencia real de mantas y telas.
-- Las ventas se registren completamente desde el sistema.
-- La producción actualice automáticamente el inventario.
-- Los pedidos personalizados puedan consultarse en cualquier momento.
-- Los usuarios puedan utilizar el sistema con facilidad después de una capacitación básica.
-- El negocio pueda reemplazar completamente los registros manuales por el sistema.
+* El inventario represente correctamente las existencias reales.
+* Las operaciones que afecten inventario generen los movimientos correspondientes.
+* Las ventas puedan registrarse correctamente.
+* Los precios especiales puedan aplicarse únicamente a la venta correspondiente.
+* La producción actualice correctamente las existencias involucradas.
+* Los usuarios puedan utilizar el sistema con facilidad.
+* La aplicación pueda utilizarse correctamente desde computadores y dispositivos móviles.
+* La información permanezca consistente entre frontend, backend y base de datos.
 
 ---
 
 # 10. Observaciones
 
-Este documento constituye la base conceptual del proyecto Mantas Guajiras y servirá como referencia para el desarrollo de la arquitectura, la base de datos, la implementación del software y las futuras ampliaciones del sistema.
+Este documento constituye la visión general del proyecto Mantas Guajiras y sirve como referencia para los demás documentos técnicos y funcionales.
+
+La documentación deberá actualizarse cuando exista un cambio relevante en la arquitectura, reglas de negocio o funcionalidades implementadas.

@@ -1,262 +1,303 @@
 # Documento de Reglas de Negocio
 
-| Campo | Valor |
-|--------|-------|
-| **Proyecto** | Mantas Guajiras |
-| **Documento** | Reglas de Negocio |
-| **Código** | DOC-02 |
-| **Versión** | v0.3.0 |
-| **Estado** | En desarrollo |
-| **Responsable** | Equipo de Desarrollo |
-| **Última actualización** |14/06/2026 |
+| Campo                    | Valor                |
+| ------------------------ | -------------------- |
+| **Proyecto**             | Mantas Guajiras      |
+| **Documento**            | Reglas de Negocio    |
+| **Código**               | DOC-02               |
+| **Versión**              | v0.4.0               |
+| **Estado**               | En desarrollo        |
+| **Responsable**          | Equipo de Desarrollo |
+| **Última actualización** | 05/09/2026           |
 
 ---
 
 ## Control de versiones
 
-| Versión | Fecha | Descripción | Responsable |
-|----------|--------|-------------|-------------|
-| v0.1.0 | 29/07/2026 | Creación inicial del documento. | Equipo de Desarrollo |
+| Versión | Fecha      | Descripción                              | Responsable          |
+| ------- | ---------- | ---------------------------------------- | -------------------- |
+| v0.1.0  | 29/07/2026 | Creación inicial del documento.          | Equipo de Desarrollo |
+| v0.4.0  | 05/09/2026 | Actualización de las reglas funcionales. | Equipo de Desarrollo |
 
 ---
 
 # 1. Introducción
 
-Este documento define las reglas de negocio que gobiernan el funcionamiento del sistema Mantas Guajiras.
+Este documento define las reglas de negocio que determinan el comportamiento del sistema Mantas Guajiras.
 
-Las reglas aquí descritas representan el comportamiento real del negocio y deberán cumplirse independientemente de la implementación técnica utilizada.
-
----
-
-# 2. Inventario
-
-## RN-01. Inventario de mantas
-
-Cada tipo de manta tendrá una cantidad disponible dentro del inventario.
+Las reglas deberán cumplirse independientemente de la interfaz utilizada por el usuario.
 
 ---
 
-## RN-02. Inventario de telas
+# 2. Productos
 
-Cada tipo de tela almacenará la cantidad disponible expresada en metros.
+## RN-01. Categorías
 
----
+Los productos pertenecen a una categoría.
 
-## RN-03. Inventario no negativo
+Las categorías utilizadas actualmente contemplan principalmente:
 
-El sistema no permitirá que la existencia de mantas o telas sea inferior a cero.
-
----
-
-## RN-04. Ajustes de inventario
-
-Los ajustes manuales de inventario únicamente podrán ser realizados por un usuario con rol de Administrador.
-
-Todo ajuste deberá generar un movimiento de inventario.
+* Manta.
+* Tela.
 
 ---
 
-# 3. Producción
+## RN-02. Unidad de producto
 
-## RN-05. Fabricación de mantas
+La unidad utilizada depende del tipo de producto.
 
-La fabricación de mantas incrementará automáticamente el inventario del tipo de manta producido.
-
----
-
-## RN-06. Consumo de tela
-
-Toda fabricación de mantas disminuirá automáticamente la cantidad de tela utilizada.
+| Producto  | Unidad              |
+| --------- | ------------------- |
+| **Manta** | Unidad entera (`#`) |
+| **Tela**  | Metro               |
 
 ---
 
-## RN-07. Registro de producción
+## RN-03. Cantidad de mantas
 
-Cada proceso de producción deberá registrar como mínimo:
+Las mantas se manejan mediante cantidades enteras.
 
-- Fecha.
-- Usuario responsable.
-- Tipo de manta.
-- Cantidad fabricada.
-- Tipo de tela utilizada.
-- Cantidad de tela consumida.
+No se deberán registrar fracciones de manta en operaciones que requieran unidades completas.
 
 ---
 
-# 4. Ventas
+## RN-04. Cantidad de tela
 
-## RN-08. Venta de mantas
+Las telas se manejan mediante metros.
 
-Toda venta disminuirá automáticamente la cantidad correspondiente del inventario.
-
----
-
-## RN-09. Venta de telas
-
-Las telas se venderán únicamente por metros.
-
-Cada venta disminuirá automáticamente la cantidad de metros vendidos.
+La cantidad podrá contener valores decimales.
 
 ---
 
-## RN-10. Precio por docena
+# 3. Precios
 
-Las mantas podrán tener un precio especial para ventas por docena.
+## RN-05. Precio base
 
-Cuando una venta cumpla esta condición, el sistema utilizará automáticamente el precio correspondiente.
+Cada producto tendrá un precio base asociado.
 
----
-
-## RN-11. Registro de ventas
-
-Toda venta deberá registrar:
-
-- Fecha.
-- Usuario.
-- Cliente (cuando aplique).
-- Productos vendidos.
-- Cantidades.
-- Valor total.
-- Método de pago.
+El precio de compra y el precio unitario se consideran actualmente como el mismo concepto dentro del modelo funcional del sistema.
 
 ---
 
-# 5. Pedidos
+## RN-06. Precio especial en una venta
 
-## RN-12. Pedidos personalizados
+El precio de un producto podrá modificarse manualmente para una venta específica.
 
-El sistema permitirá registrar pedidos personalizados con un precio definido manualmente.
+El precio especial:
 
----
-
-## RN-13. Estado del pedido
-
-Todo pedido deberá encontrarse en uno de los siguientes estados:
-
-- Pendiente.
-- En producción.
-- Listo para entregar.
-- Entregado.
-- Cancelado.
+* Solo afectará esa venta.
+* Podrá aplicarse incluso a una unidad.
+* No dependerá exclusivamente de la cantidad.
+* No modificará permanentemente el precio base del producto.
 
 ---
 
-## RN-14. Pagos
+## RN-07. Descuento
 
-Cada pedido podrá registrar uno o varios pagos.
-
-Los pagos podrán realizarse como:
-
-- Abono.
-- Pago total.
+Cuando se establezca un precio especial inferior al precio original, el sistema podrá calcular el descuento correspondiente tomando como referencia el precio base.
 
 ---
 
-## RN-15. Saldo pendiente
+# 4. Inventario
 
-El saldo pendiente será calculado automáticamente como:
+## RN-08. Stock actual
 
-Saldo pendiente = Valor total del pedido − Total pagado.
+El stock actual representa la cantidad realmente disponible de un producto.
 
----
-
-## RN-16. Entrega
-
-Un pedido únicamente podrá marcarse como entregado cuando el saldo pendiente sea igual a cero.
+El stock actual pertenece al registro de inventario.
 
 ---
 
-# 6. Usuarios
+## RN-09. Stock mínimo
 
-## RN-17. Roles
+El stock mínimo representa un umbral de referencia para identificar necesidades de reposición.
 
-El sistema contará inicialmente con dos roles:
-
-- Administrador.
-- Vendedor.
+El stock mínimo no representa la cantidad actualmente disponible.
 
 ---
 
-## RN-18. Permisos del Administrador
+## RN-10. Inventario no negativo
 
-El Administrador tendrá acceso completo al sistema.
-
----
-
-## RN-19. Permisos del Vendedor
-
-El Vendedor podrá:
-
-- Registrar ventas.
-- Registrar producción.
-- Gestionar pedidos.
-- Consultar inventarios.
-
-No podrá administrar usuarios ni realizar ajustes manuales de inventario.
+El sistema no permitirá que una operación produzca un stock inferior a cero.
 
 ---
 
-# 7. Sincronización
+## RN-11. Movimientos
 
-## RN-20. Funcionamiento sin conexión
-
-El sistema deberá continuar operando cuando no exista conexión con Internet.
+Toda operación que modifique el stock deberá generar el movimiento de inventario correspondiente.
 
 ---
 
-## RN-21. Sincronización
+## RN-12. Ajustes administrativos
 
-Cuando la conexión sea restablecida, el sistema sincronizará automáticamente la información con la base de datos central.
+Los ajustes manuales de inventario estarán destinados a usuarios con permisos administrativos.
 
----
-
-## RN-22. Conflictos
-
-En caso de existir conflictos durante la sincronización, prevalecerá la información almacenada en la base de datos central, aplicando las reglas definidas para la resolución de conflictos.
+Los ajustes deberán quedar registrados como movimientos de inventario.
 
 ---
 
-# 8. Auditoría
+# 5. Compras
 
-## RN-23. Movimientos
+## RN-13. Entrada por compra
 
-Todo cambio que afecte el inventario deberá generar un movimiento de inventario.
-
-Los movimientos nunca serán eliminados.
+Una compra registrada correctamente deberá aumentar el inventario del producto correspondiente.
 
 ---
 
-## RN-24. Registro de operaciones
+# 6. Ventas
 
-Las operaciones importantes deberán registrar:
+## RN-14. Salida por venta
 
-- Usuario.
-- Fecha.
-- Hora.
-- Tipo de operación.
+Una venta registrada correctamente deberá disminuir el inventario de los productos vendidos.
 
 ---
 
-# 9. Principios generales
+## RN-15. Cantidad vendida
 
-## RN-25. Consistencia
+La cantidad vendida deberá respetar la unidad asociada al producto.
 
-Toda operación deberá mantener la consistencia de la información del sistema.
+Las telas podrán venderse en cantidades decimales.
 
----
-
-## RN-26. Integridad
-
-No se permitirá registrar operaciones que produzcan datos inconsistentes.
+Las mantas deberán venderse en unidades enteras.
 
 ---
 
-## RN-27. Escalabilidad
+## RN-16. Precio histórico
 
-Las reglas de negocio deberán mantenerse independientes de la tecnología utilizada para permitir futuras ampliaciones del sistema.
+El precio aplicado durante una venta deberá conservarse en el detalle de la venta.
+
+Los cambios posteriores al precio base del producto no deberán modificar el valor histórico de una venta ya registrada.
 
 ---
 
-# 10. Observaciones
+# 7. Producción
 
-Las reglas descritas en este documento constituyen la lógica del negocio y servirán como referencia para el desarrollo del backend, el diseño de la base de datos y la implementación de las pruebas del sistema.
+## RN-17. Consumo de tela
+
+La producción consume tela del inventario.
+
+---
+
+## RN-18. Generación de mantas
+
+La producción genera mantas y aumenta su inventario.
+
+---
+
+## RN-19. Cantidad de producción
+
+La cantidad producida de mantas deberá ser un número entero.
+
+---
+
+## RN-20. Cantidad de tela
+
+La cantidad de tela consumida podrá utilizar valores decimales.
+
+---
+
+## RN-21. Operación transaccional
+
+La disminución de tela y el aumento de mantas correspondientes a una producción deberán ejecutarse como una única operación transaccional.
+
+Si la operación falla, no deberá quedar solamente una de las dos modificaciones aplicada.
+
+---
+
+# 8. Usuarios
+
+## RN-22. Roles
+
+El sistema contempla inicialmente:
+
+* Administrador.
+* Vendedor.
+
+---
+
+## RN-23. Administrador
+
+El administrador podrá ejecutar las operaciones correspondientes a sus permisos, incluyendo las operaciones administrativas sobre inventario.
+
+---
+
+## RN-24. Vendedor
+
+El vendedor podrá ejecutar las operaciones comerciales que tenga autorizadas.
+
+No deberá tener permisos para realizar ajustes administrativos de inventario ni administrar usuarios si dichas operaciones están restringidas al administrador.
+
+---
+
+# 9. Auditoría
+
+## RN-25. Trazabilidad de inventario
+
+Los movimientos de inventario deberán conservar la información necesaria para identificar:
+
+* Producto.
+* Tipo de movimiento.
+* Origen de la operación.
+* Cantidad.
+* Observaciones cuando correspondan.
+* Fecha de la operación.
+
+---
+
+## RN-26. Movimientos no eliminables
+
+Los movimientos de inventario representan trazabilidad histórica y no deberán eliminarse como mecanismo para corregir una operación.
+
+Las correcciones deberán realizarse mediante los mecanismos de ajuste correspondientes.
+
+---
+
+# 10. Pedidos y pagos
+
+Las reglas específicas de pedidos y pagos deberán mantenerse alineadas con el modelo y las funcionalidades realmente implementadas en el backend.
+
+No se deberán considerar como implementadas reglas adicionales que todavía no hayan sido desarrolladas y verificadas.
+
+---
+
+# 11. Sincronización
+
+## RN-27. Estado actual
+
+El sistema actualmente no implementa sincronización offline con una base de datos central.
+
+---
+
+## RN-28. Evolución futura
+
+La sincronización entre dispositivos y el funcionamiento offline podrán implementarse posteriormente como una evolución de la arquitectura.
+
+---
+
+# 12. Principios generales
+
+## RN-29. Consistencia
+
+Toda operación deberá mantener consistencia entre los datos registrados y el estado real del negocio.
+
+---
+
+## RN-30. Integridad
+
+No deberán permitirse operaciones que produzcan información inválida o inconsistencias entre entidades relacionadas.
+
+---
+
+## RN-31. Backend como responsable de las reglas
+
+Las reglas de negocio deberán validarse en el backend.
+
+Las validaciones del frontend sirven como apoyo a la experiencia de usuario, pero no sustituyen las validaciones del servidor.
+
+---
+
+# 13. Observaciones
+
+Las reglas descritas en este documento constituyen la referencia funcional para el desarrollo del backend, frontend y base de datos.
+
+Cuando una regla cambie, deberá actualizarse la documentación correspondiente antes o junto con la implementación.
