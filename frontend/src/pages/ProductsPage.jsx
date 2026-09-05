@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+
 import ProductForm from "../components/ProductForm";
 import ProductService from "../services/ProductService";
+import Modal from "../components/Modal";
+
 
 function ProductsPage() {
 
-    const [products, setProducts] = useState([]);
+    const [products, setProducts] =
+        useState([]);
 
     const [selectedProduct, setSelectedProduct] =
         useState(null);
@@ -85,6 +89,7 @@ function ProductsPage() {
     if (loading) {
 
         return (
+
             <div className="products-page">
 
                 <h1>Productos</h1>
@@ -105,12 +110,17 @@ function ProductsPage() {
             <div className="products-page-header">
 
                 <div>
-                    <h1>Productos</h1>
+
+                    <h1>
+                        Productos
+                    </h1>
 
                     <p>
                         Crear y administrar productos.
                     </p>
+
                 </div>
+
 
                 <button
                     type="button"
@@ -131,7 +141,15 @@ function ProductsPage() {
             )}
 
 
-            {showForm && (
+            <Modal
+                open={showForm}
+                onClose={handleCancel}
+                title={
+                    selectedProduct
+                        ? "Editar producto"
+                        : "Crear producto"
+                }
+            >
 
                 <ProductForm
                     product={selectedProduct}
@@ -139,75 +157,75 @@ function ProductsPage() {
                     onCancel={handleCancel}
                 />
 
-            )}
+            </Modal>
 
 
-            {!showForm && (
+            <div className="products-list">
 
-                <div className="products-list">
+                {products.length === 0 ? (
 
-                    {products.length === 0 ? (
+                    <p>
+                        No hay productos registrados.
+                    </p>
 
-                        <p>
-                            No hay productos registrados.
-                        </p>
+                ) : (
 
-                    ) : (
+                    products.map((product) => (
 
-                        products.map((product) => (
+                        <div
+                            className="product-row"
+                            key={product.id}
+                        >
 
-                            <div
-                                className="product-row"
-                                key={product.id}
-                            >
+                            <div>
 
-                                <div>
+                                <strong>
+                                    {product.name}
+                                </strong>
 
-                                    <strong>
-                                        {product.name}
-                                    </strong>
+                                <p>
+                                    Código:{" "}
+                                    {product.internalCode}
+                                </p>
 
-                                    <p>
-                                        Código:{" "}
-                                        {product.internalCode}
-                                    </p>
+                                <p>
+                                    Código de barras:{" "}
+                                    {product.barcode ||
+                                        "Sin código"}
+                                </p>
 
-                                    <p>
-                                        Código de barras:{" "}
-                                        {product.barcode || "Sin código"}
-                                    </p>
-
-                                    <p>
-                                        Precio:{" "}
-                                        ${Number(
-                                            product.unitPrice
-                                        ).toLocaleString("es-CO")}
-                                    </p>
-
-                                </div>
-
-
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        handleEdit(product)
-                                    }
-                                >
-                                    Editar
-                                </button>
+                                <p>
+                                    Precio:{" "}
+                                    ${Number(
+                                        product.unitPrice
+                                    ).toLocaleString(
+                                        "es-CO"
+                                    )}
+                                </p>
 
                             </div>
 
-                        ))
 
-                    )}
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    handleEdit(product)
+                                }
+                            >
+                                Editar
+                            </button>
 
-                </div>
+                        </div>
 
-            )}
+                    ))
+
+                )}
+
+            </div>
 
         </div>
     );
 }
+
 
 export default ProductsPage;

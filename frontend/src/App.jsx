@@ -6,6 +6,9 @@ import NewSalePage from "./pages/NewSalePage";
 import ProductsPage from "./pages/ProductsPage";
 import MainLayout from "./components/MainLayout";
 import AdminPage from "./pages/AdminPage";
+import InventoryPage from "./pages/InventoryPage";
+import SalesPage from "./pages/SalesPage";
+import ProductionPage from "./pages/ProductionPage";
 
 function App() {
   return (
@@ -20,21 +23,10 @@ function App() {
 
           <Route path="/products" element={<ProductsPage />} />
 
-          <Route
-            path="/inventory"
-            element={ <InventoryPage />
-            }
-          />
+          <Route path="/inventory" element={<InventoryPage />} />
 
-          <Route
-            path="/sales"
-            element={
-              <div>
-                <h1>Ventas</h1>
-              </div>
-            }
-          />
-
+          <Route path="/sales" element={<SalesPage />} />
+          <Route path="/production" element={<ProductionPage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Route>
 

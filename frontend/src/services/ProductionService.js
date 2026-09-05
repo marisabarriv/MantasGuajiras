@@ -1,13 +1,13 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-const SaleService = {
+const ProductionService = {
 
     async findAll() {
 
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-            `${API_URL}/api/sales`,
+            `${API_URL}/api/productions`,
             {
                 method: "GET",
 
@@ -34,7 +34,7 @@ const SaleService = {
             throw new Error(
                 data.message ||
                 data.error ||
-                "No fue posible cargar las ventas."
+                "No fue posible cargar las producciones."
             );
         }
 
@@ -47,7 +47,7 @@ const SaleService = {
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-            `${API_URL}/api/sales/${id}`,
+            `${API_URL}/api/productions/${id}`,
             {
                 method: "GET",
 
@@ -74,7 +74,7 @@ const SaleService = {
             throw new Error(
                 data.message ||
                 data.error ||
-                "No fue posible cargar la venta."
+                "No fue posible cargar la producción."
             );
         }
 
@@ -82,12 +82,12 @@ const SaleService = {
     },
 
 
-    async create(sale) {
+    async create(production) {
 
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-            `${API_URL}/api/sales`,
+            `${API_URL}/api/productions`,
             {
                 method: "POST",
 
@@ -96,7 +96,7 @@ const SaleService = {
                     "Content-Type": "application/json",
                 },
 
-                body: JSON.stringify(sale),
+                body: JSON.stringify(production),
             }
         );
 
@@ -116,7 +116,7 @@ const SaleService = {
             throw new Error(
                 data.message ||
                 data.error ||
-                "No fue posible crear la venta."
+                "No fue posible registrar la producción."
             );
         }
 
@@ -124,12 +124,12 @@ const SaleService = {
     },
 
 
-    async update(id, sale) {
+    async update(id, production) {
 
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-            `${API_URL}/api/sales/${id}`,
+            `${API_URL}/api/productions/${id}`,
             {
                 method: "PUT",
 
@@ -138,7 +138,7 @@ const SaleService = {
                     "Content-Type": "application/json",
                 },
 
-                body: JSON.stringify(sale),
+                body: JSON.stringify(production),
             }
         );
 
@@ -158,7 +158,7 @@ const SaleService = {
             throw new Error(
                 data.message ||
                 data.error ||
-                "No fue posible actualizar la venta."
+                "No fue posible actualizar la producción."
             );
         }
 
@@ -171,7 +171,7 @@ const SaleService = {
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-            `${API_URL}/api/sales/${id}`,
+            `${API_URL}/api/productions/${id}`,
             {
                 method: "DELETE",
 
@@ -197,7 +197,7 @@ const SaleService = {
             throw new Error(
                 data.message ||
                 data.error ||
-                "No fue posible eliminar la venta."
+                "No fue posible eliminar la producción."
             );
         }
 
@@ -205,4 +205,4 @@ const SaleService = {
     },
 };
 
-export default SaleService;
+export default ProductionService;
