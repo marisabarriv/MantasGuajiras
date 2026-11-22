@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 
 import AuthService from "../services/AuthService";
+import InstallAppButton from "../components/InstallAppButton";
 import PasswordInput from "../components/PasswordInput";
 import { clearSession, hasValidSession, saveSession } from "../utils/session";
 
@@ -111,6 +112,8 @@ function LoginPage() {
               Crear cuenta
             </button>
           </div>
+
+          <InstallAppButton className="login-install" />
         </div>
       </div>
     </div>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#4a2412" />
+    <title>Sin conexión — Mantas Guajiras</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #faf5ee;
+            color: #2b1a10;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        main {
+            max-width: 460px;
+            text-align: center;
+            background: #fff;
+            border: 1.5px solid #dccbb8;
+            border-radius: 18px;
+            padding: 32px 24px;
+        }
+        img { width: 96px; height: 96px; }
+        h1 { font-size: 28px; margin: 18px 0 10px; }
+        p { font-size: 20px; line-height: 1.5; margin: 0 0 24px; }
+        button {
+            font-size: 20px;
+            font-weight: 700;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            background: #9a3d17;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover { background: #7d3112; }
+    </style>
+</head>
+<body>
+    <main>
+        <img src="/icons/icon-192.png" alt="" />
+        <h1>No hay conexión a internet</h1>
+        <p>Revisa el Wi-Fi o los datos móviles del dispositivo y vuelve a intentarlo. Tus datos no se han perdido.</p>
+        <button type="button" onclick="location.reload()">Intentar de nuevo</button>
+    </main>
+</body>
+</html>

@@ -46,6 +46,13 @@
    la revisión final de CSS.
    ========================================================= */
 
+/* Siempre tema claro, aunque Windows o el celular estén en modo oscuro
+   (la app instalada usa el color del sistema para el fondo de la ventana). */
+html {
+    color-scheme: light;
+    background: var(--mg-bg);
+}
+
 body,
 .pos-layout {
     background: var(--mg-bg);

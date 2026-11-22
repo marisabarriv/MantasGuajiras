@@ -17,12 +17,13 @@ public class CorsConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        configuration.setAllowedOrigins(
+        // En este computador se acepta cualquier puerto local: si el puerto
+        // 5173 está ocupado, Vite usa otro (5174, 5175…) y la app
+        // instalada desde ese puerto también debe poder iniciar sesión.
+        configuration.setAllowedOriginPatterns(
                 List.of(
-                        "http://localhost:5500",
-                        "http://127.0.0.1:5500",
-                        "http://localhost:5173",
-                        "http://127.0.0.1:5173"
+                        "http://localhost:[*]",
+                        "http://127.0.0.1:[*]"
                 )
         );
 

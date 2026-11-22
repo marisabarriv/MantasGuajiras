@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 
+import InstallAppButton from "./InstallAppButton";
 import UserAvatar from "./UserAvatar";
 import { clearSession, getUser, ROLE_LABELS } from "../utils/session";
 
@@ -103,6 +104,8 @@ function Sidebar({ open = false, onNavigate }) {
 
             {/* Usuario de la sesión: perfil y cerrar sesión */}
             <div className="sidebar-user">
+
+                <InstallAppButton className="sidebar-install" />
 
                 <NavLink to="/profile" className="sidebar-user-card">
                     <UserAvatar username={user.username || ""} size={44} />
