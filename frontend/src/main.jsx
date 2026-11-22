@@ -8,6 +8,10 @@ import "./App.css";
 import "./styles/theme.css";
 
 import App from "./App.jsx";
+import { setupPwa } from "./utils/pwa";
+
+// App instalable: service worker y botón "Instalar app".
+setupPwa();
 
 createRoot(document.getElementById("root")).render(
     <StrictMode>

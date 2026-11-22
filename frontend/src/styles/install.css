@@ -1,0 +1,94 @@
+/* ---------- Botón "Instalar app" (PWA) ---------- */
+
+.install-app-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    width: 100%;
+    min-height: 50px;
+
+    padding: 8px 14px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: #f3e8dc;
+    color: #4a2412;
+
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.install-app-button img {
+    width: 30px;
+    height: 30px;
+
+    border-radius: 7px;
+}
+
+.install-app-button:hover {
+    background: #ffffff;
+}
+
+.install-app-button:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.sidebar-install {
+    margin-bottom: 12px;
+}
+
+.login-install {
+    margin-top: 22px;
+
+    border: 1.5px solid var(--mg-line);
+}
+
+.login-install:hover {
+    background: var(--mg-soft);
+    border-color: var(--mg-accent);
+}
+
+
+/* ---------- Pasos para iPhone / iPad ---------- */
+
+.install-steps {
+    margin: 0 0 22px;
+    padding-left: 26px;
+
+    color: var(--mg-text, #2b1a10);
+
+    font-size: 19px;
+    line-height: 1.55;
+}
+
+.install-steps li + li {
+    margin-top: 10px;
+}
+
+.install-steps-ok {
+    width: 100%;
+    min-height: 52px;
+
+    border: none;
+    border-radius: 12px;
+
+    background: var(--mg-accent);
+    color: #ffffff;
+
+    font-family: inherit;
+    font-size: 19px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.install-steps-ok:hover {
+    background: var(--mg-accent-hover);
+}
