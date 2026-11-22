@@ -145,6 +145,44 @@ public class GlobalExceptionHandler {
                                 .body(response);
         }
 
+        /** Cuenta inactiva o pendiente de aprobación (registro con aprobación). */
+        @ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
+        public ResponseEntity<ErrorResponse> handleDisabled(
+                        org.springframework.security.authentication.DisabledException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.FORBIDDEN,
+                                "Tu cuenta está inactiva o pendiente de aprobación. "
+                                                + "Pide a un administrador que la active.",
+                                request);
+        }
+
+        /** Archivo más grande de lo permitido (foto de perfil: 20 MB). */
+        @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+        public ResponseEntity<ErrorResponse> handleTooLarge(
+                        org.springframework.web.multipart.MaxUploadSizeExceededException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.PAYLOAD_TOO_LARGE,
+                                "La foto no puede pesar más de 20 MB.",
+                                request);
+        }
+
+        private ResponseEntity<ErrorResponse> build(
+                        HttpStatus status,
+                        String message,
+                        HttpServletRequest request) {
+
+                return ResponseEntity.status(status).body(
+                                ErrorResponse.builder()
+                                                .timestamp(LocalDateTime.now())
+                                                .status(status.value())
+                                                .error(status.getReasonPhrase())
+                                                .message(message)
+                                                .path(request.getRequestURI())
+                                                .build());
+        }
+
         @ExceptionHandler(Exception.class)
         public ResponseEntity<ErrorResponse> handleGeneral(
                         Exception ex,

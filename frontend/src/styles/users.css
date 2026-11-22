@@ -1,0 +1,271 @@
+/* =========================================================
+   USUARIOS: menú lateral, "Mi perfil" y "Administrar"
+   (usuarios 45+). Lista y botones reutilizan inventory.css.
+   ========================================================= */
+
+
+/* ---------- Usuario en el menú lateral ---------- */
+
+.sidebar-user {
+    margin-top: auto;
+
+    padding: 14px 12px 18px;
+
+    border-top: 1px solid #4a4a4a;
+}
+
+.sidebar-user-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 10px;
+
+    border-radius: 10px;
+
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.sidebar-user-card:hover,
+.sidebar-user-card.active {
+    background: var(--mg-sidebar-hover);
+}
+
+.sidebar-user-card:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.sidebar-user-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    min-width: 0;
+}
+
+.sidebar-user-text strong {
+    font-size: 17px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-user-text span {
+    color: #e6e6e6;
+
+    font-size: 15px;
+}
+
+.sidebar-user-text .sidebar-user-link {
+    color: #ffffff;
+
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.sidebar-logout {
+    width: 100%;
+    min-height: 46px;
+
+    margin-top: 8px;
+
+    border: 1.5px solid #bdbdbd;
+    border-radius: 10px;
+
+    background: transparent;
+    color: #ffffff;
+
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.sidebar-logout:hover {
+    background: var(--mg-sidebar-hover);
+}
+
+.sidebar-logout:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 2px;
+}
+
+
+/* ---------- Avatar ---------- */
+
+.user-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+}
+
+.user-avatar-initials {
+    background: var(--mg-soft);
+    color: #2f2f2f;
+
+    font-weight: 800;
+}
+
+
+/* ---------- Mi perfil ---------- */
+
+.profile-page {
+    max-width: 760px;
+}
+
+.profile-card {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+
+    margin-bottom: 22px;
+    padding: 22px;
+
+    border: 1.5px solid var(--mg-line);
+    border-radius: 14px;
+
+    background: #ffffff;
+}
+
+.profile-card h2 {
+    margin: 0;
+
+    color: #1f1f1f;
+
+    font-size: 22px;
+}
+
+.profile-photo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 22px;
+}
+
+.profile-photo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-photo-actions .profile-help {
+    flex-basis: 100%;
+}
+
+.profile-help {
+    margin: 0;
+
+    color: #3d3d3d;
+
+    font-size: 16px;
+    line-height: 1.45;
+}
+
+.profile-data {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+
+    margin: 0;
+}
+
+.profile-data dt {
+    color: #3d3d3d;
+
+    font-size: 15px;
+}
+
+.profile-data dd {
+    margin: 2px 0 0;
+
+    color: #1f1f1f;
+
+    font-size: 19px;
+    font-weight: 700;
+
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+
+    .profile-data {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ---------- Administrar ---------- */
+
+.admin-pending {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    margin-bottom: 18px;
+    padding: 14px 16px;
+
+    border: 1.5px solid #b26a00;
+    border-radius: 10px;
+
+    background: #fff4dc;
+    color: #5c3800;
+
+    font-size: 17px;
+}
+
+.inv-row.admin-row-inactive {
+    border-left-color: #b26a00;
+
+    background: #fffaf0;
+}
+
+.admin-you {
+    color: #3d3d3d;
+
+    font-weight: 400;
+}
+
+.admin-role {
+    font-size: 19px;
+}
+
+
+/* ---------- Campos de contraseña dentro de formularios grandes ----------
+   El botón del "ojo" va encima del campo: se deja espacio a la derecha. */
+
+.product-form .password-input-container input {
+    padding-right: 56px;
+}
+
+
+/* ---------- Mensajes informativos (p. ej. "Tu sesión expiró") ---------- */
+
+.result.info {
+    border: 1.5px solid #1f4e8c;
+
+    background: #e8f0fb;
+    color: #163a69;
+
+    font-size: 16px;
+}
+
+.auth-help {
+    display: block;
+
+    margin: 6px 0 12px;
+
+    color: #3d3d3d;
+
+    font-size: 14px;
+}

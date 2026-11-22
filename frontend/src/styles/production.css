@@ -1,0 +1,71 @@
+/* =========================================================
+   PRODUCCIÓN  (usuarios 45+)
+   Reutiliza inventory.css, sales.css y purchases.css.
+   Aquí solo lo propio de producción.
+   ========================================================= */
+
+/* Tarjetas de resumen: no son botones, solo información */
+.production-card {
+    cursor: default;
+}
+
+.production-card:hover {
+    box-shadow: none;
+}
+
+/* Historial: sin columna de acciones */
+.production-row {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.inv-row-product .production-maker {
+    color: #1f1f1f;
+
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.production-made {
+    color: #1e5e25;
+
+    font-size: 22px;
+}
+
+.production-used {
+    color: #7a4b00;
+
+    font-size: 22px;
+}
+
+/* Cálculo de tela cuando no alcanza */
+.purchase-summary.production-summary-error {
+    border-color: #c62828;
+
+    background: #ffebee;
+    color: #8e1b1b;
+}
+
+.production-summary-warning {
+    margin: 6px 0 0;
+
+    font-size: 17px;
+    font-weight: 700;
+}
+
+@media (max-width: 900px) {
+
+    .production-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .production-row .inv-row-product {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 600px) {
+
+    .production-row {
+        grid-template-columns: 1fr;
+    }
+}

@@ -36,9 +36,6 @@ public class User extends AuditableEntity {
     @Column(nullable = false)
     private Boolean active = true;
 
-    @Column(name = "profile_image_type")
-    private String profileImageType;
-
-    @Column(name = "profile_image", length = 20971520) // 20 MB
-    private byte[] profileImage;
+    // La foto de perfil vive en la tabla user_profile_image
+    // (entidad UserProfileImage) para no cargarla con cada usuario.
 }

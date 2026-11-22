@@ -23,6 +23,7 @@ public class UserResponse {
     private Role role;
 
     private Boolean active;
+    private Boolean hasPhoto;
 
     private LocalDateTime createdAt;
 

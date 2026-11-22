@@ -1,0 +1,202 @@
+/* =========================================================
+   COMPRAS  (usuarios 45+)
+   La lista y el detalle reutilizan styles/inventory.css y
+   styles/sales.css. Aquí solo el formulario de compra.
+   ========================================================= */
+
+.purchases-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+
+    margin-bottom: 22px;
+}
+
+.purchases-header p {
+    margin-bottom: 0;
+}
+
+.purchases-new {
+    min-height: 52px;
+
+    font-size: 18px;
+}
+
+
+/* ---------- Formulario ---------- */
+
+.purchase-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.purchase-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+.purchase-line {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    padding: 16px;
+
+    border: 1.5px solid var(--mg-line);
+    border-radius: 12px;
+
+    background: var(--mg-surface);
+}
+
+.purchase-line-error {
+    border-color: #c62828;
+}
+
+.purchase-line-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.purchase-line-number {
+    color: #1f1f1f;
+
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.purchase-remove {
+    min-height: 40px;
+
+    padding: 0 14px;
+
+    border: 1.5px solid #a11a1a;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: #a11a1a;
+
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.purchase-remove:hover {
+    background: #fdecec;
+}
+
+.purchase-line-message {
+    margin: 0;
+
+    color: #8e1b1b;
+
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.purchase-line-subtotal {
+    margin: 0;
+
+    color: #1f1f1f;
+
+    font-size: 17px;
+
+    text-align: right;
+}
+
+.purchase-add {
+    align-self: flex-start;
+
+    min-height: 50px;
+
+    padding: 0 18px;
+
+    border: 1.5px dashed #5c5c5c;
+    border-radius: 10px;
+
+    background: #ffffff;
+    color: #1f1f1f;
+
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.purchase-add:hover {
+    background: var(--mg-soft);
+}
+
+.purchase-remove:focus-visible,
+.purchase-add:focus-visible {
+    outline: 3px solid #1f1f1f;
+    outline-offset: 2px;
+}
+
+
+/* ---------- Resumen y total ---------- */
+
+.purchase-summary {
+    padding: 14px 16px;
+
+    border: 1.5px solid #2e7d32;
+    border-radius: 10px;
+
+    background: #e8f5e9;
+    color: #1b5e20;
+}
+
+.purchase-summary p {
+    margin: 0 0 8px;
+
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.purchase-summary ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.purchase-summary li {
+    margin: 4px 0;
+
+    font-size: 17px;
+}
+
+.purchase-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 14px 16px;
+
+    border-radius: 12px;
+
+    background: var(--mg-soft);
+}
+
+.purchase-total span {
+    color: #1f1f1f;
+
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.purchase-total strong {
+    color: #1f1f1f;
+
+    font-size: 28px;
+}

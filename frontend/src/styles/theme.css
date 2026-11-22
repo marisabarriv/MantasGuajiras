@@ -1,0 +1,138 @@
+/* =========================================================
+   TEMA DE COLORES — MantasGuajiras
+   Todos los colores de marca viven aquí. Para cambiar la
+   paleta solo se cambian estas variables.
+
+   Los colores de ESTADO (verde = bien/pagado, ámbar = atención,
+   rojo = agotado/error) no cambian con la paleta.
+
+   Paleta elegida: "Guajira" (crema, café y terracota).
+   Contraste del terracota sobre blanco ≈ 7:1 (apto para
+   usuarios mayores). Los estados llevan siempre ícono + palabra
+   para no confundirse con el color principal.
+   ========================================================= */
+
+:root {
+    /* Fondo de las páginas y tarjetas */
+    --mg-bg: #faf5ee;
+    --mg-surface: #ffffff;
+    --mg-soft: #f3e8dc;          /* recuadros suaves (totales, resúmenes) */
+
+    /* Menú lateral */
+    --mg-sidebar: #4a2412;
+    --mg-sidebar-brand: #3d1d0e;
+    --mg-sidebar-hover: rgba(255, 255, 255, 0.14);
+    --mg-sidebar-active: rgba(255, 255, 255, 0.24);
+
+    /* Color principal: botones principales, pestañas y filtros activos */
+    --mg-accent: #9a3d17;
+    --mg-accent-hover: #7d3112;
+    --mg-on-accent: #ffffff;
+
+    /* Bordes */
+    --mg-line: #dccbb8;
+    --mg-line-soft: #ece1d4;
+
+    /* Texto */
+    --mg-text: #1f1f1f;
+    --mg-text-muted: #3d3d3d;
+}
+
+
+/* =========================================================
+   APLICACIÓN DEL TEMA A ESTILOS ANTIGUOS (App.css / index.css)
+   Esos archivos tienen reglas repetidas; en lugar de tocarlas
+   una por una aquí se sobrescribe el color. Se ordena todo en
+   la revisión final de CSS.
+   ========================================================= */
+
+body,
+.pos-layout {
+    background: var(--mg-bg);
+    color: var(--mg-text);
+}
+
+/* ---------- Menú lateral ---------- */
+
+.sidebar {
+    background: var(--mg-sidebar);
+
+    /* Si la pantalla es baja, el menú se desplaza en vez de cortarse */
+    overflow-y: auto;
+}
+
+.sidebar-brand {
+    background: var(--mg-sidebar-brand);
+}
+
+.sidebar-brand h2 {
+    color: #ffffff;
+}
+
+.sidebar-link {
+    padding: 14px 14px;
+
+    color: #ffffff;
+
+    font-size: 18px;
+}
+
+.sidebar-brand h2 {
+    font-size: 22px;
+}
+
+.sidebar-link:hover {
+    background: var(--mg-sidebar-hover);
+}
+
+.sidebar-link.active {
+    background: var(--mg-sidebar-active);
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* ---------- Botones principales ---------- */
+
+.product-submit-button,
+.production-form-actions button[type="submit"],
+.products-page-header button,
+.checkout-button,
+.product-card button,
+.modal-actions button:last-child,
+.modal-overlay > .modal-content .modal-actions button:last-child {
+    background: var(--mg-accent);
+    border-color: var(--mg-accent);
+    color: var(--mg-on-accent);
+}
+
+.product-submit-button:hover,
+.production-form-actions button[type="submit"]:hover,
+.products-page-header button:hover,
+.checkout-button:hover:not(:disabled),
+.product-card button:hover:not(:disabled),
+.modal-actions button:last-child:hover,
+.modal-overlay > .modal-content .modal-actions button:last-child:hover {
+    background: var(--mg-accent-hover);
+    border-color: var(--mg-accent-hover);
+}
+
+/* ---------- Pestañas de categoría (Nueva venta) ---------- */
+
+.product-tab {
+    background: var(--mg-surface);
+    border: 1.5px solid var(--mg-line);
+    color: var(--mg-text);
+}
+
+.product-tab.active {
+    background: var(--mg-accent);
+    border-color: var(--mg-accent);
+    color: var(--mg-on-accent);
+}
+
+/* ---------- Carrito ---------- */
+
+.cart-header,
+.cart-footer {
+    background: var(--mg-soft);
+}

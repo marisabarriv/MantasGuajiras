@@ -1,0 +1,138 @@
+/* =========================================================
+   HISTORIAL DE VENTAS  (usuarios 45+)
+   Reutiliza la estructura visual de styles/inventory.css
+   (tarjetas .inv-card, filas .inv-row). Aquí solo lo propio.
+   ========================================================= */
+
+.sales-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sales-summary .inv-card-number {
+    font-size: 34px;
+}
+
+.sales-row-names {
+    color: #1f1f1f;
+
+    font-size: 16px;
+
+    overflow-wrap: anywhere;
+}
+
+.sales-row-total {
+    font-size: 24px;
+}
+
+.sales-special-tag,
+.sales-special-line {
+    align-self: flex-start;
+
+    color: #7a4b00;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.sales-special-tag {
+    padding: 2px 8px;
+
+    border: 1.5px solid #7a4b00;
+    border-radius: 999px;
+
+    background: #fff4dc;
+}
+
+
+/* ---------- Detalle ---------- */
+
+.sales-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.sales-detail-meta {
+    margin: 0;
+
+    color: #3d3d3d;
+
+    font-size: 17px;
+}
+
+.sales-detail-items {
+    display: flex;
+    flex-direction: column;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+.sales-detail-items li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    padding: 12px 0;
+
+    border-bottom: 1.5px solid var(--mg-line-soft);
+}
+
+.sales-detail-items li div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    min-width: 0;
+}
+
+.sales-detail-items strong {
+    color: #1f1f1f;
+
+    font-size: 18px;
+}
+
+.sales-detail-items span {
+    color: #3d3d3d;
+
+    font-size: 16px;
+}
+
+.sales-detail-items b {
+    color: #1f1f1f;
+
+    font-size: 18px;
+
+    white-space: nowrap;
+}
+
+.sales-detail-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 14px 16px;
+
+    border-radius: 12px;
+
+    background: var(--mg-soft);
+}
+
+.sales-detail-total span {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.sales-detail-total strong {
+    font-size: 28px;
+}
+
+@media (max-width: 600px) {
+
+    .sales-summary {
+        grid-template-columns: 1fr;
+    }
+}

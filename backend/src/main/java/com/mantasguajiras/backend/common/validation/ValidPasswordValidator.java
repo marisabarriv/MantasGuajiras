@@ -11,14 +11,12 @@ public class ValidPasswordValidator
             String password,
             ConstraintValidatorContext context) {
 
+        // Vacía: de eso se encarga @NotBlank (mensaje "es obligatoria").
         if (password == null || password.isBlank()) {
-            return false;
+            return true;
         }
 
-        if (password.length() < 4 || password.length() > 12) {
-            return false;
-        }
-
-        return password != null && !password.isBlank();
+        // Regla de negocio: entre 4 y 12 caracteres.
+        return password.length() >= 4 && password.length() <= 12;
     }
 }

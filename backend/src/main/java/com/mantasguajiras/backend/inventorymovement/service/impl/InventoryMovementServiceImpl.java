@@ -14,8 +14,12 @@ import com.mantasguajiras.backend.movementtype.entity.MovementType;
 import com.mantasguajiras.backend.movementtype.repository.MovementTypeRepository;
 import com.mantasguajiras.backend.product.entity.Product;
 import com.mantasguajiras.backend.product.repository.ProductRepository;
+import com.mantasguajiras.backend.security.util.SecurityUtils;
 import com.mantasguajiras.backend.sourcetype.entity.SourceType;
 import com.mantasguajiras.backend.sourcetype.repository.SourceTypeRepository;
+import com.mantasguajiras.backend.common.util.UnitUtils;
+import com.mantasguajiras.backend.user.entity.User;
+import com.mantasguajiras.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,18 +33,36 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class InventoryMovementServiceImpl implements InventoryMovementService {
 
+        private static final int OBSERVATIONS_MAX_LENGTH = 255;
+
         private final InventoryMovementRepository inventoryMovementRepository;
         private final InventoryMovementMapper inventoryMovementMapper;
         private final InventoryRepository inventoryRepository;
         private final ProductRepository productRepository;
         private final MovementTypeRepository movementTypeRepository;
         private final SourceTypeRepository sourceTypeRepository;
+        private final UserRepository userRepository;
+
+        // =========================================================
+        // CONSULTAS
+        // =========================================================
 
         @Override
         @Transactional(readOnly = true)
         public List<InventoryMovementResponse> findAll() {
 
-                return inventoryMovementRepository.findAll()
+                return inventoryMovementRepository.findAllByOrderByCreatedAtDesc()
+                                .stream()
+                                .map(inventoryMovementMapper::toResponse)
+                                .toList();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<InventoryMovementResponse> findByProduct(UUID productId) {
+
+                return inventoryMovementRepository
+                                .findByProductIdOrderByCreatedAtDesc(productId)
                                 .stream()
                                 .map(inventoryMovementMapper::toResponse)
                                 .toList();
@@ -58,19 +80,16 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                 return inventoryMovementMapper.toResponse(movement);
         }
 
+        // =========================================================
+        // MOVIMIENTO MANUAL (POST /api/inventory-movements)
+        // =========================================================
+
         @Override
         @Transactional
         public InventoryMovementResponse create(
                         InventoryMovementRequest request) {
 
-                validateQuantity(request.getQuantity());
-
-                Product product = productRepository.findById(request.getProductId())
-                                .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Producto no encontrado con id: "
-                                                                + request.getProductId()));
-
-                validateActiveProduct(product);
+                Product product = findProduct(request.getProductId());
 
                 MovementType movementType = movementTypeRepository.findById(
                                 request.getMovementTypeId())
@@ -78,48 +97,34 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                                                 "Tipo de movimiento no encontrado con id: "
                                                                 + request.getMovementTypeId()));
 
-                validateActiveMovementType(movementType);
-
                 SourceType sourceType = sourceTypeRepository.findById(
                                 request.getSourceTypeId())
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Tipo de origen no encontrado con id: "
                                                                 + request.getSourceTypeId()));
 
-                validateActiveSourceType(sourceType);
+                // Las compras, ventas y producción generan sus movimientos
+                // desde su propio módulo. Registrarlos aquí a mano dejaría
+                // movimientos sin una compra/venta/producción real detrás.
+                if (!"ADJUSTMENT".equalsIgnoreCase(sourceType.getName())) {
+                        throw new BusinessException(
+                                        "Los movimientos de compras, ventas y producción "
+                                                        + "se registran desde su propio módulo. "
+                                                        + "Aquí solo se permiten ajustes.");
+                }
 
-                validateMovementSource(
-                                movementType.getName(),
-                                sourceType.getName());
-
-                Inventory inventory = inventoryRepository.findById(product.getId())
-                                .orElseGet(() -> Inventory.builder()
-                                                .id(product.getId())
-                                                .product(product)
-                                                .quantity(BigDecimal.ZERO)
-                                                .updatedAt(LocalDateTime.now())
-                                                .build());
-
-                applyMovement(
-                                inventory,
-                                movementType.getName(),
-                                request.getQuantity());
-
-                inventory.setUpdatedAt(LocalDateTime.now());
-
-                inventoryRepository.save(inventory);
-
-                InventoryMovement movement = inventoryMovementMapper.toEntity(request);
-
-                movement.setProduct(product);
-                movement.setMovementType(movementType);
-                movement.setSourceType(sourceType);
-                movement.setSourceId(request.getSourceId());
-
-                InventoryMovement saved = inventoryMovementRepository.save(movement);
-
-                return inventoryMovementMapper.toResponse(saved);
+                return record(
+                                product,
+                                movementType,
+                                sourceType,
+                                request.getSourceId(),
+                                request.getQuantity(),
+                                request.getObservations());
         }
+
+        // =========================================================
+        // MOVIMIENTO DESDE OTROS MÓDULOS
+        // =========================================================
 
         @Override
         @Transactional
@@ -131,28 +136,99 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                         BigDecimal quantity,
                         String observations) {
 
-                validateQuantity(quantity);
+                Product product = findProduct(productId);
 
-                Product product = productRepository.findById(productId)
-                                .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Producto no encontrado con id: "
-                                                                + productId));
+                return record(
+                                product,
+                                findMovementType(movementTypeName),
+                                findSourceType(sourceTypeName),
+                                sourceId,
+                                quantity,
+                                observations);
+        }
+
+        // =========================================================
+        // AJUSTE POR CONTEO
+        // =========================================================
+
+        @Override
+        @Transactional
+        public InventoryMovementResponse adjustToCount(
+                        UUID productId,
+                        BigDecimal countedQuantity,
+                        String reason) {
+
+                if (countedQuantity == null
+                                || countedQuantity.compareTo(BigDecimal.ZERO) < 0) {
+
+                        throw new BusinessException(
+                                        "La cantidad contada no puede ser negativa.");
+                }
+
+                Product product = findProduct(productId);
+
+                validateQuantityForUnit(product, countedQuantity, "La cantidad contada");
+
+                // Se bloquea la fila para calcular la diferencia sobre la
+                // cantidad real del momento (record() vuelve a leerla dentro
+                // de la misma transacción, ya bloqueada).
+                BigDecimal currentQuantity = inventoryRepository
+                                .findByIdForUpdate(productId)
+                                .map(Inventory::getQuantity)
+                                .orElse(BigDecimal.ZERO);
+
+                BigDecimal difference = countedQuantity.subtract(currentQuantity);
+
+                if (difference.signum() == 0) {
+                        throw new BusinessException(
+                                        "La cantidad contada es igual a la registrada ("
+                                                        + format(currentQuantity)
+                                                        + "). No hay nada que ajustar.");
+                }
+
+                String movementTypeName = difference.signum() > 0 ? "IN" : "OUT";
+
+                String observations = "Ajuste por conteo: de "
+                                + format(currentQuantity)
+                                + " a "
+                                + format(countedQuantity)
+                                + (reason != null && !reason.isBlank()
+                                                ? ". Motivo: " + reason.trim()
+                                                : "");
+
+                return record(
+                                product,
+                                findMovementType(movementTypeName),
+                                findSourceType("ADJUSTMENT"),
+                                null,
+                                difference.abs(),
+                                observations);
+        }
+
+        // =========================================================
+        // LÓGICA COMÚN
+        // =========================================================
+
+        /**
+         * Valida, actualiza la existencia y guarda el movimiento.
+         * Todo ocurre en la transacción de quien llama: si algo falla,
+         * no queda ni el cambio de cantidad ni el movimiento.
+         */
+        private InventoryMovementResponse record(
+                        Product product,
+                        MovementType movementType,
+                        SourceType sourceType,
+                        UUID sourceId,
+                        BigDecimal quantity,
+                        String observations) {
+
+                validateQuantity(quantity);
 
                 validateActiveProduct(product);
 
-                MovementType movementType = movementTypeRepository
-                                .findByName(movementTypeName)
-                                .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Tipo de movimiento no encontrado: "
-                                                                + movementTypeName));
+                validateQuantityForUnit(product, quantity, "La cantidad");
 
                 validateActiveMovementType(movementType);
-
-                SourceType sourceType = sourceTypeRepository
-                                .findByName(sourceTypeName)
-                                .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Tipo de origen no encontrado: "
-                                                                + sourceTypeName));
 
                 validateActiveSourceType(sourceType);
 
@@ -160,9 +236,11 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                                 movementType.getName(),
                                 sourceType.getName());
 
-                Inventory inventory = inventoryRepository.findById(productId)
+                // Sin .id(...): con @MapsId Hibernate toma el id del
+                // producto. Si se asigna a mano, save() hace merge()
+                // y falla con "null identifier (Inventory)".
+                Inventory inventory = inventoryRepository.findByIdForUpdate(product.getId())
                                 .orElseGet(() -> Inventory.builder()
-                                                .id(productId)
                                                 .product(product)
                                                 .quantity(BigDecimal.ZERO)
                                                 .updatedAt(LocalDateTime.now())
@@ -170,6 +248,7 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
 
                 applyMovement(
                                 inventory,
+                                product,
                                 movementType.getName(),
                                 quantity);
 
@@ -183,7 +262,8 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                                 .sourceType(sourceType)
                                 .sourceId(sourceId)
                                 .quantity(quantity)
-                                .observations(observations)
+                                .observations(truncate(observations))
+                                .createdBy(currentUser())
                                 .build();
 
                 InventoryMovement savedMovement = inventoryMovementRepository.save(movement);
@@ -193,6 +273,7 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
 
         private void applyMovement(
                         Inventory inventory,
+                        Product product,
                         String movementTypeName,
                         BigDecimal quantity) {
 
@@ -211,7 +292,13 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
 
                         if (newQuantity.compareTo(BigDecimal.ZERO) < 0) {
                                 throw new BusinessException(
-                                                "No hay suficiente inventario disponible.");
+                                                "No hay suficiente inventario de "
+                                                                + product.getName()
+                                                                + ". Disponible: "
+                                                                + format(currentQuantity)
+                                                                + ", solicitado: "
+                                                                + format(quantity)
+                                                                + ".");
                         }
 
                         inventory.setQuantity(newQuantity);
@@ -225,6 +312,43 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                 }
         }
 
+        private Product findProduct(UUID productId) {
+
+                return productRepository.findById(productId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Producto no encontrado con id: "
+                                                                + productId));
+        }
+
+        private MovementType findMovementType(String name) {
+
+                return movementTypeRepository
+                                .findByName(name)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Tipo de movimiento no encontrado: "
+                                                                + name));
+        }
+
+        private SourceType findSourceType(String name) {
+
+                return sourceTypeRepository
+                                .findByName(name)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Tipo de origen no encontrado: "
+                                                                + name));
+        }
+
+        private User currentUser() {
+
+                return SecurityUtils.currentUsername()
+                                .flatMap(userRepository::findByUsername)
+                                .orElse(null);
+        }
+
+        // =========================================================
+        // VALIDACIONES
+        // =========================================================
+
         private void validateQuantity(BigDecimal quantity) {
 
                 if (quantity == null ||
@@ -232,6 +356,25 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
 
                         throw new BusinessException(
                                         "La cantidad debe ser mayor que cero.");
+                }
+        }
+
+        /**
+         * Mantas (unidad "#") solo admiten cantidades enteras.
+         * Telas (metros) admiten decimales.
+         */
+        private void validateQuantityForUnit(
+                        Product product,
+                        BigDecimal quantity,
+                        String label) {
+
+                if (UnitUtils.isWholeUnit(product.getUnit())
+                                && quantity.stripTrailingZeros().scale() > 0) {
+
+                        throw new BusinessException(
+                                        label + " de " + product.getName()
+                                                        + " debe ser un número entero, "
+                                                        + "porque se maneja en unidades (#).");
                 }
         }
 
@@ -302,5 +445,26 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                                         "Un ajuste de inventario solo puede generar "
                                                         + "una entrada o una salida.");
                 }
+        }
+
+        // =========================================================
+        // UTILIDADES
+        // =========================================================
+
+        private static String format(BigDecimal value) {
+
+                return value == null
+                                ? "0"
+                                : value.stripTrailingZeros().toPlainString()
+                                .replace('.', ','); // decimal con coma (es-CO)
+        }
+
+        private static String truncate(String text) {
+
+                if (text == null || text.length() <= OBSERVATIONS_MAX_LENGTH) {
+                        return text;
+                }
+
+                return text.substring(0, OBSERVATIONS_MAX_LENGTH);
         }
 }

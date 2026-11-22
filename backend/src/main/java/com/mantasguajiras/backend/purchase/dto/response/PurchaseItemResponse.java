@@ -17,6 +17,10 @@ import lombok.Setter;
 public class PurchaseItemResponse {
     private UUID id;
     private UUID productId;
+    private String productName;
+    private String unitAbbreviation;
+    private String unitName;
     private BigDecimal quantity;
     private BigDecimal unitCost;
+    private BigDecimal subtotal;
 }

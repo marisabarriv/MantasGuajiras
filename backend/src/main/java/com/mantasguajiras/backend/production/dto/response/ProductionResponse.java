@@ -20,6 +20,8 @@ public class ProductionResponse {
     private UUID id;
 
     private String observations;
+    private String makerName;
+    private String createdByUsername;
 
     private LocalDateTime createdAt;
 

@@ -1,287 +1,62 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiRequest as request } from "./apiClient";
+
 
 const ProductService = {
 
-    async findAll() {
+    /** Solo activos. Con includeInactive = true también los inactivos (pantalla de Productos). */
+    findAll(includeInactive = false) {
+        const query = includeInactive ? "?includeInactive=true" : "";
 
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(
-            `${API_URL}/api/products`,
-            {
-                method: "GET",
-
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        const text = await response.text();
-
-        let data = {};
-
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch {
-                data = {};
-            }
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                data.error ||
-                "No fue posible cargar los productos."
-            );
-        }
-
-        return data;
+        return request(`/api/products${query}`, {
+            fallbackMessage: "No fue posible cargar los productos.",
+        });
     },
 
 
-    async findById(id) {
-
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(
-            `${API_URL}/api/products/${id}`,
-            {
-                method: "GET",
-
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        const text = await response.text();
-
-        let data = {};
-
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch {
-                data = {};
-            }
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                data.error ||
-                "No fue posible cargar el producto."
-            );
-        }
-
-        return data;
+    findById(id) {
+        return request(`/api/products/${id}`, {
+            fallbackMessage: "No fue posible cargar el producto.",
+        });
     },
 
 
-    async create(product) {
-
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(
-            `${API_URL}/api/products`,
-            {
-                method: "POST",
-
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-
-                body: JSON.stringify(product),
-            }
-        );
-
-        const text = await response.text();
-
-        let data = {};
-
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch {
-                data = {};
-            }
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                data.error ||
-                "No fue posible crear el producto."
-            );
-        }
-
-        return data;
+    create(product) {
+        return request("/api/products", {
+            method: "POST",
+            body: product,
+            fallbackMessage: "No fue posible crear el producto.",
+        });
     },
 
 
-    async update(id, product) {
-
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(
-            `${API_URL}/api/products/${id}`,
-            {
-                method: "PUT",
-
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-
-                body: JSON.stringify(product),
-            }
-        );
-
-        const text = await response.text();
-
-        let data = {};
-
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch {
-                data = {};
-            }
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                data.error ||
-                "No fue posible actualizar el producto."
-            );
-        }
-
-        return data;
+    update(id, product) {
+        return request(`/api/products/${id}`, {
+            method: "PUT",
+            body: product,
+            fallbackMessage: "No fue posible actualizar el producto.",
+        });
     },
 
 
-    async delete(id) {
-
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(
-            `${API_URL}/api/products/${id}`,
-            {
-                method: "DELETE",
-
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                },
-            }
-        );
-
-        const text = await response.text();
-
-        let data = {};
-
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch {
-                data = {};
-            }
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                data.error ||
-                "No fue posible eliminar el producto."
-            );
-        }
-
-        return data;
+    delete(id) {
+        return request(`/api/products/${id}`, {
+            method: "DELETE",
+            fallbackMessage: "No fue posible eliminar el producto.",
+        });
     },
 
 
-    async findCategories() {
-
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(
-            `${API_URL}/api/product-categories`,
-            {
-                method: "GET",
-
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        const text = await response.text();
-
-        let data = {};
-
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch {
-                data = {};
-            }
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                data.error ||
-                "No fue posible cargar las categorías."
-            );
-        }
-
-        return data;
+    findCategories() {
+        return request("/api/product-categories", {
+            fallbackMessage: "No fue posible cargar las categorías.",
+        });
     },
 
 
-    async findUnits() {
-
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(
-            `${API_URL}/api/unit`,
-            {
-                method: "GET",
-
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        const text = await response.text();
-
-        let data = {};
-
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch {
-                data = {};
-            }
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                data.error ||
-                "No fue posible cargar las unidades."
-            );
-        }
-
-        return data;
+    findUnits() {
+        return request("/api/unit", {
+            fallbackMessage: "No fue posible cargar las unidades.",
+        });
     },
 };
 

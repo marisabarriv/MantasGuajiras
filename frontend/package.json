@@ -5,11 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:celular": "vite --mode celular",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2"
@@ -18,6 +21,7 @@
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "^6.1.0",
     "eslint": "^10.9.0",
     "eslint-plugin-react-hooks": "^7.1.1",

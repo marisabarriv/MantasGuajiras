@@ -1,5 +1,11 @@
 package com.mantasguajiras.backend.security.config;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -58,6 +64,19 @@ public class SecurityConfig {
                         )
                 )
 
+                // 401 = sin sesión o sesión vencida; 403 = sin permiso.
+                // Así la pantalla sabe si debe volver al inicio de sesión.
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, exception) ->
+                                writeError(response, request.getRequestURI(), 401,
+                                        "Unauthorized",
+                                        "Tu sesión expiró o no has iniciado sesión. Vuelve a iniciar sesión."))
+                        .accessDeniedHandler((request, response, exception) ->
+                                writeError(response, request.getRequestURI(), 403,
+                                        "Forbidden",
+                                        "No tienes permisos para realizar esta operación."))
+                )
+
                 .authorizeHttpRequests(auth -> auth
 
                         .requestMatchers(
@@ -72,9 +91,32 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 HttpMethod.POST,
-                                "/api/inventory-movements"
+                                "/api/inventory-movements",
+                                "/api/inventory/adjustments",
+                                "/api/purchases"
                         )
                         .hasRole("ADMIN")
+
+                        // Regla de negocio: los montos de ventas y compras
+                        // (totales, costos, historial) son SOLO para ADMIN.
+                        // Cualquier usuario con sesión puede VENDER (POST),
+                        // pero solo el administrador puede CONSULTAR ventas
+                        // y compras. El orden importa: la primera
+                        // regla que coincide es la que se aplica.
+                        .requestMatchers(HttpMethod.POST, "/api/sales")
+                        .authenticated()
+
+                        .requestMatchers(
+                                "/api/sales",
+                                "/api/sales/**",
+                                "/api/purchases",
+                                "/api/purchases/**"
+                        )
+                        .hasRole("ADMIN")
+
+                        // Excepción del negocio: "Personalizadas" (/api/orders)
+                        // es para TODOS los roles, valores incluidos. Queda
+                        // cubierta por anyRequest().authenticated().
 
                         .anyRequest()
                         .authenticated()
@@ -86,5 +128,26 @@ public class SecurityConfig {
                 );
 
         return http.build();
+    }
+
+    /** Respuesta JSON con el mismo formato que ErrorResponse. */
+    private static void writeError(
+            HttpServletResponse response,
+            String path,
+            int status,
+            String error,
+            String message) throws IOException {
+
+        response.setStatus(status);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentType("application/json");
+
+        response.getWriter().write(
+                "{\"status\":" + status
+                        + ",\"error\":\"" + error
+                        + "\",\"message\":\"" + message
+                        + "\",\"path\":\"" + path.replace("\"", "")
+                        + "\",\"timestamp\":\"" + LocalDateTime.now()
+                        + "\"}");
     }
 }

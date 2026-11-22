@@ -8,7 +8,8 @@ import java.util.UUID;
 
 public interface ProductService {
 
-    List<ProductResponse> findAll();
+    /** Solo activos, salvo includeInactive = true (pantalla de Productos). */
+    List<ProductResponse> findAll(boolean includeInactive);
 
     ProductResponse findById(UUID id);
 

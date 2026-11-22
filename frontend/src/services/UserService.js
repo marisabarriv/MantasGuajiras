@@ -1,145 +1,85 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiBlob, apiRequest as request, apiUpload } from "./apiClient";
 
+
+/** Administración de usuarios (solo ADMIN). */
 const UserService = {
 
-    // =========================================
-    // LISTAR USUARIOS
-    // =========================================
-
-    async findAll() {
-
-        const token =
-            localStorage.getItem("token");
-
-        const response = await fetch(
-            `${API_URL}/users`,
-            {
-                method: "GET",
-
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                },
-            }
-        );
-
-        const data =
-            await response.json();
-
-        if (!response.ok) {
-
-            throw new Error(
-                data.message ||
-                "No fue posible cargar los usuarios."
-            );
-        }
-
-        return data;
+    /** Primero los inactivos (pendientes de aprobación). */
+    findAll() {
+        return request("/users", {
+            fallbackMessage: "No fue posible cargar los usuarios.",
+        });
     },
 
 
-    // =========================================
-    // ACTUALIZAR USUARIO
-    // =========================================
-
-    async update(id, userData) {
-
-        const token =
-            localStorage.getItem("token");
-
-        const response = await fetch(
-            `${API_URL}/users/${id}`,
-            {
-                method: "PUT",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
-                },
-
-                body: JSON.stringify(userData),
-            }
-        );
-
-        const data =
-            await response.json();
-
-        if (!response.ok) {
-
-            throw new Error(
-                data.message ||
-                "No fue posible actualizar el usuario."
-            );
-        }
-
-        return data;
+    /** @param {{username, phone, password, role, active}} user */
+    create(user) {
+        return request("/users", {
+            method: "POST",
+            body: user,
+            fallbackMessage: "No fue posible crear el usuario.",
+        });
     },
 
 
-    // =========================================
-    // ELIMINAR USUARIO
-    // =========================================
-
-    async delete(id) {
-
-        const token =
-            localStorage.getItem("token");
-
-        const response = await fetch(
-            `${API_URL}/users/${id}`,
-            {
-                method: "DELETE",
-
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                },
-            }
-        );
-
-        if (!response.ok) {
-
-            const data =
-                await response.json();
-
-            throw new Error(
-                data.message ||
-                "No fue posible eliminar el usuario."
-            );
-        }
+    /** @param {{username, phone, role, active}} user */
+    update(id, user) {
+        return request(`/users/${id}`, {
+            method: "PUT",
+            body: user,
+            fallbackMessage: "No fue posible guardar los cambios del usuario.",
+        });
     },
 
 
-    // =========================================
-    // PROMOVER A ADMINISTRADOR
-    // =========================================
+    resetPassword(id, newPassword) {
+        return request(`/users/${id}/reset-password`, {
+            method: "PATCH",
+            body: { newPassword },
+            fallbackMessage: "No fue posible restablecer la contraseña.",
+        });
+    },
+};
 
-    async promoteToAdmin(id) {
 
-        const token =
-            localStorage.getItem("token");
+/** "Mi perfil": el usuario de la sesión actual. */
+export const MeService = {
 
-        const response = await fetch(
-            `${API_URL}/users/${id}/promote`,
-            {
-                method: "PATCH",
+    get() {
+        return request("/api/me", {
+            fallbackMessage: "No fue posible cargar tu perfil.",
+        });
+    },
 
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                },
-            }
-        );
 
-        const data =
-            await response.json();
+    changePassword(currentPassword, newPassword) {
+        return request("/api/me/password", {
+            method: "PATCH",
+            body: { currentPassword, newPassword },
+            fallbackMessage: "No fue posible cambiar la contraseña.",
+        });
+    },
 
-        if (!response.ok) {
 
-            throw new Error(
-                data.message ||
-                "No fue posible promover al usuario."
-            );
-        }
+    uploadPhoto(file) {
+        return apiUpload("/api/me/photo", file, {
+            fallbackMessage: "No fue posible subir la foto.",
+        });
+    },
 
-        return data;
+
+    getPhoto() {
+        return apiBlob("/api/me/photo", {
+            fallbackMessage: "No fue posible cargar la foto.",
+        });
+    },
+
+
+    deletePhoto() {
+        return request("/api/me/photo", {
+            method: "DELETE",
+            fallbackMessage: "No fue posible quitar la foto.",
+        });
     },
 };
 

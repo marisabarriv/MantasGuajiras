@@ -1,13 +1,10 @@
 package com.mantasguajiras.backend.order.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -19,13 +16,30 @@ public class OrderResponse {
 
     private UUID id;
 
+    private String name;
+
+    private String clientName;
+
+    /** Valor de la manta. */
     private BigDecimal total;
 
-    private String observations;
+    private BigDecimal paidAmount;
 
-    private Boolean active;
+    /** Lo que falta por pagar. */
+    private BigDecimal balance;
+
+    /** PAID (pagada completa) o PENDING (con abono / saldo pendiente). */
+    private String status;
+
+    private UUID fabricProductId;
+
+    private String fabricProductName;
+
+    private BigDecimal fabricQuantity;
+
+    private String createdByUsername;
 
     private LocalDateTime createdAt;
 
-    private LocalDateTime updatedAt;
+    private List<OrderPaymentResponse> payments;
 }

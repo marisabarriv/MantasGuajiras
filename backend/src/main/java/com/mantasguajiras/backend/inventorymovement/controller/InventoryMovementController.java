@@ -18,9 +18,17 @@ public class InventoryMovementController {
 
     private final InventoryMovementService inventoryMovementService;
 
+    /**
+     * Historial de movimientos, del más reciente al más antiguo.
+     * Con ?productId=... devuelve solo los de ese producto.
+     */
     @GetMapping
-    public List<InventoryMovementResponse> findAll() {
-        return inventoryMovementService.findAll();
+    public List<InventoryMovementResponse> findAll(
+            @RequestParam(required = false) UUID productId) {
+
+        return productId == null
+                ? inventoryMovementService.findAll()
+                : inventoryMovementService.findByProduct(productId);
     }
 
     @GetMapping("/{id}")
@@ -32,7 +40,6 @@ public class InventoryMovementController {
     @ResponseStatus(HttpStatus.CREATED)
     public InventoryMovementResponse create(
             @Valid @RequestBody InventoryMovementRequest request) {
-
         return inventoryMovementService.create(request);
     }
 }

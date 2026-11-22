@@ -20,17 +20,17 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ProductionItemRequest {
 
-    @NotNull
+    @NotNull(message = "El producto es obligatorio.")
     private UUID productId;
 
-    @NotNull
+    @NotNull(message = "El tipo es obligatorio.")
     private ProductionItemType type;
 
-    @NotNull
+    @NotNull(message = "La cantidad es obligatoria.")
     @DecimalMin(
         value = "0.00",
         inclusive = false,
-        message = "Quantity must be greater than 0"
+        message = "La cantidad debe ser mayor que cero."
     )
     private BigDecimal quantity;
 }

@@ -18,4 +18,28 @@ public class InventoryResponse {
     private BigDecimal quantity;
 
     private LocalDateTime updatedAt;
+
+    // Datos del producto para mostrar sin consultas extra
+
+    private String productName;
+
+    private String internalCode;
+
+    private String barcode;
+
+    private String categoryName;
+
+    private String unitName;
+
+    private String unitAbbreviation;
+
+    private BigDecimal minimumStock;
+
+    /**
+     * Estado calculado con la existencia real:
+     * OUT  = agotado (cantidad 0)
+     * LOW  = stock bajo (cantidad menor o igual al stock mínimo)
+     * OK   = suficiente
+     */
+    private String status;
 }

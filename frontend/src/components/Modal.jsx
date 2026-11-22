@@ -1,5 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+
+/**
+ * Ventanas abiertas, en orden. Con ventanas una encima de otra
+ * (por ejemplo, la cámara sobre el formulario de producto), la
+ * tecla Esc cierra solo la de arriba.
+ */
+const openModals = [];
 
 function Modal({
     open,
@@ -8,41 +15,54 @@ function Modal({
     children,
 }) {
 
+    // Se guarda en una referencia para no reabrir la ventana (ni
+    // cambiar su orden) cada vez que el padre vuelve a dibujarse.
+    const onCloseRef = useRef(onClose);
+
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
+
+
     useEffect(() => {
 
         if (!open) {
-            return;
+            return undefined;
         }
+
+        const token = {};
+
+        openModals.push(token);
 
         const handleKeyDown = (event) => {
 
-            if (event.key === "Escape") {
-                onClose();
+            const isTopModal = openModals[openModals.length - 1] === token;
+
+            if (event.key === "Escape" && isTopModal) {
+                onCloseRef.current?.();
             }
         };
 
-        document.addEventListener(
-            "keydown",
-            handleKeyDown
-        );
+        document.addEventListener("keydown", handleKeyDown);
 
-        const previousOverflow =
-            document.body.style.overflow;
+        const previousOverflow = document.body.style.overflow;
 
         document.body.style.overflow = "hidden";
 
         return () => {
 
-            document.removeEventListener(
-                "keydown",
-                handleKeyDown
-            );
+            document.removeEventListener("keydown", handleKeyDown);
 
-            document.body.style.overflow =
-                previousOverflow;
+            const index = openModals.indexOf(token);
+
+            if (index !== -1) {
+                openModals.splice(index, 1);
+            }
+
+            document.body.style.overflow = previousOverflow;
         };
 
-    }, [open, onClose]);
+    }, [open]);
 
 
     if (!open) {

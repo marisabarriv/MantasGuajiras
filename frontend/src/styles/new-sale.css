@@ -1,0 +1,725 @@
+/* =========================================================
+   NUEVA VENTA  (usuarios 45+)
+   Solo estilos de elementos nuevos o rediseñados en la
+   Parte 3. El resto de la página sigue usando App.css /
+   index.css (revisión general de CSS pendiente al final).
+   ========================================================= */
+
+
+/* ---------- Encabezado ---------- */
+
+.pos-layout .pos-header {
+    padding: 4px 4px 18px;
+}
+
+.pos-layout .pos-header h1 {
+    margin: 0 0 6px;
+
+    color: #1f1f1f;
+
+    font-size: 30px;
+}
+
+.pos-layout .pos-header p {
+    margin: 0;
+
+    color: #3d3d3d;
+
+    font-size: 18px;
+}
+
+
+/* ---------- Buscador y botón de escanear ---------- */
+
+.pos-layout .search-area input {
+    min-height: 54px;
+
+    padding: 10px 16px;
+
+    border: 1.5px solid #8a8a8a;
+    border-radius: 10px;
+
+    background: #ffffff;
+    color: #1f1f1f;
+
+    font-family: inherit;
+    font-size: 18px;
+}
+
+.pos-layout .search-area input::placeholder {
+    color: #6b6b6b;
+}
+
+.pos-layout .search-area input:focus {
+    outline: none;
+    border-color: #1f1f1f;
+    box-shadow: 0 0 0 3px rgba(31, 31, 31, 0.25);
+}
+
+.pos-layout .scan-button {
+    min-height: 54px;
+
+    padding: 0 18px;
+
+    border: 1.5px solid #8a8a8a;
+    border-radius: 10px;
+
+    background: #ffffff;
+    color: #1f1f1f;
+
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.pos-layout .scan-button:hover {
+    background: var(--mg-soft);
+}
+
+
+/* ---------- Pestañas de categoría (Manta / Tela) ---------- */
+
+.pos-layout .product-tabs {
+    gap: 8px;
+}
+
+.pos-layout .product-tab {
+    min-height: 52px;
+    min-width: 120px;
+
+    padding: 0 22px;
+
+    border-radius: 999px;
+
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+
+/* ---------- Tarjetas de producto ---------- */
+
+.pos-layout .product-card {
+    padding: 16px;
+
+    border: 1.5px solid var(--mg-line);
+    border-radius: 14px;
+
+    background: #ffffff;
+}
+
+.pos-layout .product-card h3 {
+    margin: 0 0 6px;
+
+    color: #1f1f1f;
+
+    font-size: 19px;
+}
+
+.pos-layout .product-card p {
+    color: #1f1f1f;
+
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.pos-layout .product-card button {
+    min-height: 50px;
+
+    border-radius: 10px;
+
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.pos-layout .cart-header h2 {
+    color: #1f1f1f;
+
+    font-size: 22px;
+}
+
+.pos-layout .cart-empty p {
+    color: #3d3d3d;
+
+    font-size: 18px;
+}
+
+
+/* ---------- Búsqueda ---------- */
+
+.pos-scan-help,
+.pos-search-info {
+    margin: 0;
+
+    padding: 10px 14px;
+
+    border-radius: 10px;
+
+    background: var(--mg-soft);
+    color: #1f1f1f;
+
+    font-size: 16px;
+}
+
+/* Indicación permanente para el lector de códigos: discreta */
+.pos-scan-help {
+    padding: 0 4px;
+
+    background: transparent;
+    color: #3d3d3d;
+
+    font-size: 16px;
+}
+
+
+/* ---------- Tarjetas de producto ---------- */
+
+.product-card .pos-price-unit {
+    color: #3d3d3d;
+
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.product-card .pos-stock {
+    margin: 4px 0 10px;
+
+    color: #1e5e25;
+
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.product-card .pos-stock.pos-stock-out {
+    color: #a11a1a;
+}
+
+.product-card.product-card-out {
+    opacity: 0.85;
+}
+
+.product-card button:disabled {
+    background: #d9d4ca;
+    border-color: #d9d4ca;
+    color: #3d3d3d;
+
+    cursor: not-allowed;
+}
+
+
+/* ---------- Filas del carrito ---------- */
+
+.pos-cart-list {
+    padding-top: 4px;
+}
+
+.pos-cart-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "info  total"
+        "qty   actions";
+    align-items: center;
+    gap: 10px 12px;
+
+    padding: 14px 6px;
+
+    border-bottom: 1.5px solid var(--mg-line-soft);
+}
+
+.pos-cart-info {
+    grid-area: info;
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    min-width: 0;
+}
+
+.pos-cart-info strong {
+    color: #1f1f1f;
+
+    font-size: 17px;
+
+    overflow-wrap: anywhere;
+}
+
+.pos-cart-price {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+
+    color: #3d3d3d;
+
+    font-size: 15px;
+}
+
+.pos-special-tag {
+    padding: 2px 8px;
+
+    border: 1.5px solid #7a4b00;
+    border-radius: 999px;
+
+    background: #fff4dc;
+    color: #7a4b00;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.pos-cart-line-total {
+    grid-area: total;
+
+    color: #1f1f1f;
+
+    font-size: 18px;
+    font-weight: 700;
+
+    text-align: right;
+}
+
+
+/* Cantidad: − 2 + */
+
+.pos-cart-qty {
+    grid-area: qty;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pos-cart-qty button {
+    width: 40px;
+    height: 40px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1.5px solid #8a8a8a;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: #1f1f1f;
+
+    font-family: inherit;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.pos-cart-qty button:hover:not(:disabled) {
+    background: var(--mg-soft);
+}
+
+.pos-cart-qty button:disabled {
+    border-color: #cfcfcf;
+    color: #9a9a9a;
+
+    cursor: not-allowed;
+}
+
+.pos-cart-qty-value {
+    min-width: 30px;
+
+    color: #1f1f1f;
+
+    font-size: 18px;
+    font-weight: 700;
+
+    text-align: center;
+}
+
+.pos-cart-qty-input {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    color: #1f1f1f;
+
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.pos-cart-qty-input input {
+    width: 82px;
+    height: 40px;
+
+    padding: 0 8px;
+
+    border: 1.5px solid #8a8a8a;
+    border-radius: 9px;
+
+    color: #1f1f1f;
+
+    font-family: inherit;
+    font-size: 17px;
+
+    text-align: center;
+}
+
+.pos-cart-qty-input input:focus {
+    outline: none;
+    border-color: #1f1f1f;
+    box-shadow: 0 0 0 3px rgba(31, 31, 31, 0.25);
+}
+
+
+/* Acciones: Cambiar precio / Quitar */
+
+.pos-cart-actions {
+    grid-area: actions;
+
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.pos-cart-price-button,
+.pos-cart-remove-button {
+    min-height: 40px;
+
+    padding: 0 12px;
+
+    border-radius: 9px;
+
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.pos-cart-price-button {
+    border: 1.5px solid #8a8a8a;
+    background: #ffffff;
+    color: #1f1f1f;
+}
+
+.pos-cart-price-button:hover {
+    background: var(--mg-soft);
+}
+
+.pos-cart-remove-button {
+    border: 1.5px solid #a11a1a;
+    background: #ffffff;
+    color: #a11a1a;
+}
+
+.pos-cart-remove-button:hover {
+    background: #fdecec;
+}
+
+.pos-cart-qty button:focus-visible,
+.pos-cart-price-button:focus-visible,
+.pos-cart-remove-button:focus-visible {
+    outline: 3px solid #1f1f1f;
+    outline-offset: 2px;
+}
+
+/* Carrito angosto: cantidad y acciones en filas separadas */
+@media (max-width: 1150px) and (min-width: 901px) {
+
+    .pos-cart-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "info    total"
+            "qty     qty"
+            "actions actions";
+    }
+
+    .pos-cart-actions {
+        justify-content: stretch;
+    }
+
+    .pos-cart-actions button {
+        flex: 1 1 0;
+    }
+}
+
+/* Celular y pantallas pequeñas: productos arriba y carrito abajo.
+   El carrito crece según su contenido (vacío ocupa poco) hasta un
+   máximo; con muchos productos solo la lista hace scroll. Antes tenía
+   altura fija y dejaba un gran espacio en blanco cuando estaba vacío. */
+@media (max-width: 900px) {
+
+    .pos-layout .cart-section {
+        height: auto;
+        max-height: min(560px, calc(100vh - 150px));
+        max-height: min(560px, calc(100dvh - 150px));
+
+        /* Quita la franja blanca encima de "Carrito" */
+        padding-top: 0;
+        margin-top: 16px;
+
+        border: 1.5px solid var(--mg-line);
+        border-radius: 14px;
+    }
+
+    .pos-layout .cart-empty {
+        flex: 0 0 auto;
+
+        padding: 18px 16px;
+    }
+
+    .pos-layout .cart-items {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+}
+
+
+/* ---------- Pie del carrito ---------- */
+
+.pos-cart-message {
+    margin-bottom: 12px;
+
+    padding: 10px 12px;
+
+    border: 1.5px solid #b26a00;
+    border-radius: 9px;
+
+    background: #fff4dc;
+    color: #5c3800;
+
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.cart-footer .cart-total span {
+    color: #1f1f1f;
+
+    font-size: 17px;
+}
+
+.cart-footer .cart-total strong {
+    font-size: 26px;
+}
+
+.cart-footer .checkout-button {
+    min-height: 54px;
+
+    font-size: 18px;
+    font-weight: 700;
+}
+
+
+/* ---------- Popup de precio ---------- */
+
+.pos-price-error {
+    margin: 0 0 16px;
+
+    padding: 12px 14px;
+
+    border: 1.5px solid #c62828;
+    border-radius: 9px;
+
+    background: #ffebee;
+    color: #8e1b1b;
+
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.modal-overlay > .modal-content .pos-price-note {
+    margin: 0 0 6px;
+
+    color: #3d3d3d;
+
+    font-size: 15px;
+}
+
+.modal-overlay > .modal-content .pos-price-actions button:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+}
+
+
+/* ---------- Confirmar / venta registrada ---------- */
+
+.pos-confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.pos-confirm-list {
+    display: flex;
+    flex-direction: column;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+.pos-confirm-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    padding: 12px 0;
+
+    border-bottom: 1.5px solid var(--mg-line-soft);
+}
+
+.pos-confirm-list li div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    min-width: 0;
+}
+
+.pos-confirm-list strong {
+    color: #1f1f1f;
+
+    font-size: 18px;
+}
+
+.pos-confirm-list span {
+    color: #3d3d3d;
+
+    font-size: 16px;
+}
+
+.pos-confirm-list b {
+    color: #1f1f1f;
+
+    font-size: 18px;
+
+    white-space: nowrap;
+}
+
+.pos-confirm-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 14px 16px;
+
+    border-radius: 12px;
+
+    background: var(--mg-soft);
+}
+
+.pos-confirm-total span {
+    color: #1f1f1f;
+
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.pos-confirm-total strong {
+    color: #1f1f1f;
+
+    font-size: 30px;
+}
+
+.pos-result {
+    margin: 0;
+
+    padding: 14px 16px;
+
+    border: 1.5px solid #c62828;
+    border-radius: 10px;
+
+    color: #8e1b1b;
+
+    font-size: 17px;
+    line-height: 1.45;
+}
+
+.pos-success {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    padding: 18px;
+
+    border: 1.5px solid #2e7d32;
+    border-radius: 12px;
+
+    background: #e8f5e9;
+    color: #1b5e20;
+}
+
+.pos-success p {
+    margin: 4px 0;
+
+    font-size: 18px;
+}
+
+.pos-success strong {
+    font-size: 24px;
+}
+
+.pos-success-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 52px;
+    height: 52px;
+
+    border-radius: 50%;
+
+    background: #1e5e25;
+    color: #ffffff;
+
+    font-size: 30px;
+    font-weight: 800;
+}
+
+
+/* ---------- Popup de precio: letra más grande -----------
+   Sus estilos base (13-14 px) están en App.css bajo
+   ".modal-overlay > .modal-content"; aquí solo se agrandan. */
+
+.modal-overlay > .modal-content > p {
+    color: #2f2f2f;
+
+    font-size: 17px;
+}
+
+.modal-overlay > .modal-content .form-group label {
+    color: #1f1f1f;
+
+    font-size: 17px;
+}
+
+.modal-overlay > .modal-content .form-group input {
+    min-height: 50px;
+
+    border: 1.5px solid #8a8a8a;
+
+    color: #1f1f1f;
+
+    font-size: 19px;
+}
+
+.modal-overlay > .modal-content .automatic-field {
+    min-height: 50px;
+
+    color: #1f1f1f;
+
+    font-size: 17px;
+}
+
+.modal-overlay > .modal-content .modal-actions button {
+    min-height: 50px;
+
+    font-size: 17px;
+}

@@ -1,359 +1,154 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import ProductService from "../services/ProductService";
-import ProductionService from "../services/ProductionService";
 import Modal from "../components/Modal";
+import LoadError from "../components/LoadError";
+import ProductionForm from "../components/ProductionForm";
+import ProductionService from "../services/ProductionService";
+import {
+    formatDateTime,
+    formatNumber,
+    formatQuantity,
+} from "../utils/inventoryFormat";
+
+import "../styles/inventory.css";
+import "../styles/sales.css";
+import "../styles/purchases.css";
+import "../styles/production.css";
+
+const isThisMonth = (value) => {
+    if (!value) {
+        return false;
+    }
+
+    const date = new Date(value);
+    const now = new Date();
+
+    return (
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth()
+    );
+};
+
+const itemOfType = (production, type) =>
+    (production.items || []).find((item) => item.type === type);
 
 
+/**
+ * Producción: tela (metros) → mantas (unidades).
+ * Sin montos de dinero, así que la pueden usar todos los roles.
+ */
 function ProductionPage() {
 
-    const [productions, setProductions] =
-        useState([]);
+    const [productions, setProductions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [reloadKey, setReloadKey] = useState(0);
 
-    const [products, setProducts] =
-        useState([]);
-
-    const [showForm, setShowForm] =
-        useState(false);
-
-    const [loading, setLoading] =
-        useState(true);
-
-    const [formLoading, setFormLoading] =
-        useState(false);
-
-    const [error, setError] =
-        useState("");
-
-    const [formError, setFormError] =
-        useState("");
-
-    const [success, setSuccess] =
-        useState("");
-
-
-    const [form, setForm] = useState({
-
-        fabricProductId: "",
-
-        fabricQuantityPerUnit: "",
-
-        outputProductId: "",
-
-        outputQuantity: "",
-
-        observations: "",
-    });
-
-
-    const loadData = async () => {
-
-        try {
-
-            setLoading(true);
-            setError("");
-
-            const [
-                productionData,
-                productData
-            ] = await Promise.all([
-
-                ProductionService.findAll(),
-
-                ProductService.findAll(),
-
-            ]);
-
-            setProductions(
-                productionData
-            );
-
-            setProducts(
-                productData
-            );
-
-        } catch (error) {
-
-            setError(
-                error.message ||
-                "No fue posible cargar la información de producción."
-            );
-
-        } finally {
-
-            setLoading(false);
-        }
-    };
+    const [formOpen, setFormOpen] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
 
 
     useEffect(() => {
 
-        loadData();
-
-    }, []);
-
-
-    const resetForm = () => {
-
-        setForm({
-
-            fabricProductId: "",
-
-            fabricQuantityPerUnit: "",
-
-            outputProductId: "",
-
-            outputQuantity: "",
-
-            observations: "",
-        });
-
-        setFormError("");
-    };
-
-
-    const handleNewProduction = () => {
-
-        resetForm();
-
-        setSuccess("");
-
-        setShowForm(true);
-    };
-
-
-    const handleCancel = () => {
-
-        setShowForm(false);
-
-        resetForm();
-    };
-
-
-    const handleChange = (event) => {
-
-        const {
-            name,
-            value
-        } = event.target;
-
-
-        setForm((previous) => ({
-
-            ...previous,
-
-            [name]: value,
-
-        }));
-
-
-        setFormError("");
-        setSuccess("");
-    };
-
-
-    const handleSubmit = async (event) => {
-
-        event.preventDefault();
-
-        setFormError("");
-        setSuccess("");
-
-
-        if (!form.fabricProductId) {
-
-            setFormError(
-                "Debes seleccionar el tipo de tela."
-            );
-
-            return;
-        }
-
-
-        if (
-            form.fabricQuantityPerUnit === "" ||
-            Number(
-                form.fabricQuantityPerUnit
-            ) <= 0
-        ) {
-
-            setFormError(
-                "La cantidad de tela por manta debe ser mayor que 0."
-            );
-
-            return;
-        }
-
-
-        if (!form.outputProductId) {
-
-            setFormError(
-                "Debes seleccionar el tipo de manta."
-            );
-
-            return;
-        }
-
-
-        if (
-            form.outputQuantity === "" ||
-            !Number.isInteger(
-                Number(
-                    form.outputQuantity
-                )
-            ) ||
-            Number(
-                form.outputQuantity
-            ) <= 0
-        ) {
-
-            setFormError(
-                "La cantidad de mantas debe ser un número entero mayor que 0."
-            );
-
-            return;
-        }
-
-
-        if (
-            form.fabricProductId ===
-            form.outputProductId
-        ) {
-
-            setFormError(
-                "La tela y la manta producida no pueden ser el mismo producto."
-            );
-
-            return;
-        }
-
-
-        try {
-
-            setFormLoading(true);
-
-
-            const production = {
-
-                fabricProductId:
-                    form.fabricProductId,
-
-                fabricQuantityPerUnit:
-                    Number(
-                        form.fabricQuantityPerUnit
-                    ),
-
-                outputProductId:
-                    form.outputProductId,
-
-                outputQuantity:
-                    Number(
-                        form.outputQuantity
-                    ),
-
-                observations:
-                    form.observations.trim() ||
-                    null,
-            };
-
-
-            await ProductionService.create(
-                production
-            );
-
-
-            setShowForm(false);
-
-            resetForm();
-
-            setSuccess(
-                "La producción fue registrada correctamente."
-            );
-
-
-            await loadData();
-
-        } catch (error) {
-
-            setFormError(
-                error.message ||
-                "No fue posible registrar la producción."
-            );
-
-        } finally {
-
-            setFormLoading(false);
-        }
-    };
-
-
-    const formatQuantity = (
-        quantity
-    ) => {
-
-        return Number(
-            quantity || 0
-        ).toLocaleString(
-            "es-CO",
-            {
-                maximumFractionDigits: 2,
-            }
-        );
-    };
-
-
-    const formatDate = (
-        date
-    ) => {
-
-        if (!date) {
-            return "Sin fecha";
-        }
-
-        return new Date(date)
-            .toLocaleString("es-CO");
-    };
-
-
-    const fabricProduct =
-        products.find(
-            (product) =>
-                product.id ===
-                form.fabricProductId
+        let cancelled = false;
+
+        ProductionService.findAll()
+            .then((data) => {
+                if (!cancelled) {
+                    setProductions(Array.isArray(data) ? data : []);
+                    setError("");
+                }
+            })
+            .catch((loadError) => {
+                if (!cancelled) {
+                    setError(loadError.message);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+
+    }, [reloadKey]);
+
+
+    // Resumen del mes: mantas fabricadas y tela usada.
+    const month = useMemo(() => {
+
+        const monthProductions = productions.filter((production) =>
+            isThisMonth(production.createdAt)
         );
 
+        return {
+            count: monthProductions.length,
+            blankets: monthProductions.reduce(
+                (total, production) =>
+                    total + Number(itemOfType(production, "OUTPUT")?.quantity || 0),
+                0
+            ),
+            fabric: monthProductions.reduce(
+                (total, production) =>
+                    total + Number(itemOfType(production, "INPUT")?.quantity || 0),
+                0
+            ),
+        };
 
-    const outputProduct =
-        products.find(
-            (product) =>
-                product.id ===
-                form.outputProductId
+    }, [productions]);
+
+
+    // Nombres de fabricantes ya usados, para sugerirlos en el formulario.
+    const makerSuggestions = useMemo(
+        () =>
+            [...new Set(
+                productions
+                    .map((production) => production.makerName?.trim())
+                    .filter(Boolean)
+            )].sort((a, b) => a.localeCompare(b, "es")),
+        [productions]
+    );
+
+
+    const handleSuccess = (production, summary) => {
+
+        setFormOpen(false);
+
+        setSuccessMessage(
+            `Producción registrada: ${formatNumber(summary.quantity)} ` +
+            `${summary.quantity === 1 ? "unidad" : "unidades"} de ${summary.outputName} ` +
+            `con ${formatNumber(summary.totalFabric)} metros de ${summary.fabricName}, ` +
+            `fabricadas por ${summary.makerName}. ` +
+            "El inventario ya se actualizó."
         );
 
+        setReloadKey((key) => key + 1);
+    };
 
-    const totalFabric =
-        Number(
-            form.fabricQuantityPerUnit || 0
-        ) *
-        Number(
-            form.outputQuantity || 0
+
+    // Sin datos cargados no se muestran ceros: solo el aviso.
+    if (error && !loading) {
+        return (
+            <LoadError
+                title="Producción"
+                message={error}
+                onRetry={() => {
+                    setError("");
+                    setLoading(true);
+                    setReloadKey((key) => key + 1);
+                }}
+            />
         );
-
+    }
 
     if (loading) {
-
         return (
-
-            <div className="production-page">
-
-                <h1>
-                    Producción
-                </h1>
-
-                <p>
-                    Cargando producción...
-                </p>
-
+            <div className="inv-page">
+                <h1>Producción</h1>
+                <p className="inv-message">Cargando producciones...</p>
             </div>
         );
     }
@@ -361,499 +156,151 @@ function ProductionPage() {
 
     return (
 
-        <div className="production-page">
+        <div className="inv-page">
 
-            <div className="production-page-header">
-
+            <div className="inv-header purchases-header">
                 <div>
-
-                    <h1>
-                        Producción
-                    </h1>
-
+                    <h1>Producción</h1>
                     <p>
-                        Registrar y consultar las producciones realizadas.
+                        Mantas fabricadas con tela. Cada producción descuenta
+                        la tela usada y suma las mantas al inventario.
                     </p>
-
                 </div>
-
 
                 <button
                     type="button"
-                    onClick={
-                        handleNewProduction
-                    }
+                    className="inv-button-primary purchases-new"
+                    onClick={() => {
+                        setSuccessMessage("");
+                        setFormOpen(true);
+                    }}
                 >
-                    + Nueva
+                    + Registrar producción
                 </button>
+            </div>
+
+            {error && <div className="result error inv-result">{error}</div>}
+
+            {successMessage && (
+                <div className="result success inv-result" role="status">
+                    {successMessage}
+                </div>
+            )}
+
+            {/* RESUMEN DEL MES (sin dinero) */}
+
+            <div className="inv-summary sales-summary">
+
+                <div className="inv-card inv-card-ok production-card">
+                    <span className="inv-card-number">{formatNumber(month.blankets)}</span>
+                    <span className="inv-card-label">Mantas fabricadas este mes</span>
+                    <span className="inv-card-help">
+                        En {month.count}{" "}
+                        {month.count === 1 ? "producción" : "producciones"}
+                    </span>
+                </div>
+
+                <div className="inv-card production-card">
+                    <span className="inv-card-number">{formatNumber(month.fabric)} m</span>
+                    <span className="inv-card-label">Tela usada este mes</span>
+                    <span className="inv-card-help">Metros descontados del inventario</span>
+                </div>
 
             </div>
 
+            {/* HISTORIAL */}
 
-            {error && (
+            {productions.length === 0 ? (
 
-                <div className="result error">
-                    {error}
-                </div>
+                <p className="inv-message">No hay producciones registradas.</p>
 
-            )}
+            ) : (
 
+                <ul className="inv-list">
 
-            {success && (
+                    {productions.map((production) => {
 
-                <div className="result success">
-                    {success}
-                </div>
+                        const input = itemOfType(production, "INPUT");
+                        const output = itemOfType(production, "OUTPUT");
 
-            )}
+                        return (
+                            <li className="inv-row production-row" key={production.id}>
 
-
-            <Modal
-                open={showForm}
-                onClose={handleCancel}
-                title="Nueva producción"
-            >
-
-                {formError && (
-
-                    <div className="result error">
-                        {formError}
-                    </div>
-
-                )}
-
-
-                <form
-                    onSubmit={handleSubmit}
-                    className="production-form"
-                >
-
-                    <div className="form-group">
-
-                        <label htmlFor="fabricProductId">
-                            Tipo de tela
-                        </label>
-
-
-                        <select
-                            id="fabricProductId"
-                            name="fabricProductId"
-                            value={
-                                form.fabricProductId
-                            }
-                            onChange={
-                                handleChange
-                            }
-                            disabled={
-                                formLoading
-                            }
-                        >
-
-                            <option value="">
-                                Selecciona una tela
-                            </option>
-
-
-                            {products
-                                .filter(
-                                    (product) =>
-                                        product.active !== false &&
-                                        product.purchasable === true
-                                )
-                                .map(
-                                    (product) => (
-
-                                        <option
-                                            key={
-                                                product.id
-                                            }
-                                            value={
-                                                product.id
-                                            }
-                                        >
-                                            {product.name}
-                                        </option>
-
-                                    )
-                                )}
-
-                        </select>
-
-                    </div>
-
-
-                    <div className="form-group">
-
-                        <label htmlFor="fabricQuantityPerUnit">
-                            Tela necesaria por manta
-                        </label>
-
-
-                        <input
-                            id="fabricQuantityPerUnit"
-                            name="fabricQuantityPerUnit"
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            value={
-                                form.fabricQuantityPerUnit
-                            }
-                            onChange={
-                                handleChange
-                            }
-                            placeholder="Ej. 1.50"
-                            disabled={
-                                formLoading
-                            }
-                        />
-
-
-                        <small>
-                            Puedes utilizar valores decimales.
-                        </small>
-
-                    </div>
-
-
-                    <div className="form-group">
-
-                        <label htmlFor="outputProductId">
-                            Tipo de manta
-                        </label>
-
-
-                        <select
-                            id="outputProductId"
-                            name="outputProductId"
-                            value={
-                                form.outputProductId
-                            }
-                            onChange={
-                                handleChange
-                            }
-                            disabled={
-                                formLoading
-                            }
-                        >
-
-                            <option value="">
-                                Selecciona una manta
-                            </option>
-
-
-                            {products
-                                .filter(
-                                    (product) =>
-                                        product.active !== false &&
-                                        product.manufacturable === true
-                                )
-                                .map(
-                                    (product) => (
-
-                                        <option
-                                            key={
-                                                product.id
-                                            }
-                                            value={
-                                                product.id
-                                            }
-                                        >
-                                            {product.name}
-                                        </option>
-
-                                    )
-                                )}
-
-                        </select>
-
-                    </div>
-
-
-                    <div className="form-group">
-
-                        <label htmlFor="outputQuantity">
-                            Cantidad de mantas
-                        </label>
-
-
-                        <input
-                            id="outputQuantity"
-                            name="outputQuantity"
-                            type="number"
-                            min="1"
-                            step="1"
-                            value={
-                                form.outputQuantity
-                            }
-                            onChange={
-                                handleChange
-                            }
-                            placeholder="Ej. 8"
-                            disabled={
-                                formLoading
-                            }
-                        />
-
-
-                        <small>
-                            La cantidad debe ser un número entero.
-                        </small>
-
-                    </div>
-
-
-                    <div className="production-calculation">
-
-                        <strong>
-                            Tela total a utilizar
-                        </strong>
-
-
-                        <p>
-
-                            {formatQuantity(
-                                totalFabric
-                            )}
-
-                            {fabricProduct?.unit?.abbreviation
-                                ? ` ${fabricProduct.unit.abbreviation}`
-                                : ""}
-
-                        </p>
-
-
-                        {form.fabricQuantityPerUnit &&
-                        form.outputQuantity && (
-
-                            <small>
-
-                                {formatQuantity(
-                                    form.fabricQuantityPerUnit
-                                )}
-
-                                {fabricProduct?.unit?.abbreviation
-                                    ? ` ${fabricProduct.unit.abbreviation}`
-                                    : ""}
-
-                                {" × "}
-
-                                {formatQuantity(
-                                    form.outputQuantity
-                                )}
-
-                                {" manta(s)"}
-
-                            </small>
-
-                        )}
-
-                    </div>
-
-
-                    <div className="form-group">
-
-                        <label htmlFor="observations">
-                            Observaciones
-                        </label>
-
-
-                        <textarea
-                            id="observations"
-                            name="observations"
-                            value={
-                                form.observations
-                            }
-                            onChange={
-                                handleChange
-                            }
-                            placeholder="Observaciones opcionales..."
-                            rows="4"
-                            disabled={
-                                formLoading
-                            }
-                        />
-
-                    </div>
-
-
-                    {outputProduct && (
-
-                        <div className="production-summary">
-
-                            <p>
-
-                                Se producirán{" "}
-
-                                <strong>
-                                    {formatQuantity(
-                                        form.outputQuantity
+                                <div className="inv-row-product">
+                                    <strong>{formatDateTime(production.createdAt)}</strong>
+                                    <span className="production-maker">
+                                        {production.makerName
+                                            ? `Fabricó: ${production.makerName}`
+                                            : "Fabricante no registrado"}
+                                    </span>
+                                    <span>
+                                        {production.createdByUsername
+                                            ? `Registró: ${production.createdByUsername}`
+                                            : "Usuario no registrado"}
+                                    </span>
+                                    {production.observations && (
+                                        <span>{production.observations}</span>
                                     )}
-                                </strong>
-
-                                {" unidad(es) de "}
-
-                                <strong>
-                                    {outputProduct.name}
-                                </strong>
-
-                                {" utilizando "}
-
-                                <strong>
-                                    {formatQuantity(
-                                        totalFabric
-                                    )}
-                                </strong>
-
-                                {" "}
-
-                                {fabricProduct?.unit?.abbreviation ||
-                                    "unidad(es)"}
-
-                                {" de "}
-
-                                <strong>
-                                    {fabricProduct?.name}
-                                </strong>
-                                .
-
-                            </p>
-
-                        </div>
-
-                    )}
-
-
-                    <div className="production-form-actions">
-
-                        <button
-                            type="submit"
-                            disabled={
-                                formLoading
-                            }
-                        >
-                            {formLoading
-                                ? "Registrando..."
-                                : "Registrar producción"}
-                        </button>
-
-
-                        <button
-                            type="button"
-                            onClick={
-                                handleCancel
-                            }
-                            disabled={
-                                formLoading
-                            }
-                        >
-                            Cancelar
-                        </button>
-
-                    </div>
-
-                </form>
-
-            </Modal>
-
-
-            <div className="production-list">
-
-                <h2>
-                    Historial de producciones
-                </h2>
-
-
-                {productions.length === 0 ? (
-
-                    <p>
-                        No hay producciones registradas.
-                    </p>
-
-                ) : (
-
-                    productions.map(
-                        (production) => (
-
-                            <div
-                                className="production-row"
-                                key={
-                                    production.id
-                                }
-                            >
-
-                                <div>
-
-                                    <strong>
-                                        Producción
-                                    </strong>
-
-
-                                    <p>
-                                        Fecha:{" "}
-                                        {formatDate(
-                                            production.createdAt
-                                        )}
-                                    </p>
-
-
-                                    {production.items &&
-                                    production.items.length > 0 ? (
-
-                                        production.items.map(
-                                            (
-                                                item,
-                                                index
-                                            ) => (
-
-                                                <p
-                                                    key={
-                                                        item.id ||
-                                                        index
-                                                    }
-                                                >
-
-                                                    {item.type ===
-                                                    "INPUT"
-                                                        ? "Tela utilizada: "
-                                                        : "Mantas producidas: "}
-
-                                                    {item.productName ||
-                                                        item.product?.name ||
-                                                        "Producto"}
-
-                                                    {" — "}
-
-                                                    {formatQuantity(
-                                                        item.quantity
-                                                    )}
-
-                                                </p>
-
-                                            )
-                                        )
-
-                                    ) : (
-
-                                        <p>
-                                            Sin detalle disponible.
-                                        </p>
-
-                                    )}
-
                                 </div>
 
-                            </div>
+                                <div className="inv-row-qty">
+                                    <span className="inv-row-label">Se fabricaron</span>
+                                    <strong className="production-made">
+                                        {output
+                                            ? formatQuantity(
+                                                output.quantity,
+                                                output.unitAbbreviation,
+                                                output.unitName
+                                            )
+                                            : "—"}
+                                    </strong>
+                                    <span className="sales-row-names">
+                                        {output?.productName}
+                                    </span>
+                                </div>
 
-                        )
-                    )
+                                <div className="inv-row-status">
+                                    <span className="inv-row-label">Tela usada</span>
+                                    <strong className="production-used">
+                                        {input
+                                            ? formatQuantity(
+                                                input.quantity,
+                                                input.unitAbbreviation,
+                                                input.unitName
+                                            )
+                                            : "—"}
+                                    </strong>
+                                    <span className="sales-row-names">
+                                        {input?.productName}
+                                    </span>
+                                </div>
 
+                            </li>
+                        );
+                    })}
+
+                </ul>
+
+            )}
+
+            {/* REGISTRAR */}
+
+            <Modal
+                open={formOpen}
+                onClose={() => setFormOpen(false)}
+                title="Registrar producción"
+            >
+                {formOpen && (
+                    <ProductionForm
+                        makerSuggestions={makerSuggestions}
+                        onSuccess={handleSuccess}
+                        onCancel={() => setFormOpen(false)}
+                    />
                 )}
-
-            </div>
+            </Modal>
 
         </div>
     );
 }
-
 
 export default ProductionPage;

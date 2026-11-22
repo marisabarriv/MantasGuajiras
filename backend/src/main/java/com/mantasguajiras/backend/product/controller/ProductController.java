@@ -19,8 +19,9 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public List<ProductResponse> findAll() {
-        return productService.findAll();
+    public List<ProductResponse> findAll(
+            @RequestParam(defaultValue = "false") boolean includeInactive) {
+        return productService.findAll(includeInactive);
     }
 
     @GetMapping("/{id}")
