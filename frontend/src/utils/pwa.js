@@ -26,6 +26,19 @@ export function isIOS() {
         || (ua.includes("Macintosh") && window.navigator.maxTouchPoints > 1);
 }
 
+/**
+ * Navegador, para dar los pasos correctos cuando no hay aviso automático
+ * (iPhone, o certificado de prueba en la red local).
+ */
+export function browserKind() {
+    const ua = window.navigator.userAgent;
+    if (isIOS()) return "ios";
+    if (/Android/.test(ua)) return "android";
+    if (/Edg\//.test(ua)) return "edge";
+    if (/Chrome\//.test(ua)) return "chrome";
+    return "other";
+}
+
 export function setupPwa() {
     window.addEventListener("beforeinstallprompt", (event) => {
         // Evita el aviso automático; se muestra desde el botón "Instalar app".
