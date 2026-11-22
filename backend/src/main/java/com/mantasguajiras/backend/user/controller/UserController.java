@@ -1,12 +1,14 @@
 package com.mantasguajiras.backend.user.controller;
 
+import com.mantasguajiras.backend.security.util.SecurityUtils;
+import com.mantasguajiras.backend.user.dto.requests.ResetPasswordRequest;
+
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.mantasguajiras.backend.user.dto.requests.ChangePasswordRequest;
 import com.mantasguajiras.backend.user.dto.requests.UpdateUserRequest;
 import com.mantasguajiras.backend.user.dto.requests.UserRequest;
 import com.mantasguajiras.backend.user.dto.response.UserResponse;
@@ -47,16 +49,18 @@ public class UserController {
                         @Valid @RequestBody UpdateUserRequest request) {
 
                 return ResponseEntity.ok(
-                                userService.update(id, request));
+                                userService.update(
+                                                id,
+                                                request,
+                                                SecurityUtils.currentUsername().orElse(null)));
         }
 
-        @PatchMapping("/{id}/password")
-        public ResponseEntity<Void> changePassword(
+        /** El administrador asigna una contraseña nueva (por ejemplo, si la olvidó). */
+        @PatchMapping("/{id}/reset-password")
+        public ResponseEntity<Void> resetPassword(
                         @PathVariable UUID id,
-                        @Valid @RequestBody ChangePasswordRequest request) {
-
-                userService.changePassword(id, request);
-
+                        @Valid @RequestBody ResetPasswordRequest request) {
+                userService.resetPassword(id, request);
                 return ResponseEntity.noContent().build();
         }
 

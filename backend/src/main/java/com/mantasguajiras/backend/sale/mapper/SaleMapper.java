@@ -20,13 +20,17 @@ public interface SaleMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "items", ignore = true)
     @Mapping(target = "total", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
     Sale toEntity(SaleRequest request);
 
     @Mapping(target = "items", source = "items")
+    @Mapping(target = "sellerUsername", source = "createdBy.username")
     SaleResponse toResponse(Sale sale);
 
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "productName", source = "product.name")
+    @Mapping(target = "unitAbbreviation", source = "product.unit.abbreviation")
+    @Mapping(target = "unitName", source = "product.unit.name")
     SaleItemResponse toItemResponse(SaleItem item);
 
     @BeanMapping(
@@ -38,6 +42,7 @@ public interface SaleMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "items", ignore = true)
     @Mapping(target = "total", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
     void updateEntity(
         SaleRequest request,
         @MappingTarget Sale sale

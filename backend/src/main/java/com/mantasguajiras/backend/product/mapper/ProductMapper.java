@@ -15,6 +15,7 @@ public interface ProductMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "unit", ignore = true)
+    @Mapping(target = "internalCode", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Product toEntity(ProductRequest request);
@@ -27,6 +28,7 @@ public interface ProductMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "unit", ignore = true)
+    @Mapping(target = "internalCode", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     void updateEntity(ProductRequest request, @MappingTarget Product product);

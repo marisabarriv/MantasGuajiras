@@ -21,6 +21,8 @@ public class SaleItemResponse {
     private UUID productId;
 
     private String productName;
+    private String unitAbbreviation;
+    private String unitName;
 
     private BigDecimal quantity;
 

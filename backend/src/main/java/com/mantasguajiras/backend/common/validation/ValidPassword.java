@@ -15,7 +15,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidPassword {
 
-    String message() default "La contraseña debe tener entre 8 y 100 caracteres.";
+    String message() default "La contraseña debe tener entre 4 y 12 caracteres.";
 
     Class<?>[] groups() default {};
 

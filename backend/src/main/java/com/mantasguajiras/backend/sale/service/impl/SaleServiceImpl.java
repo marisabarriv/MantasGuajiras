@@ -2,7 +2,6 @@ package com.mantasguajiras.backend.sale.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -12,12 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mantasguajiras.backend.common.exception.BusinessException;
 import com.mantasguajiras.backend.common.exception.ResourceNotFoundException;
-import com.mantasguajiras.backend.inventory.entity.Inventory;
-import com.mantasguajiras.backend.inventory.repository.InventoryRepository;
-import com.mantasguajiras.backend.inventorymovement.entity.InventoryMovement;
-import com.mantasguajiras.backend.inventorymovement.repository.InventoryMovementRepository;
-import com.mantasguajiras.backend.movementtype.entity.MovementType;
-import com.mantasguajiras.backend.movementtype.repository.MovementTypeRepository;
+import com.mantasguajiras.backend.inventorymovement.service.InventoryMovementService;
 import com.mantasguajiras.backend.product.entity.Product;
 import com.mantasguajiras.backend.product.repository.ProductRepository;
 import com.mantasguajiras.backend.sale.dto.requests.SaleItemRequest;
@@ -28,8 +22,8 @@ import com.mantasguajiras.backend.sale.entity.SaleItem;
 import com.mantasguajiras.backend.sale.mapper.SaleMapper;
 import com.mantasguajiras.backend.sale.repository.SaleRepository;
 import com.mantasguajiras.backend.sale.service.SaleService;
-import com.mantasguajiras.backend.sourcetype.entity.SourceType;
-import com.mantasguajiras.backend.sourcetype.repository.SourceTypeRepository;
+import com.mantasguajiras.backend.security.util.SecurityUtils;
+import com.mantasguajiras.backend.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,10 +36,11 @@ public class SaleServiceImpl implements SaleService {
     private final SaleMapper saleMapper;
     private final ProductRepository productRepository;
 
-    private final InventoryRepository inventoryRepository;
-    private final InventoryMovementRepository inventoryMovementRepository;
-    private final MovementTypeRepository movementTypeRepository;
-    private final SourceTypeRepository sourceTypeRepository;
+    // Todo cambio de existencias pasa por el servicio central:
+    // bloquea la fila de inventario, valida enteros en mantas,
+    // revisa que alcance el stock y guarda el usuario.
+    private final InventoryMovementService inventoryMovementService;
+    private final UserRepository userRepository;
 
     // =========================================================
     // CREATE
@@ -62,30 +57,30 @@ public class SaleServiceImpl implements SaleService {
         sale.setItems(saleItems);
         sale.setTotal(calculateTotal(saleItems));
 
+        sale.setCreatedBy(
+                SecurityUtils.currentUsername()
+                        .flatMap(userRepository::findByUsername)
+                        .orElse(null)
+        );
+
         Sale savedSale =
                 saleRepository.save(sale);
 
-        MovementType salida =
-                getMovementType("OUT");
-
-        SourceType venta =
-                getSourceType("SALE");
-
+        // Si algún producto no tiene existencias suficientes, el
+        // servicio lanza una excepción y la transacción completa
+        // (venta + movimientos ya hechos) se revierte.
         for (SaleItem item : savedSale.getItems()) {
 
-            updateInventory(
-                    item.getProduct(),
-                    salida,
-                    item.getQuantity()
-            );
-
-            registerMovement(
-                    item.getProduct(),
-                    salida,
-                    venta,
+            inventoryMovementService.registerMovement(
+                    item.getProduct().getId(),
+                    "OUT",
+                    "SALE",
                     savedSale.getId(),
                     item.getQuantity(),
-                    savedSale.getObservations()
+                    savedSale.getObservations() != null
+                            && !savedSale.getObservations().isBlank()
+                            ? "Venta. " + savedSale.getObservations().trim()
+                            : "Venta"
             );
         }
 
@@ -138,7 +133,7 @@ public class SaleServiceImpl implements SaleService {
     @Transactional(readOnly = true)
     public List<SaleResponse> findAll() {
 
-        return saleRepository.findAll()
+        return saleRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
                 .map(saleMapper::toResponse)
                 .toList();
@@ -227,14 +222,9 @@ public class SaleServiceImpl implements SaleService {
                 );
             }
 
-            // =====================================================
-            // INVENTARIO
-            // =====================================================
-
-            validateStock(
-                    product,
-                    itemRequest.getQuantity()
-            );
+            // El stock se valida al descontar (con la fila bloqueada)
+            // en InventoryMovementService, no aquí, para evitar que
+            // dos ventas simultáneas pasen la misma validación.
 
             // =====================================================
             // PRECIO ESPECIAL
@@ -455,149 +445,6 @@ public class SaleServiceImpl implements SaleService {
         return total.setScale(
                 2,
                 RoundingMode.HALF_UP
-        );
-    }
-
-    // =========================================================
-    // VALIDAR INVENTARIO
-    // =========================================================
-
-    private void validateStock(
-            Product product,
-            BigDecimal quantity) {
-
-        Inventory inventory =
-                inventoryRepository.findById(
-                        product.getId()
-                ).orElseThrow(() ->
-                        new BusinessException(
-                                "El producto "
-                                        + product.getName()
-                                        + " no tiene inventario."
-                        ));
-
-        if (inventory.getQuantity()
-                .compareTo(quantity) < 0) {
-
-            throw new BusinessException(
-                    "Inventario insuficiente para el producto "
-                            + product.getName()
-                            + ". Disponible: "
-                            + inventory.getQuantity()
-                            + ", solicitado: "
-                            + quantity
-            );
-        }
-    }
-
-    // =========================================================
-    // ACTUALIZAR INVENTARIO
-    // =========================================================
-
-    private void updateInventory(
-            Product product,
-            MovementType movementType,
-            BigDecimal quantity) {
-
-        Inventory inventory =
-                inventoryRepository.findById(
-                        product.getId()
-                ).orElseThrow(() ->
-                        new BusinessException(
-                                "No existe inventario para el producto "
-                                        + product.getName()
-                        ));
-
-        if (!"OUT".equalsIgnoreCase(
-                movementType.getName())) {
-
-            throw new BusinessException(
-                    "El tipo de movimiento no es válido "
-                            + "para una venta."
-            );
-        }
-
-        BigDecimal newQuantity =
-                inventory.getQuantity()
-                        .subtract(quantity);
-
-        if (newQuantity.compareTo(
-                BigDecimal.ZERO) < 0) {
-
-            throw new BusinessException(
-                    "No hay suficiente inventario disponible "
-                            + "para el producto "
-                            + product.getName()
-            );
-        }
-
-        inventory.setQuantity(
-                newQuantity
-        );
-
-        inventory.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-        inventoryRepository.save(inventory);
-    }
-
-    // =========================================================
-    // OBTENER TIPO DE MOVIMIENTO
-    // =========================================================
-
-    private MovementType getMovementType(
-            String name) {
-
-        return movementTypeRepository
-                .findByName(name)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Tipo de movimiento no encontrado: "
-                                        + name
-                        ));
-    }
-
-    // =========================================================
-    // OBTENER TIPO DE ORIGEN
-    // =========================================================
-
-    private SourceType getSourceType(
-            String name) {
-
-        return sourceTypeRepository
-                .findByName(name)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Tipo de origen no encontrado: "
-                                        + name
-                        ));
-    }
-
-    // =========================================================
-    // REGISTRAR MOVIMIENTO
-    // =========================================================
-
-    private void registerMovement(
-            Product product,
-            MovementType movementType,
-            SourceType sourceType,
-            UUID sourceId,
-            BigDecimal quantity,
-            String observations) {
-
-        InventoryMovement movement =
-                InventoryMovement.builder()
-                        .product(product)
-                        .movementType(movementType)
-                        .sourceType(sourceType)
-                        .sourceId(sourceId)
-                        .quantity(quantity)
-                        .observations(observations)
-                        .build();
-
-        inventoryMovementRepository.save(
-                movement
         );
     }
 }

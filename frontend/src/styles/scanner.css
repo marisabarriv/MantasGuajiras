@@ -1,0 +1,169 @@
+/* =========================================================
+   ESCÁNER DE CÓDIGOS DE BARRAS (components/BarcodeScanModal)
+   ========================================================= */
+
+.scanner {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.scanner-video-box {
+    position: relative;
+
+    overflow: hidden;
+
+    border: 2px solid var(--mg-line);
+    border-radius: 14px;
+
+    background: #1f1f1f;
+}
+
+.scanner-video {
+    display: block;
+
+    width: 100%;
+    max-height: 50vh;
+
+    object-fit: cover;
+}
+
+/* Rectángulo guía: dónde poner el código */
+.scanner-guide {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    width: 70%;
+    height: 34%;
+
+    border: 3px solid #ffffff;
+    border-radius: 10px;
+
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.28);
+
+    transform: translate(-50%, -50%);
+
+    pointer-events: none;
+}
+
+.scanner-status {
+    margin: 0;
+
+    color: #1f1f1f;
+
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.scanner-camera-error {
+    padding: 14px 16px;
+
+    border: 1.5px solid #b26a00;
+    border-radius: 10px;
+
+    background: #fff4dc;
+    color: #5c3800;
+
+    font-size: 17px;
+    line-height: 1.45;
+}
+
+.scanner-manual {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    padding-top: 14px;
+
+    border-top: 1.5px solid var(--mg-line-soft);
+}
+
+.scanner-manual label {
+    color: #1f1f1f;
+
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.scanner-manual-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.scanner-manual-row input {
+    flex: 1 1 240px;
+
+    min-height: 52px;
+
+    padding: 10px 14px;
+
+    border: 1.5px solid #8a8a8a;
+    border-radius: 10px;
+
+    color: #1f1f1f;
+
+    font-family: inherit;
+    font-size: 19px;
+    letter-spacing: 0.5px;
+}
+
+.scanner-manual-row input:focus {
+    outline: none;
+    border-color: #1f1f1f;
+    box-shadow: 0 0 0 3px rgba(31, 31, 31, 0.25);
+}
+
+.scanner-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Casilla "Código de barras" + botón Escanear (formulario de producto) */
+.barcode-field-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.barcode-field-row input {
+    flex: 1 1 140px;
+    min-width: 0;
+}
+
+/* Botón "Escanear" junto a buscadores y a la casilla de código */
+.scan-camera-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 52px;
+
+    padding: 0 18px;
+
+    border: 1.5px solid var(--mg-accent);
+    border-radius: 10px;
+
+    background: #ffffff;
+    color: var(--mg-accent);
+
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    cursor: pointer;
+}
+
+.scan-camera-button:hover {
+    background: var(--mg-soft);
+}
+
+.scan-camera-button:focus-visible {
+    outline: 3px solid #1f1f1f;
+    outline-offset: 2px;
+}

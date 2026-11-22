@@ -1,40 +1,56 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 
 import AuthService from "../services/AuthService";
 import PasswordInput from "../components/PasswordInput";
+import { clearSession, hasValidSession, saveSession } from "../utils/session";
 
 function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
-  const [result, setResult] = useState("");
-  const [resultType, setResultType] = useState("");
+  const [result, setResult] = useState(() =>
+    searchParams.get("sesion") === "expirada"
+      ? "Tu sesión expiró. Vuelve a iniciar sesión."
+      : "",
+  );
+  const [resultType, setResultType] = useState(() =>
+    searchParams.get("sesion") === "expirada" ? "info" : "",
+  );
   const [loading, setLoading] = useState(false);
+
+  // Si quedó un token vencido o inválido, se borra.
+  useEffect(() => {
+    if (!hasValidSession()) {
+      clearSession();
+    }
+  }, []);
+
+  // Con una sesión válida no tiene sentido volver a iniciar sesión.
+  if (hasValidSession()) {
+    return <Navigate to="/sale" replace />;
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     setLoading(true);
-    setResult("Iniciando sesión...");
+    setResult("");
     setResultType("");
 
     try {
-      const data = await AuthService.login(identifier, password);
+      const data = await AuthService.login(identifier.trim(), password);
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data));
+      saveSession(data);
 
-      setResult("Inicio de sesión exitoso.");
-
-      setResultType("success");
-
-      navigate("/sale");
+      navigate("/sale", { replace: true });
     } catch (error) {
+      // Mensaje real del backend: contraseña incorrecta, o cuenta
+      // inactiva / pendiente de aprobación.
       setResult(error.message || "No se pudo iniciar sesión.");
-
       setResultType("error");
     } finally {
       setLoading(false);
@@ -49,6 +65,12 @@ function LoginPage() {
 
           <h2>Iniciar sesión</h2>
 
+          {result && (
+            <div className={`result ${resultType}`} role="alert">
+              {result}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             <label htmlFor="identifier">Usuario o teléfono</label>
 
@@ -56,6 +78,7 @@ function LoginPage() {
               id="identifier"
               type="text"
               className="auth-input"
+              autoComplete="username"
               value={identifier}
               onChange={(event) => setIdentifier(event.target.value)}
               placeholder="Usuario o teléfono"
@@ -88,8 +111,6 @@ function LoginPage() {
               Crear cuenta
             </button>
           </div>
-
-          {result && <div className={`result ${resultType}`}>{result}</div>}
         </div>
       </div>
     </div>

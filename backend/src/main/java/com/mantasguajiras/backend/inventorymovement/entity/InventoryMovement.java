@@ -4,6 +4,7 @@ import com.mantasguajiras.backend.common.entity.AuditableEntity;
 import com.mantasguajiras.backend.movementtype.entity.MovementType;
 import com.mantasguajiras.backend.product.entity.Product;
 import com.mantasguajiras.backend.sourcetype.entity.SourceType;
+import com.mantasguajiras.backend.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -40,4 +41,12 @@ public class InventoryMovement extends AuditableEntity {
 
     @Column(length = 255)
     private String observations;
+
+    /**
+     * Usuario que hizo el movimiento. NULL en movimientos
+     * anteriores a la migración V13 o hechos sin sesión.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
 }

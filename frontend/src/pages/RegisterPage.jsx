@@ -34,6 +34,17 @@ function RegisterPage() {
         // VALIDAR CONTRASEÑAS
         // =========================================
 
+        if (password.length < 4 || password.length > 12) {
+
+            setResult(
+                "La contraseña debe tener entre 4 y 12 caracteres."
+            );
+
+            setResultType("error");
+
+            return;
+        }
+
         if (password !== confirmPassword) {
 
             setResult(
@@ -55,32 +66,29 @@ function RegisterPage() {
             setLoading(true);
 
             await RegisterService.register(
-                username,
-                phone,
+                username.trim(),
+                phone.trim(),
                 password
             );
 
 
             // =====================================
-            // REGISTRO EXITOSO
+            // REGISTRO EXITOSO (pendiente de aprobación)
+            // No se redirige solo: la persona debe tener
+            // tiempo de leer el aviso.
             // =====================================
 
             setResult(
-                "Cuenta creada correctamente."
+                "Tu cuenta fue creada. Antes de poder entrar, " +
+                "un administrador debe activarla. Avísale para que lo haga."
             );
 
             setResultType("success");
 
-
-            // =====================================
-            // VOLVER AL LOGIN
-            // =====================================
-
-            setTimeout(() => {
-
-                navigate("/");
-
-            }, 1200);
+            setUsername("");
+            setPhone("");
+            setPassword("");
+            setConfirmPassword("");
 
 
         } catch (error) {
@@ -178,6 +186,10 @@ function RegisterPage() {
                             placeholder="Contraseña"
                             required
                         />
+
+                        <small className="auth-help">
+                            Entre 4 y 12 caracteres.
+                        </small>
 
 
                         {/* CONFIRMAR CONTRASEÑA */}

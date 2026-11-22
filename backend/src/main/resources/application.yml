@@ -4,3 +4,20 @@ spring:
 
   profiles:
     active: dev
+
+  mvc:
+    # No registrar en el log las excepciones ya manejadas: incluían
+    # los valores rechazados de los formularios (¡contraseñas!).
+    log-resolved-exception: false
+
+  servlet:
+    multipart:
+      # Foto de perfil: máximo 20 MB (regla de negocio).
+      max-file-size: 20MB
+      max-request-size: 21MB
+
+server:
+  tomcat:
+    # Leer el resto de un archivo demasiado grande para poder responder
+    # "máximo 20 MB" en lugar de cortar la conexión.
+    max-swallow-size: 30MB

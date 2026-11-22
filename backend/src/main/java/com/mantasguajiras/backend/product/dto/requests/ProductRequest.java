@@ -74,4 +74,9 @@ public class ProductRequest {
     private Boolean manufacturable;
 
     private Boolean active;
+
+    @PositiveOrZero(
+            message = "El stock inicial no puede ser negativo."
+    )
+    private BigDecimal initialStock;
 }

@@ -13,6 +13,8 @@ import com.mantasguajiras.backend.purchase.entity.PurchaseItem;
 import com.mantasguajiras.backend.purchase.mapper.PurchaseMapper;
 import com.mantasguajiras.backend.purchase.repository.PurchaseRepository;
 import com.mantasguajiras.backend.purchase.service.PurchaseService;
+import com.mantasguajiras.backend.security.util.SecurityUtils;
+import com.mantasguajiras.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,12 +33,13 @@ public class PurchaseServiceImpl implements PurchaseService {
     private final PurchaseMapper purchaseMapper;
     private final ProductRepository productRepository;
     private final InventoryMovementService inventoryMovementService;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional(readOnly = true)
     public List<PurchaseResponse> findAll() {
 
-        return purchaseRepository.findAll()
+        return purchaseRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
                 .map(purchaseMapper::toResponse)
                 .toList();
@@ -121,6 +124,12 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         purchase.setTotal(calculatedTotal);
 
+        purchase.setCreatedBy(
+                SecurityUtils.currentUsername()
+                        .flatMap(userRepository::findByUsername)
+                        .orElse(null)
+        );
+
         Purchase savedPurchase =
                 purchaseRepository.save(purchase);
 
@@ -132,7 +141,10 @@ public class PurchaseServiceImpl implements PurchaseService {
                     "PURCHASE",
                     savedPurchase.getId(),
                     item.getQuantity(),
-                    request.getObservations()
+                    request.getObservations() != null
+                            && !request.getObservations().isBlank()
+                            ? "Compra. " + request.getObservations().trim()
+                            : "Compra"
             );
         }
 

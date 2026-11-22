@@ -1,84 +1,46 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiRequest as request } from "./apiClient";
+
 
 const InventoryService = {
 
-    async findAll() {
-
-        const token = localStorage.getItem("token");
-
-        const response = await fetch(
-            `${API_URL}/api/inventory`,
-            {
-                method: "GET",
-
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        const text = await response.text();
-
-        let data = {};
-
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch {
-                data = {};
-            }
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                data.error ||
-                "No fue posible cargar el inventario."
-            );
-        }
-
-        return data;
+    /** Existencias de todos los productos activos, con estado (OK / LOW / OUT). */
+    findAll() {
+        return request("/api/inventory", {
+            fallbackMessage: "No fue posible cargar el inventario.",
+        });
     },
 
 
-    async findById(id) {
+    findById(productId) {
+        return request(`/api/inventory/${productId}`, {
+            fallbackMessage: "No fue posible cargar el registro de inventario.",
+        });
+    },
 
-        const token = localStorage.getItem("token");
 
-        const response = await fetch(
-            `${API_URL}/api/inventory/${id}`,
-            {
-                method: "GET",
+    /** Historial (más reciente primero). Sin productId devuelve todos. */
+    findMovements(productId = null) {
 
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
+        const query = productId
+            ? `?productId=${encodeURIComponent(productId)}`
+            : "";
 
-        const text = await response.text();
+        return request(`/api/inventory-movements${query}`, {
+            fallbackMessage: "No fue posible cargar el historial de movimientos.",
+        });
+    },
 
-        let data = {};
 
-        if (text) {
-            try {
-                data = JSON.parse(text);
-            } catch {
-                data = {};
-            }
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.message ||
-                data.error ||
-                "No fue posible cargar el registro de inventario."
-            );
-        }
-
-        return data;
+    /**
+     * Ajuste por conteo (solo administradores).
+     * @param {{productId: string, countedQuantity: number, reason?: string}} adjustment
+     */
+    adjust(adjustment) {
+        return request("/api/inventory/adjustments", {
+            method: "POST",
+            body: adjustment,
+            fallbackMessage: "No fue posible guardar el ajuste de inventario.",
+        });
     },
 };
 

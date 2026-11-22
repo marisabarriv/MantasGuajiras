@@ -14,6 +14,14 @@ public interface InventoryMapper {
     Inventory toEntity(InventoryRequest request);
 
     @Mapping(target = "productId", source = "product.id")
+    @Mapping(target = "productName", ignore = true)
+    @Mapping(target = "internalCode", ignore = true)
+    @Mapping(target = "barcode", ignore = true)
+    @Mapping(target = "categoryName", ignore = true)
+    @Mapping(target = "unitName", ignore = true)
+    @Mapping(target = "unitAbbreviation", ignore = true)
+    @Mapping(target = "minimumStock", ignore = true)
+    @Mapping(target = "status", ignore = true)
     InventoryResponse toResponse(Inventory inventory);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

@@ -20,6 +20,7 @@ public interface UserMapper {
     @Mapping(target = "role", ignore = true)
     User toEntity(UserRequest request);
 
+    @Mapping(target = "hasPhoto", ignore = true)
     UserResponse toResponse(User entity);
 
     @BeanMapping(

@@ -17,6 +17,7 @@ public class PurchaseResponse {
     private UUID id;
     private BigDecimal total;
     private String observations;
+    private String createdByUsername;
     private LocalDateTime createdAt;
     private List<PurchaseItemResponse> items;
 }

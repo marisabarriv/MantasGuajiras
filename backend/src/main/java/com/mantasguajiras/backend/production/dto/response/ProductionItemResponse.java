@@ -23,6 +23,8 @@ public class ProductionItemResponse {
     private UUID productId;
 
     private String productName;
+    private String unitAbbreviation;
+    private String unitName;
 
     private ProductionItemType type;
 

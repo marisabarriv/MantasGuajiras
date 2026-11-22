@@ -18,14 +18,14 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SaleItemRequest {
 
-    @NotNull
+    @NotNull(message = "El producto es obligatorio.")
     private UUID productId;
 
-    @NotNull
+    @NotNull(message = "La cantidad es obligatoria.")
     @DecimalMin(
         value = "0.00",
         inclusive = false,
-        message = "Quantity must be greater than 0"
+        message = "La cantidad debe ser mayor que cero."
     )
     private BigDecimal quantity;
 
@@ -34,14 +34,14 @@ public class SaleItemRequest {
     @DecimalMin(
         value = "0.00",
         inclusive = true,
-        message = "Discount percentage cannot be negative"
+        message = "El descuento no puede ser negativo."
     )
     private BigDecimal discountPercentage;
 
     @DecimalMin(
         value = "0.00",
         inclusive = false,
-        message = "Final unit price must be greater than 0"
+        message = "El precio especial debe ser mayor que cero."
     )
     private BigDecimal finalUnitPrice;
 }

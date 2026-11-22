@@ -16,6 +16,9 @@ public class InventoryMovementResponse {
     private UUID id;
 
     private UUID productId;
+    private String productName;
+    private String productInternalCode;
+    private String unitAbbreviation;
 
     private UUID movementTypeId;
 
@@ -32,4 +35,5 @@ public class InventoryMovementResponse {
     private String observations;
 
     private LocalDateTime createdAt;
+    private String createdByUsername;
 }

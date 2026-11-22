@@ -1,6 +1,7 @@
 package com.mantasguajiras.backend.sale.entity;
 
 import com.mantasguajiras.backend.common.entity.AuditableEntity;
+import com.mantasguajiras.backend.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -31,4 +32,9 @@ public class Sale extends AuditableEntity {
     )
     @Builder.Default
     private List<SaleItem> items = new ArrayList<>();
+
+    /** Usuario que registró la venta. NULL en ventas anteriores a V14. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
 }

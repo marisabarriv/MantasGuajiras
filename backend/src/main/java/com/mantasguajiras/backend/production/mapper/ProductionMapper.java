@@ -19,13 +19,17 @@ public interface ProductionMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "items", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
     Production toEntity(ProductionRequest request);
 
     @Mapping(target = "items", source = "items")
+    @Mapping(target = "createdByUsername", source = "createdBy.username")
     ProductionResponse toResponse(Production production);
 
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "productName", source = "product.name")
+    @Mapping(target = "unitAbbreviation", source = "product.unit.abbreviation")
+    @Mapping(target = "unitName", source = "product.unit.name")
     ProductionItemResponse toItemResponse(ProductionItem item);
 
     @BeanMapping(
@@ -36,6 +40,7 @@ public interface ProductionMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "items", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
     void updateEntity(
         ProductionRequest request,
         @MappingTarget Production production

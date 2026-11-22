@@ -1,15 +1,34 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
-function Sidebar() {
+import UserAvatar from "./UserAvatar";
+import { clearSession, getUser, ROLE_LABELS } from "../utils/session";
 
-    const user = JSON.parse(
-        localStorage.getItem("user") || "{}"
-    );
+import "../styles/users.css";
+
+function Sidebar({ open = false, onNavigate }) {
+
+    const navigate = useNavigate();
+
+    const user = getUser();
 
     const isAdmin = user.role === "ADMIN";
 
+    const handleLogout = () => {
+        clearSession();
+        navigate("/", { replace: true });
+    };
+
     return (
-        <aside className="sidebar">
+        <aside
+            id="main-menu"
+            className={`sidebar ${open ? "open" : ""}`}
+            // En celular, el menú se cierra al elegir una opción.
+            onClick={(event) => {
+                if (event.target.closest("a, button.sidebar-logout")) {
+                    onNavigate?.();
+                }
+            }}
+        >
 
             <div className="sidebar-brand">
                 <h2>Mantas Guajiras</h2>
@@ -22,6 +41,13 @@ function Sidebar() {
                     className="sidebar-link"
                 >
                     Nueva venta
+                </NavLink>
+
+                <NavLink
+                    to="/custom-orders"
+                    className="sidebar-link"
+                >
+                    Personalizadas
                 </NavLink>
 
                 <NavLink
@@ -38,12 +64,24 @@ function Sidebar() {
                     Inventario
                 </NavLink>
 
-                <NavLink
-                    to="/sales"
-                    className="sidebar-link"
-                >
-                    Ventas
-                </NavLink>
+                {/* Montos de ventas y compras: solo ADMIN */}
+                {isAdmin && (
+                    <>
+                        <NavLink
+                            to="/sales"
+                            className="sidebar-link"
+                        >
+                            Ventas
+                        </NavLink>
+
+                        <NavLink
+                            to="/purchases"
+                            className="sidebar-link"
+                        >
+                            Compras
+                        </NavLink>
+                    </>
+                )}
 
                 <NavLink
                     to="/production"
@@ -51,18 +89,38 @@ function Sidebar() {
                 >
                     Producción
                 </NavLink>
-            
-            </nav>
 
-            <div className="sidebar-admin">    
                 {isAdmin && (
                     <NavLink
                         to="/admin"
                         className="sidebar-link"
                     >
-                        Administrar
+                        Administrar usuarios
                     </NavLink>
                 )}
+
+            </nav>
+
+            {/* Usuario de la sesión: perfil y cerrar sesión */}
+            <div className="sidebar-user">
+
+                <NavLink to="/profile" className="sidebar-user-card">
+                    <UserAvatar username={user.username || ""} size={44} />
+                    <span className="sidebar-user-text">
+                        <strong>{user.username}</strong>
+                        <span>{ROLE_LABELS[user.role] || user.role}</span>
+                        <span className="sidebar-user-link">Mi perfil</span>
+                    </span>
+                </NavLink>
+
+                <button
+                    type="button"
+                    className="sidebar-logout"
+                    onClick={handleLogout}
+                >
+                    Cerrar sesión
+                </button>
+
             </div>
         </aside>
     );

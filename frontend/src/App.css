@@ -29,30 +29,41 @@ body {
 
 .auth-container {
     width: 100%;
-    max-width: 420px;
+    max-width: 480px;
 }
 
+/* =========================================
+   INICIO DE SESIÓN Y CREAR CUENTA (usuarios 45+)
+   Letra mínima 16 px, campos de 52 px, bordes y foco visibles.
+   ========================================= */
+
 .auth-card {
-    background: white;
+    background: #ffffff;
 
-    padding: 30px;
+    padding: 34px 32px;
 
-    border-radius: 14px;
+    border: 1.5px solid var(--mg-line);
+    border-radius: 16px;
 
-    box-shadow:
-        0 5px 20px rgba(0, 0, 0, 0.10);
+    color: #1f1f1f;
 }
 
 .auth-title {
     text-align: center;
 
     margin-top: 0;
-    margin-bottom: 30px;
+    margin-bottom: 26px;
+
+    color: var(--mg-accent);
+
+    font-size: 32px;
 }
 
 .auth-card h2 {
     margin-top: 0;
-    margin-bottom: 25px;
+    margin-bottom: 18px;
+
+    font-size: 25px;
 }
 
 .auth-card p {
@@ -62,26 +73,39 @@ body {
 .auth-card label {
     display: block;
 
-    margin-top: 15px;
-    margin-bottom: 6px;
+    margin-top: 18px;
+    margin-bottom: 8px;
 
+    color: #1f1f1f;
+
+    font-size: 18px;
     font-weight: bold;
 }
 
 .auth-input {
     width: 100%;
+    min-height: 52px;
 
-    padding: 12px;
+    padding: 12px 14px;
 
-    border: 1px solid #ccc;
-    border-radius: 7px;
+    border: 1.5px solid #8a8a8a;
+    border-radius: 10px;
 
-    font-size: 15px;
+    background: #ffffff;
+    color: #1f1f1f;
+
+    font-family: inherit;
+    font-size: 18px;
+}
+
+.auth-input::placeholder {
+    color: #6b6b6b;
 }
 
 .auth-input:focus {
     outline: none;
-    border-color: #555;
+    border-color: #1f1f1f;
+    box-shadow: 0 0 0 3px rgba(31, 31, 31, 0.25);
 }
 
 .password-input-container {
@@ -91,13 +115,13 @@ body {
 }
 
 .password-input-container .auth-input {
-    padding-right: 45px;
+    padding-right: 56px;
 }
 
 .password-eye {
     position: absolute;
 
-    right: 8px;
+    right: 6px;
     top: 50%;
 
     transform: translateY(-50%);
@@ -106,17 +130,17 @@ body {
     align-items: center;
     justify-content: center;
 
-    width: 32px;
-    height: 32px;
+    width: 42px;
+    height: 42px;
 
-    padding: 5px;
+    padding: 8px;
 
     border: none;
     border-radius: 50%;
 
     background: transparent;
 
-    color: #666;
+    color: #3d3d3d;
 
     cursor: pointer;
 
@@ -124,30 +148,43 @@ body {
 }
 
 .password-eye:hover {
-    color: #222;
-    background: #f1f1f1;
+    color: #1f1f1f;
+    background: var(--mg-soft);
+}
+
+.password-eye:focus-visible {
+    outline: 3px solid #1f1f1f;
+    outline-offset: 1px;
 }
 
 .auth-button {
     width: 100%;
+    min-height: 54px;
 
-    margin-top: 20px;
+    margin-top: 24px;
 
     padding: 12px;
 
-    border: none;
-    border-radius: 7px;
+    border: 1.5px solid var(--mg-accent);
+    border-radius: 10px;
 
-    background: #333;
-    color: white;
+    background: var(--mg-accent);
+    color: var(--mg-on-accent);
 
-    font-size: 16px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: bold;
 
     cursor: pointer;
 }
 
 .auth-button:hover {
-    background: #555;
+    background: var(--mg-accent-hover);
+}
+
+.auth-button:focus-visible {
+    outline: 3px solid #1f1f1f;
+    outline-offset: 3px;
 }
 
 .auth-button:disabled {
@@ -156,52 +193,65 @@ body {
 }
 
 .register-question {
-    margin-top: 25px;
+    margin-top: 26px;
 
     text-align: center;
 
-    font-size: 14px;
+    color: #3d3d3d;
+
+    font-size: 17px;
 }
 
 .register-question p {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .register-link {
     margin-top: 0;
 
-    background: transparent;
+    background: #ffffff;
 
-    color: #333;
+    color: #1f1f1f;
 
-    border: 1px solid #333;
+    border: 1.5px solid #8a8a8a;
 }
 
 .register-link:hover {
-    background: #f1f1f1;
+    background: var(--mg-soft);
 }
+
+/* =========================================
+   MENSAJES (éxito / error / información)
+   ========================================= */
 
 .result {
     margin-top: 20px;
 
-    padding: 15px;
+    padding: 14px 16px;
 
-    border-radius: 7px;
+    border: 1.5px solid #8a8a8a;
+    border-radius: 10px;
 
-    background: #f1f1f1;
+    background: #f4f4f4;
+    color: #1f1f1f;
 
     white-space: pre-wrap;
     word-break: break-word;
 
-    font-size: 14px;
+    font-size: 17px;
+    line-height: 1.45;
 }
 
 .result.success {
+    border-color: #2e7d32;
     background: #e8f5e9;
+    color: #1b5e20;
 }
 
 .result.error {
+    border-color: #c62828;
     background: #ffebee;
+    color: #8e1b1b;
 }
 
 /* =========================================
@@ -403,7 +453,7 @@ body {
     position: relative;
 
     width: 100%;
-    max-width: 650px;
+    max-width: 680px;
 
     max-height: 90vh;
 
@@ -411,9 +461,10 @@ body {
 
     background: #ffffff;
 
+    border: 1px solid #cfc7ba;
     border-radius: 16px;
 
-    padding: 28px;
+    padding: 32px;
 
     box-sizing: border-box;
 
@@ -431,29 +482,38 @@ body {
 
 .modal-header h2 {
     margin: 0;
+
+    color: #1f1f1f;
+
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
 }
 
 
+/* Botón cerrar: 48 px para que sea fácil de pulsar */
 .modal-close {
     position: absolute;
 
-    top: 14px;
+    top: 16px;
     right: 16px;
 
-    width: 36px;
-    height: 36px;
+    width: 48px;
+    height: 48px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border: none;
+    border: 1px solid transparent;
 
     border-radius: 50%;
 
     background: transparent;
 
-    font-size: 28px;
+    color: #2f2f2f;
+
+    font-size: 34px;
     line-height: 1;
 
     cursor: pointer;
@@ -461,12 +521,21 @@ body {
 
 
 .modal-close:hover {
-    background: rgba(0, 0, 0, 0.06);
+    background: #f0ece4;
+    border-color: #cfc7ba;
+}
+
+
+.modal-close:focus-visible {
+    outline: 3px solid #1f1f1f;
+    outline-offset: 2px;
 }
 
 
 .modal-content {
     width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 
@@ -703,20 +772,20 @@ body {
 
 
 .product-form-section-title {
-    padding-bottom: 8px;
+    padding-bottom: 10px;
 
-    border-bottom: 1px solid #eeeeee;
+    border-bottom: 2px solid #e2dccf;
 }
 
 
 .product-form-section-title h3 {
     margin: 0;
 
-    font-size: 15px;
+    font-size: 19px;
 
-    font-weight: 650;
+    font-weight: 700;
 
-    color: #333333;
+    color: #1f1f1f;
 }
 
 
@@ -730,9 +799,24 @@ body {
     grid-template-columns:
         repeat(2, minmax(0, 1fr));
 
-    gap: 18px 16px;
+    gap: 22px 20px;
+
+    width: 100%;
+    box-sizing: border-box;
 }
 
+.product-form-grid > .form-group {
+    min-width: 0;
+}
+
+/*
+   Si una fila queda con un solo campo (número impar de campos),
+   ese campo ocupa todo el ancho y no deja un hueco al lado.
+   Ej.: "Precio" solo, o "Stock mínimo" solo al editar.
+*/
+.product-form-grid > .form-group:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
 
 /* =========================================
    CAMPOS
@@ -1001,6 +1085,152 @@ body {
         width: 100%;
     }
 }
+
+/* =========================================
+   PRODUCT FORM — LEGIBILIDAD (usuarios 45+)
+   Letra mínima 16 px, texto de ayuda oscuro
+   (contraste ≥ 7:1 sobre blanco), bordes visibles
+   (≥ 3:1) y controles de 48 px de alto.
+   ========================================= */
+
+.product-form form {
+    gap: 30px;
+}
+
+.product-form .form-group {
+    gap: 8px;
+}
+
+.product-form .form-group label {
+    color: #1f1f1f;
+
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.product-form .form-group .optional {
+    color: #4a4a4a;
+
+    font-weight: 400;
+}
+
+.product-form .form-group input,
+.product-form .form-group select {
+    min-height: 50px;
+
+    padding: 10px 14px;
+
+    border: 1.5px solid #8a8a8a;
+    border-radius: 9px;
+
+    color: #1f1f1f;
+
+    font-size: 18px;
+}
+
+.product-form .form-group input:hover,
+.product-form .form-group select:hover {
+    border-color: #5c5c5c;
+}
+
+.product-form .form-group input:focus,
+.product-form .form-group select:focus {
+    border-color: #1f1f1f;
+
+    box-shadow: 0 0 0 3px rgba(31, 31, 31, 0.25);
+}
+
+.product-form .form-group input::placeholder {
+    color: #6b6b6b;
+}
+
+.product-form .field-help {
+    margin-top: 2px;
+
+    color: #4a4a4a;
+
+    font-size: 15px;
+    line-height: 1.45;
+
+    opacity: 1;
+}
+
+.product-form .checkbox-option {
+    gap: 14px;
+
+    padding: 14px 16px;
+
+    border: 1.5px solid #cfc7ba;
+}
+
+.product-form .checkbox-option input {
+    width: 24px;
+    height: 24px;
+
+    accent-color: #222222;
+}
+
+.product-form .checkbox-option span {
+    color: #1f1f1f;
+
+    font-size: 17px;
+}
+
+.product-form .result {
+    margin-top: 0;
+
+    padding: 14px 16px;
+
+    border: 1.5px solid transparent;
+    border-radius: 9px;
+
+    font-size: 16px;
+    line-height: 1.45;
+}
+
+.product-form .result.success {
+    border-color: #2e7d32;
+
+    background: #e8f5e9;
+    color: #1b5e20;
+}
+
+.product-form .result.error {
+    border-color: #c62828;
+
+    background: #ffebee;
+    color: #8e1b1b;
+}
+
+.product-form-actions {
+    border-top: 2px solid #e2dccf;
+}
+
+.product-form-actions button {
+    min-width: 160px;
+    height: 50px;
+
+    font-size: 17px;
+}
+
+.product-cancel-button {
+    color: #1f1f1f;
+
+    border: 1.5px solid #8a8a8a;
+}
+
+.product-form-actions button:focus-visible {
+    outline: 3px solid #1f1f1f;
+    outline-offset: 3px;
+}
+
+.product-form-loading {
+    color: #333333;
+
+    font-size: 17px;
+}
+
 
 .automatic-field {
     min-height: 42px;
@@ -1460,25 +1690,13 @@ body {
    MODAL DE PRECIO
    ========================================= */
 
-.modal-overlay {
-    z-index: 9999;
-}
-
-.modal-content {
-    max-width: 500px;
-}
-
-.modal-content h2 {
-    margin: 0 0 8px;
-    font-size: 20px;
-    color: #333;
-}
-
-.modal-content > p {
-    margin: 0 0 22px;
-    color: #666;
-    font-size: 14px;
-}
+/*
+   Los estilos del popup de precio viven más abajo bajo
+   ".modal-overlay > .modal-content".
+   NO usar ".modal-content" sin prefijo aquí: esa clase también
+   la usa el componente Modal.jsx (productos, producción) y un
+   max-width global dejaba un espacio en blanco a la derecha.
+*/
 
 /* =========================================
    ACCIONES DEL MODAL
@@ -2414,4 +2632,93 @@ body {
     .product-row button {
         width: 100%;
     }
+}
+
+/* =========================================================
+   NUEVA VENTA — ALTURA FIJA DEL CARRITO  (bloque definitivo)
+
+   Por qué existe este bloque:
+   - .app-content tiene 20 px de padding arriba y abajo y
+     .pos-layout medía 100vh: la página quedaba 40 px más alta
+     que la ventana y el pie del carrito ("Finalizar venta")
+     quedaba cortado, obligando a hacer scroll en toda la página.
+   - Hay reglas del carrito repetidas en index.css y App.css;
+     este bloque va al final para fijar el comportamiento.
+
+   Resultado: el carrito tiene altura fija; encabezado y pie
+   quedan siempre visibles y SOLO la lista de productos hace
+   scroll cuando no cabe.
+   ========================================================= */
+
+.app-content {
+    --app-content-padding: 20px;
+
+    padding: var(--app-content-padding);
+}
+
+.pos-layout {
+    /* index.css define min-height: 100vh, que gana sobre
+       cualquier height: hay que anularlo explícitamente. */
+    min-height: 0;
+
+    height: calc(100vh - 2 * var(--app-content-padding, 20px));
+    height: calc(100dvh - 2 * var(--app-content-padding, 20px));
+}
+
+.pos-main {
+    height: 100%;
+}
+
+.cart-section {
+    min-height: 0;
+
+    overflow: hidden;
+}
+
+.cart-header,
+.cart-footer {
+    flex-shrink: 0;
+}
+
+.cart-items {
+    flex: 1 1 auto;
+
+    min-height: 0;
+    max-height: none;
+
+    overflow-y: auto;
+
+    /* El scroll de la lista no "arrastra" a la página */
+    overscroll-behavior: contain;
+
+    padding-top: 0;
+}
+
+/* Pantallas angostas: productos arriba y carrito abajo.
+   La columna puede desplazarse, pero el carrito conserva
+   una altura fija con su propia lista desplazable. */
+@media (max-width: 900px) {
+
+    .cart-section {
+        flex: 0 0 auto;
+
+        height: min(560px, calc(100vh - 2 * var(--app-content-padding, 20px)));
+        height: min(560px, calc(100dvh - 2 * var(--app-content-padding, 20px)));
+    }
+}
+
+
+/* =========================================================
+   POPUP DE PRECIO — BOTÓN CERRAR (X)
+   Reutiliza .modal-close; aquí solo se reserva espacio para
+   que el título no quede debajo de la X.
+   ========================================================= */
+
+.modal-overlay > .modal-content h2 {
+    padding-right: 56px;
+}
+
+.modal-overlay > .modal-content .modal-close {
+    top: 14px;
+    right: 14px;
 }

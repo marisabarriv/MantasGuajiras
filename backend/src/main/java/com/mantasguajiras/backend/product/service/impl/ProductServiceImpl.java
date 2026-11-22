@@ -12,7 +12,7 @@ import com.mantasguajiras.backend.productcategory.entity.ProductCategory;
 import com.mantasguajiras.backend.productcategory.repository.ProductCategoryRepository;
 import com.mantasguajiras.backend.unit.entity.Unit;
 import com.mantasguajiras.backend.unit.repository.UnitRepository;
-
+import com.mantasguajiras.backend.inventorymovement.service.InventoryMovementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,13 +29,17 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final ProductCategoryRepository productCategoryRepository;
     private final UnitRepository unitRepository;
-
+    private final InventoryMovementService inventoryMovementService;
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductResponse> findAll() {
+    public List<ProductResponse> findAll(boolean includeInactive) {
 
-        return productRepository.findByActiveTrue()
+        // Venta, inventario, etc. solo necesitan los activos. La pantalla
+        // de Productos pide también los inactivos para poder reactivarlos.
+        return (includeInactive
+                        ? productRepository.findAll()
+                        : productRepository.findByActiveTrue())
                 .stream()
                 .map(productMapper::toResponse)
                 .toList();
@@ -143,6 +147,18 @@ public class ProductServiceImpl implements ProductService {
 
         Product savedProduct =
                 productRepository.save(product);
+
+        if (request.getInitialStock() != null
+                && request.getInitialStock().signum() > 0) {
+
+            inventoryMovementService.registerMovement(
+                    savedProduct.getId(),
+                    "IN", "ADJUSTMENT",
+                    null,
+                    request.getInitialStock(),
+                    "Stock inicial"
+            );
+        }
 
 
         return productMapper.toResponse(savedProduct);

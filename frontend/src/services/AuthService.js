@@ -1,77 +1,33 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiRequest as request } from "./apiClient";
+
 
 const AuthService = {
 
-    // =========================================
-    // LOGIN
-    // =========================================
-
-    async login(identifier, password) {
-
-        const response = await fetch(
-            `${API_URL}/auth/login`,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json",
-                },
-
-                body: JSON.stringify({
-                    identifier,
-                    password,
-                }),
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-
-            throw new Error(
-                data.message ||
-                "No fue posible iniciar sesión."
-            );
-        }
-
-        return data;
+    /**
+     * Inicia sesión con usuario o teléfono.
+     * Errores posibles (mensaje del backend): contraseña incorrecta,
+     * o cuenta inactiva / pendiente de aprobación.
+     */
+    login(identifier, password) {
+        return request("/auth/login", {
+            method: "POST",
+            body: { identifier, password },
+            auth: false,
+            redirectOn401: false,
+            fallbackMessage: "No fue posible iniciar sesión.",
+        });
     },
 
 
-    // =========================================
-    // REGISTRO
-    // =========================================
-
-    async register(username, phone, password) {
-
-        const response = await fetch(
-            `${API_URL}/auth/register`,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json",
-                },
-
-                body: JSON.stringify({
-                    username,
-                    phone,
-                    password,
-                }),
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-
-            throw new Error(
-                data.message ||
-                "No fue posible crear la cuenta."
-            );
-        }
-
-        return data;
+    /** Registro público: la cuenta queda pendiente de aprobación del admin. */
+    register(username, phone, password) {
+        return request("/auth/register", {
+            method: "POST",
+            body: { username, phone, password },
+            auth: false,
+            redirectOn401: false,
+            fallbackMessage: "No fue posible crear la cuenta.",
+        });
     },
 };
 

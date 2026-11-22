@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import ProductService from "../services/ProductService";
+import BarcodeScanModal from "./BarcodeScanModal";
 
 function ProductForm({ product = null, onSuccess, onCancel }) {
   const isEditing = Boolean(product);
@@ -14,14 +15,33 @@ function ProductForm({ product = null, onSuccess, onCancel }) {
   const [result, setResult] = useState("");
   const [resultType, setResultType] = useState("");
 
-  const [form, setForm] = useState({
-    categoryId: "",
-    barcode: "",
-    name: "",
-    price: "",
-    minimumStock: "",
-    active: true,
-  });
+  // Ventana de la cámara para leer el código de barras.
+  const [scanOpen, setScanOpen] = useState(false);
+
+  // En edición, el formulario empieza con los datos del producto.
+  // (El formulario se crea de nuevo cada vez que se abre la ventana.)
+  const [form, setForm] = useState(() =>
+    product
+      ? {
+          categoryId: product.categoryId || "",
+          barcode: product.barcode || "",
+          name: product.name || "",
+          price: product.unitPrice ?? product.purchasePrice ?? "",
+          // En edición no se toca el inventario.
+          initialStock: "",
+          minimumStock: product.minimumStock ?? "",
+          active: product.active ?? true,
+        }
+      : {
+          categoryId: "",
+          barcode: "",
+          name: "",
+          price: "",
+          initialStock: "",
+          minimumStock: "",
+          active: true,
+        },
+  );
 
   // =========================================
   // CARGAR CATEGORÍAS Y UNIDADES
@@ -54,30 +74,6 @@ function ProductForm({ product = null, onSuccess, onCancel }) {
 
     loadData();
   }, []);
-
-  // =========================================
-  // CARGAR PRODUCTO EN MODO EDICIÓN
-  // =========================================
-
-  useEffect(() => {
-    if (!product) {
-      return;
-    }
-
-    setForm({
-      categoryId: product.categoryId || "",
-
-      barcode: product.barcode || "",
-
-      name: product.name || "",
-
-      price: product.unitPrice ?? product.purchasePrice ?? "",
-
-      minimumStock: product.minimumStock ?? "",
-
-      active: product.active ?? true,
-    });
-  }, [product]);
 
   // =========================================
   // CAMBIAR CAMPOS
@@ -237,6 +233,22 @@ function ProductForm({ product = null, onSuccess, onCancel }) {
       return;
     }
 
+
+    if (!isEditing && form.initialStock !== "") {
+      const initialStock = Number(form.initialStock);
+
+      if (!Number.isFinite(initialStock) || initialStock < 0) {
+        setResult("El stock inicial no puede ser negativo.");
+        setResultType("error");
+        return;
+      }
+
+      if (categoryType === "blanket" && !Number.isInteger(initialStock)) {
+        setResult("El stock inicial de las mantas debe ser un número entero.");
+        setResultType("error");
+        return;
+      }
+    }
     // =====================================
     // PREPARAR DATOS
     // =====================================
@@ -274,6 +286,11 @@ function ProductForm({ product = null, onSuccess, onCancel }) {
 
       active: form.active,
     };
+
+    if (!isEditing) {
+      request.initialStock =
+        form.initialStock === "" ? null : Number(form.initialStock);
+    }
 
     // =====================================
     // CREAR / EDITAR
@@ -364,14 +381,34 @@ function ProductForm({ product = null, onSuccess, onCancel }) {
                 <span className="optional"> (opcional)</span>
               </label>
 
-              <input
-                id="barcode"
-                name="barcode"
-                type="text"
-                value={form.barcode}
-                onChange={handleChange}
-                placeholder="Código de barras"
-              />
+              <div className="barcode-field-row">
+                <input
+                  id="barcode"
+                  name="barcode"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={form.barcode}
+                  onChange={handleChange}
+                  // El lector físico termina con Enter: no debe guardar
+                  // el formulario a medio llenar.
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                    }
+                  }}
+                  placeholder="Escanea o escribe"
+                />
+
+                <button
+                  type="button"
+                  className="scan-camera-button"
+                  onClick={() => setScanOpen(true)}
+                  aria-label="Escanear código de barras con la cámara"
+                >
+                  Escanear
+                </button>
+              </div>
             </div>
 
             <div className="form-group">
@@ -392,20 +429,18 @@ function ProductForm({ product = null, onSuccess, onCancel }) {
                   </option>
                 ))}
               </select>
-                </div>
 
-                {/* =====================
-                            UNIDAD AUTOMÁTICA
-                           ===================== */}
-
-              <small className="field-help">
-                {selectedUnit
-                  ? selectedUnit.abbreviation === "#"
-                    ? "Esta categoría se maneja en unidades (#)."
-                    : "Esta categoría se maneja en metros."
-                  : ""}
-              </small>
+              {/* Unidad automática: el texto va DENTRO del campo
+                  para no crear una celda vacía en la cuadrícula. */}
+              {selectedUnit && (
+                <small className="field-help">
+                  {selectedUnit.abbreviation === "#"
+                    ? "Esta categoría se maneja en unidades enteras (#)."
+                    : "Esta categoría se maneja en metros."}
+                </small>
+              )}
             </div>
+          </div>
         </div>
 
         {/* =============================
@@ -452,6 +487,26 @@ function ProductForm({ product = null, onSuccess, onCancel }) {
           </div>
 
           <div className="product-form-grid">
+            {!isEditing && (
+              <div className="form-group">
+                <label htmlFor="initialStock">
+                  Stock inicial
+                  <span className="optional"> (opcional)</span>
+                </label>
+
+                <input
+                  id="initialStock"
+                  name="initialStock"
+                  type="number"
+                  min="0"
+                  step={stockStep}
+                  value={form.initialStock}
+                  onChange={handleChange}
+                  placeholder="0"
+                />
+              </div>
+            )}
+
             <div className="form-group">
               <label htmlFor="minimumStock">Stock mínimo</label>
 
@@ -541,6 +596,19 @@ function ProductForm({ product = null, onSuccess, onCancel }) {
           </button>
         </div>
       </form>
+
+      {/* Leer el código de barras con la cámara (o lector / a mano) */}
+      <BarcodeScanModal
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onDetected={(code) => {
+          setScanOpen(false);
+          setForm((previous) => ({ ...previous, barcode: code }));
+          setResult("");
+          setResultType("");
+        }}
+        title="Escanear código de barras"
+      />
     </div>
   );
 }

@@ -1,5 +1,7 @@
 package com.mantasguajiras.backend.user.dto.requests;
 
+import com.mantasguajiras.backend.user.entity.Role;
+
 import com.mantasguajiras.backend.common.validation.ValidPassword;
 import com.mantasguajiras.backend.common.validation.ValidPhone;
 
@@ -30,4 +32,7 @@ public class UserRequest {
 
     @NotNull(message = "Debe indicar si el usuario está activo.")
     private Boolean active;
+
+    /** Rol del nuevo usuario. Si no se indica, será vendedor (SELLER). */
+    private Role role;
 }

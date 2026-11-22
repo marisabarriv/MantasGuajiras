@@ -1,0 +1,40 @@
+# =========================================================
+# MantasGuajiras — archivos que NUNCA deben subirse a git
+# (claves, contraseñas, copias y configuraciones locales).
+# Cada subproyecto tiene además su propio .gitignore.
+# =========================================================
+
+# Variables de entorno con claves (usar los .env.example como plantilla)
+.env
+.env.*
+!.env.example
+
+# Configuración local del backend (contraseñas de la base de datos,
+# admin por defecto y clave JWT). La plantilla es application-dev.example.yml
+**/application-dev.yml
+**/application-local.yml
+**/application-*.local.yml
+
+# Copias comprimidas del proyecto (pueden incluir claves)
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+
+# Certificados y llaves privadas
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Copias de la base de datos con datos reales
+*.dump
+*.backup
+*.bak
+
+# Ajustes locales de Claude Code (rutas de este computador)
+.claude/settings.local.json
+.claude/launch.json

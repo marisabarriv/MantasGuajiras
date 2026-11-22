@@ -1,132 +1,230 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import Modal from "../components/Modal";
+import BarcodeScanModal from "../components/BarcodeScanModal";
 import ProductService from "../services/ProductService";
+import InventoryService from "../services/InventoryService";
+import SaleService from "../services/SaleService";
+import {
+  formatNumber,
+  formatQuantity,
+  isWholeUnit,
+} from "../utils/inventoryFormat";
+
+import "../styles/new-sale.css";
+
+const money = (value) =>
+  `$${Number(value || 0).toLocaleString("es-CO", {
+    maximumFractionDigits: 2,
+  })}`;
+
+// Redondeo a 2 decimales para metros y dinero.
+const round2 = (value) => Math.round(Number(value) * 100) / 100;
 
 function NewSalePage() {
-  const [search, setSearch] = useState("");
-
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-
   const username = user.username || "usuario";
 
-  const [products, setProducts] = useState([]);
+  const searchInputRef = useRef(null);
+  const submittingRef = useRef(false);
 
+  // =========================================
+  // DATOS
+  // =========================================
+
+  const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [stock, setStock] = useState({});
 
   const [loadingProducts, setLoadingProducts] = useState(true);
-
   const [productsError, setProductsError] = useState("");
 
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [search, setSearch] = useState("");
+  const [scanOpen, setScanOpen] = useState(false);
+
+  // =========================================
+  // CARRITO
+  // =========================================
 
   const [cart, setCart] = useState([]);
+  const [cartMessage, setCartMessage] = useState("");
 
   // =========================================
   // POPUP DE PRECIO
   // =========================================
 
   const [selectedCartItem, setSelectedCartItem] = useState(null);
-
   const [specialPrice, setSpecialPrice] = useState("");
 
   // =========================================
-  // CARGAR PRODUCTOS Y CATEGORÍAS
+  // CONFIRMAR / REGISTRAR VENTA
   // =========================================
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [saleError, setSaleError] = useState("");
+  const [completedSale, setCompletedSale] = useState(null);
+
+  // =========================================
+  // CARGAR PRODUCTOS, CATEGORÍAS Y EXISTENCIAS
+  // =========================================
+
+  const applyStock = (inventoryData) => {
+    const map = {};
+
+    (Array.isArray(inventoryData) ? inventoryData : []).forEach((item) => {
+      map[item.productId] = item;
+    });
+
+    setStock(map);
+  };
+
   useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setLoadingProducts(true);
-        setProductsError("");
+    let cancelled = false;
 
-        const [productsData, categoriesData] = await Promise.all([
-          ProductService.findAll(),
-          ProductService.findCategories(),
-        ]);
+    Promise.all([
+      ProductService.findAll(),
+      ProductService.findCategories(),
+      InventoryService.findAll(),
+    ])
+      .then(([productsData, categoriesData, inventoryData]) => {
+        if (cancelled) {
+          return;
+        }
 
-        setProducts(Array.isArray(productsData) ? productsData : []);
+        // Solo productos activos se pueden vender.
+        setProducts(
+          (Array.isArray(productsData) ? productsData : []).filter(
+            (product) => product.active !== false,
+          ),
+        );
 
-        const activeCategories = Array.isArray(categoriesData)
-          ? [...categoriesData]
-              .filter((category) => category.active !== false)
-              .sort((a, b) => {
-                const nameA = String(a.name || "")
-                  .trim()
-                  .toLowerCase();
+        const activeCategories = (
+          Array.isArray(categoriesData) ? [...categoriesData] : []
+        )
+          .filter((category) => category.active !== false)
+          .sort((a, b) => {
+            const nameA = String(a.name || "").trim().toLowerCase();
+            const nameB = String(b.name || "").trim().toLowerCase();
 
-                const nameB = String(b.name || "")
-                  .trim()
-                  .toLowerCase();
+            if (nameA === "manta") return -1;
+            if (nameB === "manta") return 1;
+            if (nameA === "tela") return -1;
+            if (nameB === "tela") return 1;
 
-                if (nameA === "manta") return -1;
-                if (nameB === "manta") return 1;
-
-                if (nameA === "tela") return -1;
-                if (nameB === "tela") return 1;
-
-                return 0;
-              })
-          : [];
+            return 0;
+          });
 
         setCategories(activeCategories);
 
-        // Seleccionar automáticamente
-        // la primera categoría disponible.
         if (activeCategories.length > 0) {
           setSelectedCategory(activeCategories[0].id);
         }
-      } catch (error) {
-        setProductsError(
-          error.message || "No fue posible cargar los productos.",
-        );
-      } finally {
-        setLoadingProducts(false);
-      }
-    };
 
-    loadProducts();
+        applyStock(inventoryData);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setProductsError(
+            error.message || "No fue posible cargar los productos.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingProducts(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  const reloadStock = () => {
+    InventoryService.findAll()
+      .then(applyStock)
+      .catch(() => {
+        // Si falla, se conserva el último dato; el backend
+        // valida igualmente las existencias al vender.
+      });
+  };
+
   // =========================================
-  // CATEGORÍA SELECCIONADA
+  // AYUDANTES DE PRODUCTO
   // =========================================
 
-  const selectedCategoryData = categories.find(
-    (category) => String(category.id) === String(selectedCategory),
-  );
+  const getAvailable = (productId) => Number(stock[productId]?.quantity || 0);
+
+  const getUnit = (productId) => ({
+    unitAbbreviation: stock[productId]?.unitAbbreviation,
+    unitName: stock[productId]?.unitName,
+  });
+
+  const quantityText = (value, productId) => {
+    const { unitAbbreviation, unitName } = getUnit(productId);
+    return formatQuantity(value, unitAbbreviation, unitName);
+  };
+
+  const getCartQuantity = (productId) =>
+    Number(cart.find((item) => item.productId === productId)?.quantity || 0);
 
   // =========================================
   // FILTRAR PRODUCTOS
+  // Con texto de búsqueda se busca en TODAS las
+  // categorías (nombre, código interno o de barras).
   // =========================================
 
-  const filteredProducts = products
-    .filter(
-      (product) => String(product.categoryId) === String(selectedCategory),
-    )
-    .filter((product) =>
-      product.name?.toLowerCase().includes(search.toLowerCase()),
-    );
+  const searchText = search.trim().toLowerCase();
+
+  const filteredProducts = products.filter((product) => {
+    if (searchText) {
+      return [product.name, product.internalCode, product.barcode]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(searchText));
+    }
+
+    return String(product.categoryId) === String(selectedCategory);
+  });
 
   // =========================================
-  // AGREGAR PRODUCTO AL CARRITO
+  // CARRITO
   // =========================================
 
   const handleAddToCart = (product) => {
+    const available = getAvailable(product.id);
+    const inCart = getCartQuantity(product.id);
+    const remaining = round2(available - inCart);
+
+    if (remaining <= 0) {
+      setCartMessage(
+        available <= 0
+          ? `${product.name} está agotado.`
+          : `Ya agregaste todas las existencias de ${product.name} (${quantityText(available, product.id)}).`,
+      );
+      return;
+    }
+
+    // Se agrega 1 (o lo que quede, si es menos de 1 metro).
+    const step = Math.min(1, remaining);
+
+    setCartMessage("");
+
     setCart((currentCart) => {
-      const existingProduct = currentCart.find(
+      const existing = currentCart.find(
         (item) => item.productId === product.id,
       );
 
-      if (existingProduct) {
+      if (existing) {
         return currentCart.map((item) =>
           item.productId === product.id
-            ? {
-                ...item,
-                quantity: item.quantity + 1,
-              }
+            ? { ...item, quantity: round2(Number(item.quantity) + step) }
             : item,
         );
       }
+
+      const { unitAbbreviation, unitName } = getUnit(product.id);
 
       return [
         ...currentCart,
@@ -134,106 +232,133 @@ function NewSalePage() {
           productId: product.id,
           name: product.name,
 
-          // Precio utilizado
-          // en esta venta.
+          // Precio usado en esta venta (puede ser especial).
           price: Number(product.unitPrice),
 
-          // Precio original.
-          // Se conserva para
-          // calcular el descuento.
+          // Precio normal del producto. No se modifica.
           originalPrice: Number(product.unitPrice),
 
-          quantity: 1,
+          quantity: step,
+
+          wholeUnit: isWholeUnit(unitAbbreviation, unitName),
         },
       ];
     });
   };
 
   const handleRemoveFromCart = (productId) => {
+    setCartMessage("");
     setCart((currentCart) =>
       currentCart.filter((item) => item.productId !== productId),
     );
   };
 
   const handleDecreaseQuantity = (productId) => {
+    setCartMessage("");
     setCart((currentCart) =>
-        currentCart
-            .map((item) =>
-                item.productId === productId
-                    ? {
-                        ...item,
-                        quantity: item.quantity - 1,
-                    }
-                    : item
-            )
-            .filter(
-                (item) => item.quantity > 0
-            )
+      currentCart
+        .map((item) =>
+          item.productId === productId
+            ? { ...item, quantity: round2(Number(item.quantity) - 1) }
+            : item,
+        )
+        .filter((item) => Number(item.quantity) > 0),
     );
-};
+  };
+
+  // Telas: se escribe la cantidad de metros (con decimales).
+  const handleQuantityInput = (productId, value) => {
+    setCart((currentCart) =>
+      currentCart.map((item) =>
+        item.productId === productId ? { ...item, quantity: value } : item,
+      ),
+    );
+  };
+
+  // Al salir del campo se corrige un valor vacío o mayor al disponible.
+  const handleQuantityBlur = (item) => {
+    const available = getAvailable(item.productId);
+    let value = round2(Number(item.quantity));
+
+    if (!Number.isFinite(value) || value <= 0) {
+      value = Math.min(1, available);
+      setCartMessage(
+        `La cantidad de ${item.name} debe ser mayor que cero. Se dejó en ${quantityText(value, item.productId)}.`,
+      );
+    } else if (value > available) {
+      value = available;
+      setCartMessage(
+        `Solo hay ${quantityText(available, item.productId)} de ${item.name}.`,
+      );
+    } else {
+      setCartMessage("");
+    }
+
+    setCart((currentCart) =>
+      currentCart.map((cartItem) =>
+        cartItem.productId === item.productId
+          ? { ...cartItem, quantity: value }
+          : cartItem,
+      ),
+    );
+  };
 
   // =========================================
-  // ABRIR POPUP DE PRECIO
+  // POPUP DE PRECIO ESPECIAL
   // =========================================
 
   const handleOpenPricePopup = (item) => {
     setSelectedCartItem(item);
-    setSpecialPrice(item.price);
+    setSpecialPrice(String(item.price));
   };
-
-  // =========================================
-  // CERRAR POPUP
-  // =========================================
 
   const handleClosePricePopup = () => {
     setSelectedCartItem(null);
     setSpecialPrice("");
   };
 
-  // =========================================
-  // CALCULAR DESCUENTO
-  // =========================================
-
-  const calculateDiscount = () => {
+  // La tecla Esc cierra el popup de precio (igual que las demás ventanas).
+  useEffect(() => {
     if (!selectedCartItem) {
-      return 0;
+      return undefined;
     }
 
-    const originalPrice = Number(selectedCartItem.originalPrice);
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setSelectedCartItem(null);
+        setSpecialPrice("");
+      }
+    };
 
-    const currentPrice = Number(specialPrice);
+    document.addEventListener("keydown", handleKeyDown);
 
-    if (!originalPrice || currentPrice < 0) {
-      return 0;
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [selectedCartItem]);
+
+  const priceNumber = Number(specialPrice);
+
+  let priceError = "";
+
+  if (selectedCartItem) {
+    if (specialPrice === "" || !Number.isFinite(priceNumber) || priceNumber <= 0) {
+      priceError = "Escribe un precio mayor que cero.";
+    } else if (priceNumber > selectedCartItem.originalPrice) {
+      priceError = `El precio especial no puede ser mayor que el precio normal (${money(selectedCartItem.originalPrice)}).`;
     }
+  }
 
-    const discount = ((originalPrice - currentPrice) / originalPrice) * 100;
+  const discountPercent =
+    selectedCartItem && !priceError && selectedCartItem.originalPrice > 0
+      ? ((selectedCartItem.originalPrice - priceNumber) /
+          selectedCartItem.originalPrice) *
+        100
+      : 0;
 
-    return Math.max(0, discount);
-  };
-
-  // =========================================
-  // GUARDAR PRECIO PARA ESTA COMPRA
-  // =========================================
-
-  const handleSavePrice = () => {
-    if (!selectedCartItem) {
-      return;
-    }
-
-    const newPrice = Number(specialPrice);
-
-    if (!newPrice || newPrice <= 0) {
-      return;
-    }
-
+  const applyPrice = (newPrice) => {
     setCart((currentCart) =>
       currentCart.map((item) =>
         item.productId === selectedCartItem.productId
-          ? {
-              ...item,
-              price: newPrice,
-            }
+          ? { ...item, price: round2(newPrice) }
           : item,
       ),
     );
@@ -241,109 +366,254 @@ function NewSalePage() {
     handleClosePricePopup();
   };
 
+  const handleSavePrice = () => {
+    if (!selectedCartItem || priceError) {
+      return;
+    }
+
+    applyPrice(priceNumber);
+  };
+
   // =========================================
-  // TOTAL DEL CARRITO
+  // TOTAL
   // =========================================
 
   const cartTotal = cart.reduce(
-    (total, item) => total + Number(item.price) * item.quantity,
+    (total, item) => total + Number(item.price) * Number(item.quantity || 0),
     0,
   );
 
+  const cartHasInvalidQuantity = cart.some(
+    (item) => !(Number(item.quantity) > 0),
+  );
+
+  // =========================================
+  // BÚSQUEDA / LECTOR DE CÓDIGO DE BARRAS
+  // El lector escribe el código y pulsa Enter.
+  // =========================================
+
+  /** Busca por código de barras o código interno. */
+  const findByCode = (rawCode) => {
+    const code = String(rawCode || "").trim().toLowerCase();
+
+    if (!code) {
+      return null;
+    }
+
+    return (
+      products.find(
+        (product) =>
+          String(product.barcode || "").toLowerCase() === code ||
+          String(product.internalCode || "").toLowerCase() === code,
+      ) || null
+    );
+  };
+
+  // Lector físico: escribe el código en el buscador y pulsa Enter.
+  const handleSearchKeyDown = (event) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    const typed = search.trim();
+
+    if (!typed) {
+      return;
+    }
+
+    const match = findByCode(typed);
+
+    if (match) {
+      event.preventDefault();
+      handleAddToCart(match);
+      setSearch("");
+    } else if (filteredProducts.length === 0) {
+      setCartMessage(`No hay ningún producto con el código "${typed}".`);
+    }
+  };
+
+  // Cámara: al leer el código, el producto entra al carrito.
+  const handleCameraCode = (code) => {
+    setScanOpen(false);
+
+    const match = findByCode(code);
+
+    if (match) {
+      handleAddToCart(match);
+    } else {
+      setCartMessage(
+        `No hay ningún producto con el código "${code}". ` +
+          "Revisa que el producto tenga ese código de barras en Productos.",
+      );
+    }
+
+    searchInputRef.current?.focus();
+  };
+
+  // =========================================
+  // REGISTRAR VENTA
+  // =========================================
+
+  const handleOpenConfirm = () => {
+    if (cart.length === 0 || cartHasInvalidQuantity) {
+      return;
+    }
+
+    setSaleError("");
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmSale = async () => {
+    // Evita registrar dos veces la misma venta (doble clic).
+    if (submittingRef.current) {
+      return;
+    }
+
+    submittingRef.current = true;
+    setSubmitting(true);
+    setSaleError("");
+
+    const items = cart.map((item) => {
+      const special = round2(item.price) < round2(item.originalPrice);
+
+      return special
+        ? {
+            productId: item.productId,
+            quantity: round2(item.quantity),
+            specialPrice: true,
+            finalUnitPrice: round2(item.price),
+          }
+        : {
+            productId: item.productId,
+            quantity: round2(item.quantity),
+            specialPrice: false,
+          };
+    });
+
+    try {
+      const sale = await SaleService.create({ items });
+
+      setCompletedSale({
+        total: sale.total ?? cartTotal,
+        lines: cart.length,
+      });
+
+      setCart([]);
+      setCartMessage("");
+      setConfirmOpen(false);
+
+      reloadStock();
+    } catch (error) {
+      setSaleError(
+        error instanceof TypeError
+          ? "No hay conexión con el servidor. La venta NO se registró. Revisa la conexión e inténtalo de nuevo."
+          : error.message || "No fue posible registrar la venta.",
+      );
+
+      // Las existencias pudieron cambiar (otra venta, un ajuste...).
+      reloadStock();
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
+    }
+  };
+
   // =========================================
   // RENDER
+  // (Cerrar sesión está en el menú lateral, en todas las páginas.)
   // =========================================
 
   return (
     <div className="pos-layout">
       <div className="pos-main">
-        {/* =====================================
-                    ENCABEZADO
-                ===================================== */}
+        {/* ENCABEZADO */}
 
         <header className="pos-header">
           <div>
-            <h1>Mantas Guajiras</h1>
-
+            <h1>Nueva venta</h1>
             <p>
-              Hola, <b>{username}</b>
+              Hola, <b>{username}</b>. Agrega productos al carrito y pulsa
+              "Finalizar venta".
             </p>
           </div>
-
-          <button className="logout-button">Salir</button>
         </header>
 
-        {/* =====================================
-                    CONTENIDO PRINCIPAL
-                ===================================== */}
+        {/* CONTENIDO PRINCIPAL */}
 
         <main className="pos-content">
-          {/* =================================
-                        ZONA DE PRODUCTOS
-                    ================================= */}
+          {/* ZONA DE PRODUCTOS */}
 
           <section className="products-section">
-            {/* =================================
-                            HERRAMIENTAS
-                        ================================= */}
-
             <div className="products-toolbar">
-              {/* BÚSQUEDA + ESCÁNER */}
-
               <div className="search-area">
+                {/* Queda enfocado al abrir la página: el lector físico
+                    funciona sin tocar nada. */}
                 <input
-                  type="text"
-                  placeholder="Buscar producto..."
+                  ref={searchInputRef}
+                  type="search"
+                  placeholder="Buscar por nombre o código..."
+                  aria-label="Buscar producto"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  autoFocus
                 />
 
-                <button className="scan-button">Escanear código</button>
+                <button
+                  type="button"
+                  className="scan-camera-button"
+                  onClick={() => {
+                    setCartMessage("");
+                    setScanOpen(true);
+                  }}
+                >
+                  Escanear con cámara
+                </button>
               </div>
 
-              {/* =================================
-                                CATEGORÍAS
-                            ================================= */}
+              <p className="pos-scan-help">
+                Con lector de códigos: escanea directamente y el producto se
+                agrega solo al carrito.
+              </p>
 
-              <div className="product-tabs">
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    className={`product-tab ${
-                      String(selectedCategory) === String(category.id)
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() => setSelectedCategory(category.id)}
-                  >
-                    {category.name}
-                  </button>
-                ))}
-              </div>
+              {!searchText && (
+                <div className="product-tabs">
+                  {categories.map((category) => (
+                    <button
+                      type="button"
+                      key={category.id}
+                      className={`product-tab ${
+                        String(selectedCategory) === String(category.id)
+                          ? "active"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedCategory(category.id)}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {searchText && (
+                <p className="pos-search-info">
+                  Resultados en todas las categorías para "{search.trim()}"
+                </p>
+              )}
             </div>
 
-            {/* =================================
-                            PRODUCTOS
-                        ================================= */}
+            {/* PRODUCTOS */}
 
             <div className="products-grid">
-              {/* CARGANDO */}
-
               {loadingProducts && <p>Cargando productos...</p>}
 
-              {/* ERROR */}
-
-              {!loadingProducts && productsError && <p>{productsError}</p>}
-
-              {/* SIN CATEGORÍAS */}
+              {!loadingProducts && productsError && (
+                <div className="result error pos-result">{productsError}</div>
+              )}
 
               {!loadingProducts &&
                 !productsError &&
-                categories.length === 0 && (
-                  <p>No hay categorías disponibles.</p>
-                )}
-
-              {/* SIN PRODUCTOS */}
+                categories.length === 0 && <p>No hay categorías disponibles.</p>}
 
               {!loadingProducts &&
                 !productsError &&
@@ -352,136 +622,196 @@ function NewSalePage() {
                   <p>No hay productos disponibles.</p>
                 )}
 
-              {/* PRODUCTOS REALES */}
-
               {!loadingProducts &&
                 !productsError &&
-                filteredProducts.map((product) => (
-                  <div className="product-card" key={product.id}>
-                    <h3>{product.name}</h3>
+                filteredProducts.map((product) => {
+                  const available = getAvailable(product.id);
+                  const remaining = round2(
+                    available - getCartQuantity(product.id),
+                  );
+                  const { unitAbbreviation, unitName } = getUnit(product.id);
+                  const wholeUnit = isWholeUnit(unitAbbreviation, unitName);
 
-                    <p>${Number(product.unitPrice).toLocaleString("es-CO")}</p>
+                  return (
+                    <div
+                      className={`product-card ${available <= 0 ? "product-card-out" : ""}`}
+                      key={product.id}
+                    >
+                      <h3>{product.name}</h3>
 
-                    <button onClick={() => handleAddToCart(product)}>
-                      Agregar
-                    </button>
-                  </div>
-                ))}
+                      <p>
+                        {money(product.unitPrice)}
+                        <span className="pos-price-unit">
+                          {wholeUnit ? " c/u" : " por metro"}
+                        </span>
+                      </p>
+
+                      <p
+                        className={`pos-stock ${
+                          available <= 0 ? "pos-stock-out" : ""
+                        }`}
+                      >
+                        {available <= 0
+                          ? "Agotado"
+                          : `Disponibles: ${quantityText(available, product.id)}`}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAddToCart(product)}
+                        disabled={remaining <= 0}
+                      >
+                        {available <= 0
+                          ? "Agotado"
+                          : remaining <= 0
+                            ? "Todo en el carrito"
+                            : "Agregar"}
+                      </button>
+                    </div>
+                  );
+                })}
             </div>
           </section>
 
-          {/* =================================
-                        CARRITO
-                    ================================= */}
+          {/* CARRITO */}
 
           <aside className="cart-section">
             <div className="cart-header">
               <h2>Carrito</h2>
             </div>
 
-            {/* PRODUCTOS DEL CARRITO */}
-
             {cart.length === 0 ? (
               <div className="cart-empty">
                 <p>Aún no hay productos.</p>
               </div>
             ) : (
-              <div className="cart-items">
-                {/* ENCABEZADOS */}
+              <div className="cart-items pos-cart-list">
+                {cart.map((item) => {
+                  const isSpecial =
+                    round2(item.price) < round2(item.originalPrice);
+                  const lineTotal =
+                    Number(item.price) * Number(item.quantity || 0);
+                  const remaining = round2(
+                    getAvailable(item.productId) - Number(item.quantity || 0),
+                  );
 
-                <div className="cart-item">
-                  <strong>Nombre</strong>
+                  return (
+                    <div className="pos-cart-row" key={item.productId}>
+                      <div className="pos-cart-info">
+                        <strong>{item.name}</strong>
 
-                  <strong>Cantidad</strong>
+                        <span className="pos-cart-price">
+                          {money(item.price)}
+                          {item.wholeUnit ? " c/u" : " por metro"}
+                          {isSpecial && (
+                            <span className="pos-special-tag">
+                              Precio especial
+                            </span>
+                          )}
+                        </span>
+                      </div>
 
-                  <strong>Total</strong>
-                </div>
+                      <div className="pos-cart-line-total">
+                        {money(lineTotal)}
+                      </div>
 
-                {cart.map((item) => (
-                  <div
-                    className="cart-item"
-                    key={item.productId}
-                    onClick={() => handleOpenPricePopup(item)}
-                    style={{
-                      cursor: "pointer",
-                    }}
-                  >
-                    {/* NOMBRE */}
+                      <div
+                        className="pos-cart-qty"
+                        role="group"
+                        aria-label={`Cantidad de ${item.name}`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleDecreaseQuantity(item.productId)}
+                          aria-label={`Quitar una unidad de ${item.name}`}
+                        >
+                          −
+                        </button>
 
-                    <div>
-                      <strong>{item.name}</strong>
-                    </div>
-
-                    {/* CANTIDAD */}
-
-                    <div>
-    <button
-        type="button"
-        onClick={(event) => {
-            event.stopPropagation();
-            handleDecreaseQuantity(
-                item.productId
-            );
-        }}
-    >
-        −
-    </button>
-
-    <span>
-        {item.quantity}
-    </span>
-
-    <button
-        type="button"
-        onClick={(event) => {
-            event.stopPropagation();
-            handleAddToCart({
-                id: item.productId,
-                name: item.name,
-                unitPrice: item.originalPrice,
-            });
-        }}
-    >
-        +
-    </button>
-</div>
-
-                    {/* TOTAL DEL PRODUCTO */}
-
-                    <div>
-                      <strong>
-                        $
-                        {(Number(item.price) * item.quantity).toLocaleString(
-                          "es-CO",
+                        {item.wholeUnit ? (
+                          <span className="pos-cart-qty-value">
+                            {formatNumber(item.quantity)}
+                          </span>
+                        ) : (
+                          <label className="pos-cart-qty-input">
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              min="0.01"
+                              step="0.01"
+                              value={item.quantity}
+                              onChange={(event) =>
+                                handleQuantityInput(
+                                  item.productId,
+                                  event.target.value,
+                                )
+                              }
+                              onBlur={() => handleQuantityBlur(item)}
+                              aria-label={`Metros de ${item.name}`}
+                            />
+                            <span>m</span>
+                          </label>
                         )}
-                      </strong>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleAddToCart({
+                              id: item.productId,
+                              name: item.name,
+                              unitPrice: item.originalPrice,
+                            })
+                          }
+                          disabled={remaining <= 0}
+                          aria-label={`Agregar una unidad de ${item.name}`}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <div className="pos-cart-actions">
+                        <button
+                          type="button"
+                          className="pos-cart-price-button"
+                          onClick={() => handleOpenPricePopup(item)}
+                        >
+                          Cambiar precio
+                        </button>
+
+                        <button
+                          type="button"
+                          className="pos-cart-remove-button"
+                          onClick={() => handleRemoveFromCart(item.productId)}
+                        >
+                          Quitar
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleRemoveFromCart(item.productId);
-                      }}
-                    >
-                      Quitar
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
-            {/* =================================
-                            FOOTER DEL CARRITO
-                        ================================= */}
+            {/* PIE DEL CARRITO */}
 
             <div className="cart-footer">
+              {cartMessage && (
+                <div className="pos-cart-message" role="status">
+                  {cartMessage}
+                </div>
+              )}
+
               <div className="cart-total">
                 <span>Total</span>
-
-                <strong>${cartTotal.toLocaleString("es-CO")}</strong>
+                <strong>{money(cartTotal)}</strong>
               </div>
 
-              <button className="checkout-button" disabled={cart.length === 0}>
+              <button
+                type="button"
+                className="checkout-button"
+                disabled={cart.length === 0 || cartHasInvalidQuantity}
+                onClick={handleOpenConfirm}
+              >
                 Finalizar venta
               </button>
             </div>
@@ -489,24 +819,41 @@ function NewSalePage() {
         </main>
       </div>
 
-      {/* =========================================
-                POPUP PRECIO DEL PRODUCTO
-            ========================================= */}
+      {/* POPUP PRECIO DEL PRODUCTO */}
 
       {selectedCartItem && (
         <div className="modal-overlay" onClick={handleClosePricePopup}>
           <div
             className="modal-content"
             onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="price-popup-title"
           >
-            <h2>Precio del producto</h2>
+            <button
+              type="button"
+              className="modal-close"
+              onClick={handleClosePricePopup}
+              aria-label="Cerrar"
+              title="Cerrar"
+            >
+              ×
+            </button>
 
-            <p>{selectedCartItem.name}</p>
+            <h2 id="price-popup-title">Precio del producto</h2>
+
+            <p>
+              {selectedCartItem.name} · Precio normal:{" "}
+              {money(selectedCartItem.originalPrice)}
+            </p>
 
             <div className="form-group">
-              <label>Precio unitario</label>
+              <label htmlFor="specialPriceInput">
+                Precio para esta venta
+              </label>
 
               <input
+                id="specialPriceInput"
                 type="number"
                 min="0"
                 step="0.01"
@@ -522,26 +869,163 @@ function NewSalePage() {
               />
             </div>
 
-            <div className="form-group">
-              <label>Descuento</label>
-
-              <div className="automatic-field">
-                {calculateDiscount().toFixed(2)}%
+            {priceError ? (
+              <div className="pos-price-error" role="alert">
+                {priceError}
               </div>
-            </div>
+            ) : (
+              <div className="form-group">
+                <label>Descuento</label>
+                <div className="automatic-field">
+                  {discountPercent > 0
+                    ? `${formatNumber(discountPercent)} % · ahorra ${money(
+                        selectedCartItem.originalPrice - priceNumber,
+                      )} por ${selectedCartItem.wholeUnit ? "unidad" : "metro"}`
+                    : "Sin descuento (precio normal)"}
+                </div>
+              </div>
+            )}
 
-            <div className="modal-actions">
-              <button type="button" onClick={handleClosePricePopup}>
-                Cancelar
+            <p className="pos-price-note">
+              El cambio solo aplica a esta venta. El precio del producto no
+              se modifica.
+            </p>
+
+            <div className="modal-actions pos-price-actions">
+              <button
+                type="button"
+                onClick={() => applyPrice(selectedCartItem.originalPrice)}
+              >
+                Usar precio normal
               </button>
 
-              <button type="button" onClick={handleSavePrice}>
+              <button
+                type="button"
+                onClick={handleSavePrice}
+                disabled={Boolean(priceError)}
+              >
                 Aplicar
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* CONFIRMAR VENTA */}
+
+      <Modal
+        open={confirmOpen}
+        onClose={() => {
+          if (!submitting) {
+            setConfirmOpen(false);
+          }
+        }}
+        title="Confirmar venta"
+      >
+        <div className="pos-confirm">
+          <ul className="pos-confirm-list">
+            {cart.map((item) => {
+              const isSpecial =
+                round2(item.price) < round2(item.originalPrice);
+
+              return (
+                <li key={item.productId}>
+                  <div>
+                    <strong>{item.name}</strong>
+                    <span>
+                      {quantityText(item.quantity, item.productId)} ×{" "}
+                      {money(item.price)}
+                      {isSpecial && " (precio especial)"}
+                    </span>
+                  </div>
+                  <b>{money(Number(item.price) * Number(item.quantity))}</b>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="pos-confirm-total">
+            <span>Total a cobrar</span>
+            <strong>{money(cartTotal)}</strong>
+          </div>
+
+          {saleError && (
+            <div className="result error pos-result" role="alert">
+              {saleError}
+            </div>
+          )}
+
+          <div className="product-form-actions">
+            <button
+              type="button"
+              className="product-cancel-button"
+              onClick={() => setConfirmOpen(false)}
+              disabled={submitting}
+            >
+              Volver al carrito
+            </button>
+
+            <button
+              type="button"
+              className="product-submit-button"
+              onClick={handleConfirmSale}
+              disabled={submitting}
+            >
+              {submitting ? "Registrando..." : "Confirmar venta"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ESCANEAR CON CÁMARA */}
+
+      <BarcodeScanModal
+        open={scanOpen}
+        onClose={() => {
+          setScanOpen(false);
+          searchInputRef.current?.focus();
+        }}
+        onDetected={handleCameraCode}
+        title="Escanear producto"
+      />
+
+      {/* VENTA REGISTRADA */}
+
+      <Modal
+        open={Boolean(completedSale)}
+        onClose={() => setCompletedSale(null)}
+        title="Venta registrada"
+      >
+        {completedSale && (
+          <div className="pos-confirm">
+            <div className="pos-success">
+              <span className="pos-success-icon" aria-hidden="true">
+                ✓
+              </span>
+              <div>
+                <p>La venta se guardó correctamente.</p>
+                <p>
+                  Total: <strong>{money(completedSale.total)}</strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="product-form-actions">
+              <button
+                type="button"
+                className="product-submit-button"
+                onClick={() => {
+                  setCompletedSale(null);
+                  searchInputRef.current?.focus();
+                }}
+                autoFocus
+              >
+                Nueva venta
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

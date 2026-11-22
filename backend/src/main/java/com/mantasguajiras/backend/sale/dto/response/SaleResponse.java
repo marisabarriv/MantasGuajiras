@@ -20,6 +20,7 @@ public class SaleResponse {
     private UUID id;
     private BigDecimal total;
     private String observations;
+    private String sellerUsername;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<SaleItemResponse> items;
