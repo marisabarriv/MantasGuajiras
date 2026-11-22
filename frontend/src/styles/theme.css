@@ -59,6 +59,16 @@ body,
     color: var(--mg-text);
 }
 
+/* El fondo también va en los contenedores de cada pantalla: algunos
+   navegadores (modo oscuro forzado, extensiones) le quitan el fondo a
+   la página y en la app instalada se veía negro. */
+#root,
+.app-layout,
+.app-content,
+.app-container {
+    background: var(--mg-bg);
+}
+
 /* ---------- Menú lateral ---------- */
 
 .sidebar {
