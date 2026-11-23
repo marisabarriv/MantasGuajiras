@@ -11,6 +11,8 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
 
     List<InventoryMovement> findBySourceId(UUID sourceId);
 
+    boolean existsByProductId(UUID productId);
+
     // Historial: del más reciente al más antiguo, cargando en una
     // sola consulta lo que muestra la pantalla (producto, unidad,
     // tipo, origen y usuario).

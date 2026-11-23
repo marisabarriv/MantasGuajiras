@@ -1,5 +1,6 @@
 package com.mantasguajiras.backend.purchase.dto.requests;
 
+import jakarta.validation.constraints.Size;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotEmpty;
@@ -23,6 +24,7 @@ public class PurchaseRequest {
     )
     private BigDecimal total;
 
+    @Size(max = 255, message = "Las observaciones no pueden superar los 255 caracteres.")
     private String observations;
 
     @NotEmpty(message = "La compra debe tener al menos un producto.")

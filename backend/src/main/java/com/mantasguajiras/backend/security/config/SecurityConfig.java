@@ -89,10 +89,39 @@ public class SecurityConfig {
                         .requestMatchers("/users/**")
                         .hasRole("ADMIN")
 
+                        // Datos maestros (productos, categorías y unidades):
+                        // todos los roles los CONSULTAN (los necesitan para
+                        // vender, producir y ver inventario), pero solo el
+                        // ADMIN los crea, edita o desactiva.
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/products",
+                                "/api/products/**",
+                                "/api/product-categories",
+                                "/api/product-categories/**",
+                                "/api/unit",
+                                "/api/unit/**"
+                        )
+                        .authenticated()
+
+                        .requestMatchers(
+                                "/api/products",
+                                "/api/products/**",
+                                "/api/product-categories",
+                                "/api/product-categories/**",
+                                "/api/unit",
+                                "/api/unit/**"
+                        )
+                        .hasRole("ADMIN")
+
+                        // Movimientos manuales "en bruto" y compras: solo ADMIN.
+                        // Los AJUSTES por conteo físico (/api/inventory/adjustments)
+                        // los puede hacer cualquier usuario con sesión: el vendedor
+                        // cuenta en el local y el administrador ve el resultado y,
+                        // en el historial, quién hizo cada ajuste.
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/inventory-movements",
-                                "/api/inventory/adjustments",
                                 "/api/purchases"
                         )
                         .hasRole("ADMIN")
@@ -117,6 +146,11 @@ public class SecurityConfig {
                         // Excepción del negocio: "Personalizadas" (/api/orders)
                         // es para TODOS los roles, valores incluidos. Queda
                         // cubierta por anyRequest().authenticated().
+                        //
+                        // Decisión del negocio: "Producción" (/api/productions)
+                        // también es para TODOS los roles porque no muestra
+                        // montos de dinero. Si cambia, agregar aquí
+                        // .requestMatchers("/api/productions/**").hasRole("ADMIN").
 
                         .anyRequest()
                         .authenticated()

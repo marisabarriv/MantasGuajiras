@@ -5,10 +5,10 @@
 | **Proyecto**             | Mantas Guajiras        |
 | **Documento**            | Requisitos del Sistema |
 | **Código**               | DOC-01                 |
-| **Versión**              | v0.4.0                 |
-| **Estado**               | En desarrollo          |
+| **Versión**              | v1.0.0-rc.1           |
+| **Estado**               | Versión candidata      |
 | **Responsable**          | Equipo de Desarrollo   |
-| **Última actualización** | 05/09/2026             |
+| **Última actualización** | 23/11/2026             |
 
 ---
 
@@ -18,6 +18,7 @@
 | ------- | ---------- | -------------------------------------------- | -------------------- |
 | v0.1.0  | 29/07/2026 | Creación inicial del documento.              | Equipo de Desarrollo |
 | v0.4.0  | 05/09/2026 | Actualización de los requisitos del sistema. | Equipo de Desarrollo |
+| v1.0.0-rc.1 | 23/11/2026 | Alineación con la implementación real tras la auditoría técnica. | Equipo de Desarrollo |
 
 ---
 
@@ -49,6 +50,12 @@ Las operaciones podrán incluir:
 * Modificar usuarios.
 * Activar o desactivar usuarios.
 * Asignar roles.
+* Aprobar las cuentas creadas desde el registro público (quedan pendientes hasta su activación).
+* Restablecer contraseñas.
+
+Cada usuario puede consultar su perfil, cambiar su contraseña y subir una foto (JPG, PNG, WEBP o GIF, máximo 20 MB).
+
+El sistema no permite quedarse sin administradores activos.
 
 ---
 
@@ -67,6 +74,9 @@ El sistema deberá permitir:
 * Asociar una unidad.
 * Registrar el precio correspondiente.
 * Definir el stock mínimo.
+* Registrar un stock inicial al crear el producto.
+
+Solo el administrador crea, edita o desactiva productos; el vendedor los consulta. La unidad debe corresponder con la categoría (Manta → `#`, Tela → metro) y no puede cambiarse si el producto ya tiene existencias o movimientos.
 
 ---
 
@@ -115,7 +125,7 @@ El stock actual no corresponde al valor de `minimumStock`.
 
 ## RF-07. Ajustes de inventario
 
-El administrador deberá poder realizar ajustes manuales de inventario.
+Administradores y vendedores deberán poder ajustar el inventario por conteo físico. Cada ajuste registra quién lo hizo, para que el administrador pueda revisarlo.
 
 Cada ajuste deberá generar el movimiento de inventario correspondiente.
 
@@ -186,27 +196,32 @@ Una compra deberá generar el movimiento de entrada de inventario correspondient
 
 ---
 
-## RF-13. Pedidos
+## RF-13. Mantas personalizadas (pedidos)
 
-El sistema deberá permitir gestionar pedidos de acuerdo con las funcionalidades definidas para el módulo.
+El sistema deberá permitir registrar mantas hechas por encargo para un cliente, con:
 
-Los pedidos podrán incorporar información como:
-
-* Cliente.
-* Productos.
-* Cantidades.
-* Precio acordado.
-* Estado.
+* Nombre de la manta.
+* Nombre del cliente.
+* Valor acordado.
+* Abono inicial.
+* Tela utilizada y su cantidad, que se descuenta del inventario al registrar.
 * Observaciones.
-* Información relacionada con pagos.
 
-Las funcionalidades específicas deberán mantenerse alineadas con la implementación real del módulo.
+La manta personalizada se entrega directamente al cliente: **no** aumenta el inventario de mantas terminadas.
+
+Disponible para todos los roles (decisión del negocio). Una vez registrada no se modifica ni se elimina.
 
 ---
 
-## RF-14. Pagos
+## RF-14. Pagos de personalizadas
 
-Cuando una funcionalidad de pedido requiera pagos, el sistema deberá permitir registrar los valores correspondientes y mantener el saldo pendiente de acuerdo con las reglas de negocio implementadas.
+El sistema deberá permitir registrar pagos posteriores al abono inicial y mostrar:
+
+* Total pagado.
+* Saldo pendiente.
+* Estado: pagada o pendiente.
+
+Un pago no puede superar el saldo pendiente.
 
 ---
 
@@ -319,9 +334,9 @@ Actualmente:
 * No se utiliza TypeScript.
 * No se utiliza Tailwind CSS.
 * No se utiliza una aplicación móvil nativa.
-* Los endpoints se prueban mediante la aplicación frontend y no mediante Swagger.
+* Los endpoints se prueban mediante la aplicación frontend y las pruebas automatizadas del backend, no mediante Swagger.
 * La sincronización en la nube no forma parte de la implementación actual.
-* El funcionamiento offline con sincronización posterior es una funcionalidad futura.
+* Sin conexión solo se pueden registrar ventas; se sincronizan al volver la conexión (ver RN-27).
 
 ---
 

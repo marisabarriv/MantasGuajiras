@@ -3,7 +3,16 @@ spring:
     name: backend
 
   profiles:
-    active: dev
+    # Perfil por defecto: dev. En producción se arranca con
+    # SPRING_PROFILES_ACTIVE=prod (ver docs/06-despliegue.md).
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  config:
+    # Carga backend/.env (si existe) al arrancar desde la carpeta backend.
+    # Formato: CLAVE=valor, una por línea, sin comillas.
+    # Las variables de entorno reales del sistema tienen prioridad.
+    # Plantilla: backend/.env.example
+    import: optional:file:.env[.properties]
 
   mvc:
     # No registrar en el log las excepciones ya manejadas: incluían
@@ -21,3 +30,9 @@ server:
     # Leer el resto de un archivo demasiado grande para poder responder
     # "máximo 20 MB" en lugar de cortar la conexión.
     max-swallow-size: 30MB
+
+app:
+  cors:
+    # Orígenes del frontend que pueden llamar a la API (separados por comas).
+    # Desarrollo: cualquier puerto de localhost. Producción: el dominio real.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:[*],http://127.0.0.1:[*]}

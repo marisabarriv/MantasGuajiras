@@ -5,10 +5,10 @@
 | **Proyecto**             | Mantas Guajiras      |
 | **Documento**            | Frontend             |
 | **Código**               | DOC-08               |
-| **Versión**              | v0.4.0               |
-| **Estado**               | En desarrollo        |
+| **Versión**              | v1.0.0-rc.1         |
+| **Estado**               | Versión candidata    |
 | **Responsable**          | Equipo de Desarrollo |
-| **Última actualización** | 05/09/2026           |
+| **Última actualización** | 23/11/2026           |
 
 ---
 
@@ -75,32 +75,34 @@ Los estilos se manejan mediante archivos CSS propios del proyecto.
 
 # 3. Estructura del frontend
 
-La estructura actual del frontend se organiza de la siguiente manera:
-
 ```text
 frontend/
 │
 ├── public/
+│   ├── icons/                 Íconos de la app instalable
+│   ├── manifest.webmanifest   Manifiesto PWA
+│   ├── sw.js                  Service worker
+│   └── offline.html           Página sin conexión
 │
 ├── src/
 │   ├── assets/
-│   │
-│   ├── components/
-│   │
-│   ├── pages/
-│   │
-│   ├── services/
-│   │
+│   ├── components/            Formularios, modales, escáner, layout, protección de rutas
+│   ├── pages/                 Una página por módulo
+│   ├── services/              Llamadas a la API (apiClient + un servicio por módulo)
+│   ├── styles/                Estilos por área (inventario, ventas, compras…)
+│   ├── utils/                 Sesión, cantidades, fotos, PWA
 │   ├── App.jsx
 │   ├── App.css
 │   ├── index.css
 │   └── main.jsx
 │
+├── .env.example               VITE_API_URL
 ├── index.html
 ├── package.json
-├── vite.config.js
-└── ...
+└── vite.config.js             Modos: local y celular (HTTPS + proxy)
 ```
+
+---
 
 ## 3.1 `index.html`
 
@@ -153,17 +155,11 @@ La estructura general es:
 ```text
 App
  │
- ├── /login
- │      └── LoginPage
- │
- ├── /register
- │      └── RegisterPage
- │
- └── MainLayout
-        │
+ ├── /            LoginPage
+ ├── /register    RegisterPage
+ └── RequireAuth → MainLayout
         ├── Sidebar
-        │
-        └── Página actual
+        └── Página actual (ver sección 4)
 ```
 
 ---
@@ -199,47 +195,36 @@ Actualmente incluye estilos relacionados con:
 
 # 4. Arquitectura de navegación
 
-La navegación se implementa mediante **React Router**.
+La navegación se implementa con **React Router** (`App.jsx`).
 
-La aplicación utiliza rutas independientes para las diferentes funcionalidades.
-
-Actualmente se encuentran definidas rutas como:
-
-```text
-/login
-/register
-/sale/new
-/products
-/production
-```
-
-Las páginas de autenticación se encuentran fuera del layout principal.
-
-Las páginas funcionales utilizan `MainLayout`.
-
-La estructura es:
+| Ruta              | Página              | Acceso                                  |
+| ----------------- | ------------------- | --------------------------------------- |
+| `/`               | `LoginPage`         | Público                                 |
+| `/register`       | `RegisterPage`      | Público                                 |
+| `/sale`           | `NewSalePage`       | Todos los roles                         |
+| `/custom-orders`  | `CustomOrdersPage`  | Todos los roles (valores incluidos)     |
+| `/products`       | `ProductsPage`      | Todos consultan; solo ADMIN crea y edita |
+| `/inventory`      | `InventoryPage`     | Todos los roles (consultar y ajustar)   |
+| `/production`     | `ProductionPage`    | Todos los roles                         |
+| `/profile`        | `ProfilePage`       | Todos los roles                         |
+| `/sales`          | `SalesPage`         | Solo ADMIN (`RequireAdmin`)             |
+| `/purchases`      | `PurchasesPage`     | Solo ADMIN (`RequireAdmin`)             |
+| `/admin`          | `AdminPage`         | Solo ADMIN (`RequireAdmin`)             |
+| cualquier otra    | redirige a `/`      |                                         |
 
 ```text
 BrowserRouter
-     │
-     └── Routes
-          │
-          ├── /login
-          │     └── LoginPage
-          │
-          ├── /register
-          │     └── RegisterPage
-          │
-          └── MainLayout
-                 │
-                 ├── Sidebar
-                 │
-                 └── Outlet
-                        │
-                        ├── NewSalePage
-                        ├── ProductsPage
-                        └── ProductionPage
+  └── Routes
+       ├── /            LoginPage
+       ├── /register    RegisterPage
+       └── RequireAuth (sesión válida)
+            └── MainLayout (Sidebar + Outlet)
+                 ├── /sale  /custom-orders  /products  /inventory  /production  /profile
+                 └── RequireAdmin
+                      └── /sales  /purchases  /admin
 ```
+
+`RequireAuth` y `RequireAdmin` solo evitan mostrar pantallas que no corresponden. **La protección real está en el backend**, que responde `401` o `403`.
 
 ---
 
@@ -277,74 +262,23 @@ En dispositivos con pantallas pequeñas, el diseño puede reorganizar los elemen
 
 ---
 
-# 7. Páginas actuales
+# 7. Páginas
 
-## 7.1 LoginPage
+| Página              | Qué permite                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------- |
+| `LoginPage`         | Iniciar sesión con usuario o teléfono. Avisa si la cuenta está pendiente de aprobación.          |
+| `RegisterPage`      | Registro de vendedores; la cuenta queda pendiente hasta que un administrador la active.          |
+| `NewSalePage`       | Punto de venta: búsqueda, escáner, carrito, precio especial por producto, protección contra doble envío. |
+| `CustomOrdersPage`  | Mantas personalizadas: registro con tela usada, abono inicial, pagos posteriores y saldo; filtro pagadas/pendientes. |
+| `ProductsPage`      | Lista por categoría, búsqueda y escáner. ADMIN: crear y editar (`ProductForm`). Vendedor: solo consulta. |
+| `InventoryPage`     | Existencias con estado (agotado, bajo, normal), historial de movimientos con quién hizo cada uno, y ajuste por conteo físico (todos los roles). |
+| `ProductionPage`    | Registrar producción (tela consumida → mantas generadas) e historial. Sin montos de dinero.       |
+| `SalesPage`         | Historial de ventas con montos (ADMIN).                                                           |
+| `PurchasesPage`     | Registrar compras e historial (ADMIN).                                                            |
+| `AdminPage`         | Activar cuentas nuevas, cambiar roles, restablecer contraseñas, desactivar usuarios (ADMIN).     |
+| `ProfilePage`       | Datos propios, foto de perfil y cambio de contraseña.                                             |
 
-Ruta:
-
-```text
-/login
-```
-
-Permite iniciar sesión en el sistema.
-
-La autenticación se realiza contra el backend y utiliza el mecanismo de autenticación basado en JWT.
-
----
-
-## 7.2 RegisterPage
-
-Ruta:
-
-```text
-/register
-```
-
-Permite registrar nuevos usuarios mediante el formulario correspondiente.
-
-La validación definitiva de los datos corresponde al backend.
-
-El frontend debe mostrar al usuario los errores específicos devueltos por el backend cuando una operación no puede realizarse.
-
----
-
-## 7.3 ProductsPage
-
-Ruta:
-
-```text
-/products
-```
-
-Permite administrar los productos disponibles en el sistema.
-
-Actualmente permite:
-
-* Consultar productos.
-* Crear productos.
-* Editar productos.
-* Mostrar información básica del producto.
-
-La página utiliza `ProductForm` para las operaciones de creación y edición.
-
-La información se obtiene mediante `ProductService`.
-
----
-
-## 7.4 NewSalePage
-
-Ruta:
-
-```text
-/sale/new
-```
-
-Corresponde al punto de venta.
-
-Su objetivo es permitir al vendedor seleccionar productos y construir una venta mediante un carrito.
-
-El diseño busca mantener una experiencia sencilla y rápida tanto en computador como en dispositivos móviles.
+Componentes principales: `ProductForm`, `PurchaseForm`, `ProductionForm`, `CustomOrderForm`, `InventoryAdjustForm`, `MovementHistory`, `BarcodeScanModal`, `Modal`, `LoadError`, `InstallAppButton`, `UserAvatar`, `PasswordInput`, `Sidebar`, `MainLayout`.
 
 ---
 
@@ -564,7 +498,9 @@ findCategories()
 findUnits()
 ```
 
-Estas operaciones utilizan los endpoints actualmente disponibles en el backend.
+Los demás servicios siguen el mismo patrón sobre `apiClient.js`: `AuthService`, `RegisterService`, `UserService`, `InventoryService`, `SaleService`, `PurchaseService`, `ProductionService` y `OrderService`. La lista completa de endpoints está en `05-api.md`.
+
+`create`, `update` y `delete` de productos solo funcionan con el rol ADMIN; para un vendedor el backend responde `403`.
 
 Ejemplos de rutas utilizadas:
 
@@ -902,40 +838,54 @@ La compatibilidad con computadores y dispositivos móviles forma parte del dise�
 
 # 30. Estado actual del frontend
 
-Actualmente el frontend se encuentra en desarrollo y cuenta con una base funcional para:
+Versión `1.0.0-rc.1`: todos los módulos del backend tienen su pantalla e integración.
 
-* Autenticación.
-* Registro.
-* Layout principal.
-* Navegación mediante React Router.
-* Administración de productos.
-* Creación de productos.
-* Edición de productos.
-* Consulta de productos.
-* Punto de venta.
-* Carrito de venta.
-* Configuración de precios especiales por producto.
-* Producción.
+* Autenticación, registro con aprobación y aviso de sesión vencida.
+* Navegación por rol (menú y rutas).
+* Productos, inventario con historial y ajustes, ventas, compras, producción y personalizadas.
+* Escáner de códigos de barras con la cámara (requiere HTTPS en el celular: `npm run dev:celular`).
+* Perfil de usuario con foto.
+* App instalable (PWA) que abre sin conexión.
+* Ventas sin conexión con sincronización automática (sección 30A).
+* Actualización automática de los datos de cada pantalla (`hooks/useAutoRefresh.js`).
+* Diseño responsive para computador, tablet y celular.
 
-La implementación continúa ampliándose conforme se integran las funcionalidades restantes del backend y frontend.
+Verificación: `npm run lint` y `npm run build` sin errores.
 
 ---
 
-# 31. Funcionalidades pendientes
+# 30A. Trabajo sin conexión
 
-Las funcionalidades que todavía requieran implementación o integración deberán incorporarse progresivamente.
+| Archivo                           | Responsabilidad                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| `utils/connectivity.js`           | Estado real de la conexión con el **servidor** (no solo con la red). Lo actualiza `apiClient` con cada petición. |
+| `services/apiClient.js`           | `ConnectionError` cuando la petición no llega (sin red, servidor apagado, 502/503/504 del proxy o más de 20 s sin respuesta). |
+| `utils/offlineStore.js`           | Catálogo guardado y cola de ventas pendientes en `localStorage`.                 |
+| `utils/offlineSync.js`            | Envía la cola: al abrir la app, al volver la conexión, al volver a la app, cada 30 s y tras iniciar sesión. Una sincronización a la vez. |
+| `components/ConnectionBanner.jsx` | Aviso superior: sin conexión, enviando, rechazadas.                             |
+| `hooks/useAutoRefresh.js`         | Recarga silenciosa de cada pantalla.                                             |
+| `public/sw.js`                    | Guarda **solo el código** de la app (index.html, `/assets/`, íconos) para abrirla sin conexión. Nunca guarda respuestas de la API. |
 
-Entre ellas pueden encontrarse:
+**Por qué no se duplican ventas.** Cada intento de venta genera un `clientRequestId`. Si la conexión se corta justo después de enviar, el servidor pudo haberla guardado sin que el dispositivo lo sepa; al reenviarla con el mismo identificador, el servidor devuelve la venta existente.
 
-* Integración completa de inventario.
-* Ajustes manuales de inventario.
-* Visualización detallada del stock.
-* Integración completa entre movimientos de inventario y las operaciones correspondientes.
-* Funcionalidades administrativas adicionales.
-* Mejoras adicionales de responsive y experiencia de usuario.
-* Pruebas funcionales completas de todos los módulos.
+**Qué se envía al sincronizar:** `clientRequestId`, `offlineCreatedAt` (hora del dispositivo), `observations: "Registrada sin conexión"` e `items`.
 
-Las funcionalidades pendientes no deben documentarse como implementadas hasta que hayan sido desarrolladas y verificadas.
+**Respuestas del servidor al sincronizar:**
+
+| Respuesta                     | Qué hace la app                                                  |
+| ----------------------------- | ---------------------------------------------------------------- |
+| 2xx                           | Quita la venta de la cola.                                        |
+| Sin conexión, 401 o 409       | La deja pendiente y reintenta después.                            |
+| Otro error (400, 403, 404…)   | La marca como rechazada, con el motivo, para que una persona decida. |
+
+---
+
+# 31. Mejoras posibles
+
+No bloquean el uso del sistema:
+
+* Pruebas automatizadas del frontend (por ejemplo, con Vitest y Testing Library).
+* Funcionamiento sin conexión para compras, producción y personalizadas (hoy solo ventas).
 
 ---
 
@@ -1032,7 +982,7 @@ Su arquitectura está organizada alrededor de páginas, componentes reutilizable
 
 El sistema está diseñado desde el inicio para funcionar tanto en computadores como en dispositivos móviles mediante una única interfaz responsive.
 
-El desarrollo continuará de manera progresiva, priorizando:
+Su evolución continuará priorizando:
 
 1. Funcionalidad.
 2. Claridad de uso.

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import useAutoRefresh from "../hooks/useAutoRefresh";
 
 import ProductForm from "../components/ProductForm";
 import Modal from "../components/Modal";
@@ -6,6 +7,7 @@ import BarcodeScanModal from "../components/BarcodeScanModal";
 import LoadError from "../components/LoadError";
 import ProductService from "../services/ProductService";
 import { isWholeUnit } from "../utils/inventoryFormat";
+import { isAdmin as isAdminUser } from "../utils/session";
 
 import "../styles/inventory.css";
 import "../styles/purchases.css";
@@ -17,8 +19,13 @@ const money = (value) =>
 /**
  * Productos: crear y editar mantas y telas.
  * Las existencias se manejan en Inventario.
+ *
+ * Todos los roles consultan; solo ADMIN crea y edita (el backend
+ * lo exige en SecurityConfig, aquí solo se ocultan los botones).
  */
 function ProductsPage() {
+
+    const isAdmin = isAdminUser();
 
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -26,6 +33,7 @@ function ProductsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
+    const { refreshKey, takeSilent } = useAutoRefresh();
 
     const [filter, setFilter] = useState("ALL");
     const [search, setSearch] = useState("");
@@ -39,6 +47,8 @@ function ProductsPage() {
     useEffect(() => {
 
         let cancelled = false;
+        // Recarga automática: si falla, se conservan los datos actuales.
+        const silent = takeSilent();
 
         Promise.all([
             ProductService.findAll(true),
@@ -54,7 +64,7 @@ function ProductsPage() {
                 }
             })
             .catch((loadError) => {
-                if (!cancelled) {
+                if (!cancelled && !silent) {
                     setError(loadError.message || "No fue posible cargar los productos.");
                 }
             })
@@ -68,7 +78,7 @@ function ProductsPage() {
             cancelled = true;
         };
 
-    }, [reloadKey]);
+    }, [reloadKey, refreshKey, takeSilent]);
 
 
     const categoryName = (id) =>
@@ -187,16 +197,22 @@ function ProductsPage() {
             <div className="inv-header purchases-header">
                 <div>
                     <h1>Productos</h1>
-                    <p>Crea y edita mantas y telas. Las cantidades se ven en Inventario.</p>
+                    <p>
+                        {isAdmin
+                            ? "Crea y edita mantas y telas. Las cantidades se ven en Inventario."
+                            : "Consulta las mantas y telas. Las cantidades se ven en Inventario."}
+                    </p>
                 </div>
 
-                <button
-                    type="button"
-                    className="inv-button-primary purchases-new"
-                    onClick={openCreate}
-                >
-                    + Crear producto
-                </button>
+                {isAdmin && (
+                    <button
+                        type="button"
+                        className="inv-button-primary purchases-new"
+                        onClick={openCreate}
+                    >
+                        + Crear producto
+                    </button>
+                )}
             </div>
 
             {error && <div className="result error inv-result" role="alert">{error}</div>}
@@ -244,7 +260,9 @@ function ProductsPage() {
 
                 <p className="inv-message">
                     {products.length === 0
-                        ? "Todavía no hay productos. Crea el primero con el botón de arriba."
+                        ? (isAdmin
+                            ? "Todavía no hay productos. Crea el primero con el botón de arriba."
+                            : "Todavía no hay productos registrados.")
                         : "Ningún producto coincide con la búsqueda o el filtro."}
                 </p>
 
@@ -290,15 +308,17 @@ function ProductsPage() {
                                     </span>
                                 </div>
 
-                                <div className="inv-row-actions">
-                                    <button
-                                        type="button"
-                                        className="inv-button-secondary"
-                                        onClick={() => openEdit(product)}
-                                    >
-                                        Editar
-                                    </button>
-                                </div>
+                                {isAdmin && (
+                                    <div className="inv-row-actions">
+                                        <button
+                                            type="button"
+                                            className="inv-button-secondary"
+                                            onClick={() => openEdit(product)}
+                                        >
+                                            Editar
+                                        </button>
+                                    </div>
+                                )}
 
                             </li>
                         );
@@ -328,7 +348,7 @@ function ProductsPage() {
             />
 
             <Modal
-                open={showForm}
+                open={isAdmin && showForm}
                 onClose={() => setShowForm(false)}
                 title={selectedProduct ? "Editar producto" : "Crear producto"}
             >

@@ -5,10 +5,10 @@
 | **Proyecto**             | Mantas Guajiras      |
 | **Documento**            | Reglas de Negocio    |
 | **Código**               | DOC-02               |
-| **Versión**              | v0.4.0               |
-| **Estado**               | En desarrollo        |
+| **Versión**              | v1.0.0-rc.1         |
+| **Estado**               | Versión candidata    |
 | **Responsable**          | Equipo de Desarrollo |
-| **Última actualización** | 05/09/2026           |
+| **Última actualización** | 23/11/2026           |
 
 ---
 
@@ -18,6 +18,7 @@
 | ------- | ---------- | ---------------------------------------- | -------------------- |
 | v0.1.0  | 29/07/2026 | Creación inicial del documento.          | Equipo de Desarrollo |
 | v0.4.0  | 05/09/2026 | Actualización de las reglas funcionales. | Equipo de Desarrollo |
+| v1.0.0-rc.1 | 23/11/2026 | Alineación con la implementación real tras la auditoría técnica. | Equipo de Desarrollo |
 
 ---
 
@@ -51,6 +52,10 @@ La unidad utilizada depende del tipo de producto.
 | **Manta** | Unidad entera (`#`) |
 | **Tela**  | Metro               |
 
+El backend rechaza una manta registrada en metros o una tela registrada en `#`, aunque la petición no venga del formulario.
+
+Si un producto ya tiene existencias o movimientos de inventario, **no se puede cambiar su unidad** (ni pasarlo de Manta a Tela o al revés), porque cambiaría el significado de todas sus cantidades históricas. En ese caso se crea un producto nuevo y se desactiva el anterior.
+
 ---
 
 ## RN-03. Cantidad de mantas
@@ -76,6 +81,8 @@ La cantidad podrá contener valores decimales.
 Cada producto tendrá un precio base asociado.
 
 El precio de compra y el precio unitario se consideran actualmente como el mismo concepto dentro del modelo funcional del sistema.
+
+El backend lo garantiza: si no se envía precio de compra se usa el precio unitario, y si se envía uno distinto la operación se rechaza.
 
 ---
 
@@ -128,11 +135,13 @@ Toda operación que modifique el stock deberá generar el movimiento de inventar
 
 ---
 
-## RN-12. Ajustes administrativos
+## RN-12. Ajustes por conteo físico
 
-Los ajustes manuales de inventario estarán destinados a usuarios con permisos administrativos.
+**Administradores y vendedores** pueden ajustar el inventario por conteo físico: se escribe la cantidad real que hay en el local y el sistema registra la diferencia como entrada o salida.
 
-Los ajustes deberán quedar registrados como movimientos de inventario.
+El objetivo es que el administrador conozca el estado real del local sin tener que estar presente contando. Por eso cada ajuste queda registrado como movimiento de inventario con **quién lo hizo, cuándo, la diferencia y el motivo**, visible en el historial de Inventario.
+
+Los movimientos manuales "en bruto" (`/api/inventory-movements`) siguen siendo solo del administrador.
 
 ---
 
@@ -225,7 +234,33 @@ El administrador podrá ejecutar las operaciones correspondientes a sus permisos
 
 El vendedor podrá ejecutar las operaciones comerciales que tenga autorizadas.
 
-No deberá tener permisos para realizar ajustes administrativos de inventario ni administrar usuarios si dichas operaciones están restringidas al administrador.
+Puede ajustar el inventario por conteo físico (RN-12). No tiene permisos para administrar datos maestros, registrar movimientos manuales de inventario, consultar montos de ventas y compras ni administrar usuarios.
+
+---
+
+## RN-24A. Matriz de permisos (implementada)
+
+Los permisos se aplican en el backend (`SecurityConfig`). El frontend solo oculta las opciones que el rol no puede usar.
+
+| Operación                                             | Administrador | Vendedor |
+| ----------------------------------------------------- | :-----------: | :------: |
+| Registrar ventas                                      |      Sí       |    Sí    |
+| Consultar el historial y los montos de ventas         |      Sí       |    No    |
+| Registrar y consultar compras                         |      Sí       |    No    |
+| Consultar productos, categorías y unidades            |      Sí       |    Sí    |
+| Crear, editar o desactivar productos                  |      Sí       |    No    |
+| Crear, editar o desactivar categorías y unidades      |      Sí       |    No    |
+| Consultar inventario y su historial                   |      Sí       |    Sí    |
+| Ajustar inventario por conteo físico                  |      Sí       |    Sí    |
+| Movimientos manuales de inventario                    |      Sí       |    No    |
+| Producción (no muestra montos de dinero)              |      Sí       |    Sí    |
+| Mantas personalizadas y sus pagos                     |      Sí       |    Sí    |
+| Administrar usuarios                                  |      Sí       |    No    |
+| Perfil propio (foto y contraseña)                     |      Sí       |    Sí    |
+
+Producción y Personalizadas están abiertas a ambos roles por decisión del negocio. Si eso cambia, basta con agregar la regla correspondiente en `SecurityConfig`.
+
+Estas reglas están cubiertas por la prueba automática `RolePermissionsTest`.
 
 ---
 
@@ -264,13 +299,22 @@ No se deberán considerar como implementadas reglas adicionales que todavía no 
 
 ## RN-27. Estado actual
 
-El sistema actualmente no implementa sincronización offline con una base de datos central.
+Hay una sola base de datos central; todos los usuarios trabajan sobre ella.
+
+**Ventas sin conexión (implementado):** si un dispositivo pierde la conexión con el servidor, puede seguir registrando **ventas**. Se guardan en el dispositivo y se envían solas al volver la conexión, aplicando estas reglas:
+
+* Cada venta lleva un identificador único: si llega dos veces, se registra una sola vez.
+* Al recibirla, el servidor vuelve a validar existencias y precios **actuales**. Si otra persona vendió esas existencias mientras tanto, la venta se **rechaza** (nunca se deja el inventario negativo, RN-10) y queda en el dispositivo marcada para que una persona decida: reintentarla después de un ajuste o descartarla.
+* Se conserva la hora real de la venta (`offline_created_at`), que es la que cuenta en el resumen del día.
+* Solo se envían las ventas del usuario con sesión, para que queden a su nombre.
+
+Compras, producción, ajustes de inventario y personalizadas requieren conexión.
 
 ---
 
 ## RN-28. Evolución futura
 
-La sincronización entre dispositivos y el funcionamiento offline podrán implementarse posteriormente como una evolución de la arquitectura.
+Otras operaciones sin conexión podrán agregarse con el mismo mecanismo (identificador único + validación al recibir) si el negocio lo necesita.
 
 ---
 

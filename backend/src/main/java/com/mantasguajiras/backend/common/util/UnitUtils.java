@@ -29,4 +29,22 @@ public final class UnitUtils {
 
         return "#".equals(abbreviation) || name.contains("unidad");
     }
+
+    /** true si la unidad es el metro (telas). */
+    public static boolean isMeterUnit(Unit unit) {
+
+        if (unit == null) {
+            return false;
+        }
+
+        String abbreviation = unit.getAbbreviation() != null
+                ? unit.getAbbreviation().trim().toLowerCase()
+                : "";
+
+        String name = unit.getName() != null
+                ? unit.getName().toLowerCase()
+                : "";
+
+        return "m".equals(abbreviation) || name.contains("metro");
+    }
 }

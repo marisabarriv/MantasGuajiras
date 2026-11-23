@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import useAutoRefresh from "../hooks/useAutoRefresh";
 
 import Modal from "../components/Modal";
 import BarcodeScanModal from "../components/BarcodeScanModal";
@@ -39,13 +40,11 @@ function StatusBadge({ status }) {
 
 function InventoryPage() {
 
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const isAdmin = user.role === "ADMIN";
-
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
+    const { refreshKey, takeSilent } = useAutoRefresh();
 
     const [tab, setTab] = useState("stock");
     const [filter, setFilter] = useState("ALL");
@@ -65,6 +64,8 @@ function InventoryPage() {
     useEffect(() => {
 
         let cancelled = false;
+        // Recarga automática: si falla, se conservan los datos actuales.
+        const silent = takeSilent();
 
         InventoryService.findAll()
             .then((data) => {
@@ -74,7 +75,7 @@ function InventoryPage() {
                 }
             })
             .catch((loadError) => {
-                if (!cancelled) {
+                if (!cancelled && !silent) {
                     setError(loadError.message);
                 }
             })
@@ -88,7 +89,7 @@ function InventoryPage() {
             cancelled = true;
         };
 
-    }, [reloadKey]);
+    }, [reloadKey, refreshKey, takeSilent]);
 
 
     // =========================================
@@ -375,18 +376,18 @@ function InventoryPage() {
                                             Ver historial
                                         </button>
 
-                                        {isAdmin && (
-                                            <button
-                                                type="button"
-                                                className="inv-button-primary"
-                                                onClick={() => {
-                                                    setSuccessMessage("");
-                                                    setAdjustItem(item);
-                                                }}
-                                            >
-                                                Ajustar
-                                            </button>
-                                        )}
+                                        {/* Todos los roles ajustan por conteo físico;
+                                            el historial muestra quién lo hizo. */}
+                                        <button
+                                            type="button"
+                                            className="inv-button-primary"
+                                            onClick={() => {
+                                                setSuccessMessage("");
+                                                setAdjustItem(item);
+                                            }}
+                                        >
+                                            Ajustar
+                                        </button>
 
                                     </div>
 

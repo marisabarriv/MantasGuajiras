@@ -20,6 +20,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ProductionRequest {
 
+    @Size(max = 255, message = "Las observaciones no pueden superar los 255 caracteres.")
     private String observations;
 
     @NotBlank(message = "Escribe el nombre de la persona que fabricó las mantas.")

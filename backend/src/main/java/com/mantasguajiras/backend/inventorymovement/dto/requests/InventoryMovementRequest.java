@@ -1,5 +1,6 @@
 package com.mantasguajiras.backend.inventorymovement.dto.requests;
 
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -29,5 +30,6 @@ public class InventoryMovementRequest {
     @DecimalMin(value = "0.01", message = "La cantidad debe ser mayor que cero.")
     private BigDecimal quantity;
 
+    @Size(max = 255, message = "Las observaciones no pueden superar los 255 caracteres.")
     private String observations;
 }

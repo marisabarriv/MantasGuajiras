@@ -260,6 +260,17 @@ public class UserServiceImpl implements UserService {
                                         "No fue posible leer la foto. Intenta con otra imagen.");
                 }
 
+                // El tipo lo declara el navegador y se puede falsificar:
+                // se comprueba también la firma real del archivo.
+                String detectedType = detectImageType(bytes);
+
+                if (detectedType == null) {
+                        throw new BusinessException(
+                                        "El archivo no es una imagen JPG, PNG, WEBP o GIF válida.");
+                }
+
+                contentType = detectedType;
+
                 UserProfileImage image = profileImageRepository.findById(user.getId())
                                 .orElseGet(() -> UserProfileImage.builder()
                                                 .userId(user.getId())
@@ -349,5 +360,49 @@ public class UserServiceImpl implements UserService {
                                         throw new DuplicateResourceException(
                                                         "El número de teléfono ya está registrado.");
                                 });
+        }
+
+        /**
+         * Identifica la imagen por sus primeros bytes ("firma" o magic
+         * number). Devuelve el tipo MIME o null si no es un formato
+         * permitido.
+         */
+        static String detectImageType(byte[] bytes) {
+
+                if (bytes == null || bytes.length < 12) {
+                        return null;
+                }
+
+                // JPEG: FF D8 FF
+                if ((bytes[0] & 0xFF) == 0xFF
+                                && (bytes[1] & 0xFF) == 0xD8
+                                && (bytes[2] & 0xFF) == 0xFF) {
+                        return "image/jpeg";
+                }
+
+                // PNG: 89 50 4E 47 0D 0A 1A 0A
+                if ((bytes[0] & 0xFF) == 0x89
+                                && bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G'
+                                && bytes[4] == 0x0D && bytes[5] == 0x0A
+                                && bytes[6] == 0x1A && bytes[7] == 0x0A) {
+                        return "image/png";
+                }
+
+                // GIF: "GIF87a" o "GIF89a"
+                if (bytes[0] == 'G' && bytes[1] == 'I' && bytes[2] == 'F'
+                                && bytes[3] == '8'
+                                && (bytes[4] == '7' || bytes[4] == '9')
+                                && bytes[5] == 'a') {
+                        return "image/gif";
+                }
+
+                // WEBP: "RIFF" .... "WEBP"
+                if (bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F'
+                                && bytes[8] == 'W' && bytes[9] == 'E'
+                                && bytes[10] == 'B' && bytes[11] == 'P') {
+                        return "image/webp";
+                }
+
+                return null;
         }
 }

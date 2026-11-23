@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import useAutoRefresh from "../hooks/useAutoRefresh";
 
 import Modal from "../components/Modal";
 import LoadError from "../components/LoadError";
@@ -35,6 +36,13 @@ const isToday = (value) => {
  * mantas personalizadas, juntas y de la más reciente a la más antigua.
  * Las ventas no se pueden editar ni eliminar (regla del backend).
  */
+/**
+ * Hora real de la venta: si se hizo sin conexión, la del dispositivo;
+ * si no, la del servidor.
+ */
+const saleDate = (sale) => sale.offlineCreatedAt || sale.createdAt;
+
+
 function SalesPage() {
 
     const [sales, setSales] = useState([]);
@@ -42,6 +50,7 @@ function SalesPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
+    const { refreshKey, takeSilent } = useAutoRefresh();
 
     const [selectedSale, setSelectedSale] = useState(null);
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -51,6 +60,8 @@ function SalesPage() {
     useEffect(() => {
 
         let cancelled = false;
+        // Recarga automática: si falla, se conservan los datos actuales.
+        const silent = takeSilent();
 
         Promise.all([SaleService.findAll(), OrderService.findAll()])
             .then(([salesData, ordersData]) => {
@@ -60,7 +71,7 @@ function SalesPage() {
                 }
             })
             .catch((loadError) => {
-                if (!cancelled) {
+                if (!cancelled && !silent) {
                     setError(loadError.message || "No fue posible cargar las ventas.");
                 }
             })
@@ -74,14 +85,14 @@ function SalesPage() {
             cancelled = true;
         };
 
-    }, [reloadKey]);
+    }, [reloadKey, refreshKey, takeSilent]);
 
 
     // Ventas y personalizadas en una sola lista.
     const entries = useMemo(
         () =>
             [
-                ...sales.map((sale) => ({ kind: "sale", date: sale.createdAt, data: sale })),
+                ...sales.map((sale) => ({ kind: "sale", date: saleDate(sale), data: sale })),
                 ...orders.map((order) => ({ kind: "order", date: order.createdAt, data: order })),
             ].sort((a, b) => new Date(b.date) - new Date(a.date)),
         [sales, orders]
@@ -96,7 +107,7 @@ function SalesPage() {
 
     const today = useMemo(() => {
 
-        const todaySales = sales.filter((sale) => isToday(sale.createdAt));
+        const todaySales = sales.filter((sale) => isToday(saleDate(sale)));
 
         const todayPayments = orders.flatMap((order) =>
             (order.payments || []).filter((payment) => isToday(payment.createdAt))
@@ -115,7 +126,7 @@ function SalesPage() {
 
     const todayEntries = entries.filter((entry) =>
         entry.kind === "sale"
-            ? isToday(entry.data.createdAt)
+            ? isToday(saleDate(entry.data))
             : isToday(entry.data.createdAt) ||
               (entry.data.payments || []).some((payment) => isToday(payment.createdAt))
     );
@@ -295,7 +306,10 @@ function SalesPage() {
                             <li className="inv-row sales-row" key={`sale-${sale.id}`}>
 
                                 <div className="inv-row-product">
-                                    <strong>{formatDateTime(sale.createdAt)}</strong>
+                                    <strong>{formatDateTime(saleDate(sale))}</strong>
+                                    {sale.offlineCreatedAt && (
+                                        <span className="sales-offline-tag">Hecha sin conexión</span>
+                                    )}
                                     <span>
                                         {sale.sellerUsername
                                             ? `Vendió: ${sale.sellerUsername}`
@@ -356,7 +370,10 @@ function SalesPage() {
                     <div className="sales-detail">
 
                         <p className="sales-detail-meta">
-                            {formatDateTime(selectedSale.createdAt)}
+                            {formatDateTime(saleDate(selectedSale))}
+                            {selectedSale.offlineCreatedAt && (
+                                <> · hecha sin conexión, recibida {formatDateTime(selectedSale.createdAt)}</>
+                            )}
                             {" · "}
                             {selectedSale.sellerUsername
                                 ? `Vendió: ${selectedSale.sellerUsername}`
