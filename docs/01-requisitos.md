@@ -336,7 +336,7 @@ Actualmente:
 * No se utiliza una aplicación móvil nativa.
 * Los endpoints se prueban mediante la aplicación frontend y las pruebas automatizadas del backend, no mediante Swagger.
 * La sincronización en la nube no forma parte de la implementación actual.
-* El funcionamiento offline con sincronización posterior es una funcionalidad futura.
+* Sin conexión solo se pueden registrar ventas; se sincronizan al volver la conexión (ver RN-27).
 
 ---
 
