@@ -296,13 +296,22 @@ No se deberán considerar como implementadas reglas adicionales que todavía no 
 
 ## RN-27. Estado actual
 
-El sistema actualmente no implementa sincronización offline con una base de datos central.
+Hay una sola base de datos central; todos los usuarios trabajan sobre ella.
+
+**Ventas sin conexión (implementado):** si un dispositivo pierde la conexión con el servidor, puede seguir registrando **ventas**. Se guardan en el dispositivo y se envían solas al volver la conexión, aplicando estas reglas:
+
+* Cada venta lleva un identificador único: si llega dos veces, se registra una sola vez.
+* Al recibirla, el servidor vuelve a validar existencias y precios **actuales**. Si otra persona vendió esas existencias mientras tanto, la venta se **rechaza** (nunca se deja el inventario negativo, RN-10) y queda en el dispositivo marcada para que una persona decida: reintentarla después de un ajuste o descartarla.
+* Se conserva la hora real de la venta (`offline_created_at`), que es la que cuenta en el resumen del día.
+* Solo se envían las ventas del usuario con sesión, para que queden a su nombre.
+
+Compras, producción, ajustes de inventario y personalizadas requieren conexión.
 
 ---
 
 ## RN-28. Evolución futura
 
-La sincronización entre dispositivos y el funcionamiento offline podrán implementarse posteriormente como una evolución de la arquitectura.
+Otras operaciones sin conexión podrán agregarse con el mismo mecanismo (identificador único + validación al recibir) si el negocio lo necesita.
 
 ---
 

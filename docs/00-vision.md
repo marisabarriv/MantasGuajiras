@@ -80,7 +80,7 @@ Celular ─────┘          ▼
                          ▼
                      PostgreSQL
 
-La posibilidad de sincronización en la nube y funcionamiento offline corresponde a una evolución futura del proyecto y no a una característica actualmente implementada.
+Desde la versión `v1.0.0-rc.1` se pueden registrar ventas sin conexión, que se envían solas al servidor cuando vuelve la conexión. El resto de operaciones requiere conexión.
 
 ---
 
@@ -125,7 +125,7 @@ El sistema implementa (versión `v1.0.0-rc.1`) funcionalidades relacionadas con:
 
 El frontend y el backend están integrados en todos los módulos.
 
-Las funcionalidades de sincronización en la nube, funcionamiento offline, facturación electrónica, integraciones externas y otras ampliaciones podrán incorporarse posteriormente.
+Las funcionalidades de funcionamiento sin conexión para otras operaciones además de las ventas, facturación electrónica, integraciones externas y otras ampliaciones podrán incorporarse posteriormente.
 
 ---
 
@@ -183,7 +183,7 @@ Durante el desarrollo se adoptan los siguientes principios:
 Una vez consolidada la versión inicial del sistema, podrán evaluarse funcionalidades como:
 
 * Sincronización con la nube.
-* Funcionamiento offline con sincronización posterior.
+* Funcionamiento sin conexión para compras, producción y personalizadas.
 * Acceso desde múltiples equipos mediante infraestructura centralizada.
 * Reportes avanzados.
 * Estadísticas de ventas.

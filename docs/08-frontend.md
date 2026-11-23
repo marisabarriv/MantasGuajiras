@@ -845,10 +845,38 @@ Versión `1.0.0-rc.1`: todos los módulos del backend tienen su pantalla e integ
 * Productos, inventario con historial y ajustes, ventas, compras, producción y personalizadas.
 * Escáner de códigos de barras con la cámara (requiere HTTPS en el celular: `npm run dev:celular`).
 * Perfil de usuario con foto.
-* App instalable (PWA) con página sin conexión.
+* App instalable (PWA) que abre sin conexión.
+* Ventas sin conexión con sincronización automática (sección 30A).
+* Actualización automática de los datos de cada pantalla (`hooks/useAutoRefresh.js`).
 * Diseño responsive para computador, tablet y celular.
 
 Verificación: `npm run lint` y `npm run build` sin errores.
+
+---
+
+# 30A. Trabajo sin conexión
+
+| Archivo                           | Responsabilidad                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| `utils/connectivity.js`           | Estado real de la conexión con el **servidor** (no solo con la red). Lo actualiza `apiClient` con cada petición. |
+| `services/apiClient.js`           | `ConnectionError` cuando la petición no llega (sin red, servidor apagado, 502/503/504 del proxy o más de 20 s sin respuesta). |
+| `utils/offlineStore.js`           | Catálogo guardado y cola de ventas pendientes en `localStorage`.                 |
+| `utils/offlineSync.js`            | Envía la cola: al abrir la app, al volver la conexión, al volver a la app, cada 30 s y tras iniciar sesión. Una sincronización a la vez. |
+| `components/ConnectionBanner.jsx` | Aviso superior: sin conexión, enviando, rechazadas.                             |
+| `hooks/useAutoRefresh.js`         | Recarga silenciosa de cada pantalla.                                             |
+| `public/sw.js`                    | Guarda **solo el código** de la app (index.html, `/assets/`, íconos) para abrirla sin conexión. Nunca guarda respuestas de la API. |
+
+**Por qué no se duplican ventas.** Cada intento de venta genera un `clientRequestId`. Si la conexión se corta justo después de enviar, el servidor pudo haberla guardado sin que el dispositivo lo sepa; al reenviarla con el mismo identificador, el servidor devuelve la venta existente.
+
+**Qué se envía al sincronizar:** `clientRequestId`, `offlineCreatedAt` (hora del dispositivo), `observations: "Registrada sin conexión"` e `items`.
+
+**Respuestas del servidor al sincronizar:**
+
+| Respuesta                     | Qué hace la app                                                  |
+| ----------------------------- | ---------------------------------------------------------------- |
+| 2xx                           | Quita la venta de la cola.                                        |
+| Sin conexión, 401 o 409       | La deja pendiente y reintenta después.                            |
+| Otro error (400, 403, 404…)   | La marca como rechazada, con el motivo, para que una persona decida. |
 
 ---
 
@@ -857,7 +885,7 @@ Verificación: `npm run lint` y `npm run build` sin errores.
 No bloquean el uso del sistema:
 
 * Pruebas automatizadas del frontend (por ejemplo, con Vitest y Testing Library).
-* Funcionamiento offline con sincronización posterior (requiere cambios de arquitectura; ver `00-vision.md`).
+* Funcionamiento sin conexión para compras, producción y personalizadas (hoy solo ventas).
 
 ---
 

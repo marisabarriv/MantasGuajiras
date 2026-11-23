@@ -339,11 +339,18 @@ Los cambios futuros deberán reflejarse en las migraciones correspondientes y, c
 
 # Anexo A. Notas de mantenimiento de migraciones
 
-Las migraciones están en `backend/src/main/resources/db/migration` (V1 a V19). La carpeta `database/exports` solo guarda una exportación del esquema como referencia.
+Las migraciones están en `backend/src/main/resources/db/migration` (V1 a V20). La carpeta `database/exports` solo guarda una exportación del esquema como referencia.
 
 ## Migraciones vacías históricas
 
 `V6__insert_source_types.sql`, `V11__add_profile_pic.sql` y `V12__add_profile_pic.sql` están vacías. Quedaron de versiones anteriores y **no deben borrarse ni modificarse**: Flyway guarda en `flyway_schema_history` una huella (checksum) de cada versión aplicada, y si un archivo desaparece o cambia, la validación falla al arrancar. Toda modificación nueva del esquema va en una migración con un número mayor (V20, V21…).
+
+## V20: ventas sin conexión
+
+Agrega a `sale`:
+
+- `client_request_id` (UUID, único): identificador que genera el dispositivo para cada venta. Si la misma venta llega dos veces, el backend devuelve la existente y no descuenta el inventario otra vez.
+- `offline_created_at`: hora real de la venta hecha sin conexión. `created_at` sigue siendo la hora en que llegó al servidor. La pantalla de Ventas y el resumen del día usan la hora real.
 
 ## Tipo de movimiento `ADJUSTMENT`
 
@@ -351,5 +358,5 @@ Las migraciones están en `backend/src/main/resources/db/migration` (V1 a V19). 
 
 ## Verificación
 
-- La prueba `BackendApplicationTests` aplica las 19 migraciones sobre una base vacía y comprueba que el esquema coincide con las entidades (`ddl-auto: validate`).
+- La prueba `BackendApplicationTests` aplica las 20 migraciones sobre una base vacía y comprueba que el esquema coincide con las entidades (`ddl-auto: validate`).
 - `scripts/backup/integrity-check.sql` comprueba que el inventario de cada producto sea igual a la suma de sus movimientos. Se ejecuta en cada prueba de restauración (ver `docs/09-copias-de-seguridad.md`).

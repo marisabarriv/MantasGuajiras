@@ -152,7 +152,7 @@ Unidades iniciales: **Metro (`m`)** y **Unidad (`#`)**.
 
 | Método | Ruta               | Rol   | Descripción                                                              |
 | ------ | ------------------ | ----- | ------------------------------------------------------------------------ |
-| POST   | `/api/sales`       | Todos | Registrar venta. El backend recalcula precios y total, y descuenta el inventario. |
+| POST   | `/api/sales`       | Todos | Registrar venta. El backend recalcula precios y total, y descuenta el inventario. Campos opcionales: `clientRequestId` (UUID; si ya existe una venta con ese identificador se devuelve la existente, sin duplicar) y `offlineCreatedAt` (hora real de una venta hecha sin conexión, con zona horaria). |
 | GET    | `/api/sales`       | ADMIN | Historial de ventas con montos.                                          |
 | GET    | `/api/sales/{id}`  | ADMIN | Detalle de una venta.                                                    |
 | PUT    | `/api/sales/{id}`  | ADMIN | Rechazado: las ventas no se modifican después de registrarse.           |
@@ -216,11 +216,11 @@ La API utiliza códigos HTTP para indicar el resultado de las operaciones.
 | 401    | No autenticado                  |
 | 403    | Sin permisos                    |
 | 404    | Recurso no encontrado           |
-| 409    | Conflicto de información        |
+| 409    | Conflicto de información (duplicado o choque con un registro existente; se puede reintentar) |
 | 413    | Archivo demasiado grande (foto) |
 | 500    | Error interno del servidor      |
 
-Un JSON mal formado o con un tipo de dato incorrecto responde `400` con un mensaje claro (no `500`).
+Un JSON mal formado o con un tipo de dato incorrecto responde `400` con un mensaje claro, y una ruta que no existe responde `404` (no `500`).
 
 ---
 

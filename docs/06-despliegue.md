@@ -150,7 +150,7 @@ Se recomienda:
 * Conservar varias copias recientes.
 * Verificar periódicamente que los respaldos puedan restaurarse correctamente.
 
-**Implementado:** copias automáticas cada 2 horas durante el día y al iniciar sesión, prueba semanal de restauración con verificación de integridad y procedimiento de recuperación. Ver **[09-copias-de-seguridad.md](09-copias-de-seguridad.md)**.
+**Implementado:** copias automáticas cada 2 horas de 6:00 a 21:00 y al iniciar sesión, prueba semanal de restauración con verificación de integridad y procedimiento de recuperación. Ver **[09-copias-de-seguridad.md](09-copias-de-seguridad.md)**.
 
 ---
 
@@ -288,7 +288,7 @@ Este documento establece las consideraciones generales para el despliegue del si
 
 La estrategia podrá adaptarse cuando se defina la infraestructura definitiva del entorno de producción.
 
-Actualmente no se considera implementado un sistema de funcionamiento offline ni una sincronización automática entre bases de datos locales y una base de datos centralizada en la nube.
+Las ventas se pueden registrar sin conexión y se sincronizan solas al volver la conexión (sección 15.4). No hay bases de datos locales que sincronizar: la base es única.
 
 Cualquier modificación importante relacionada con la infraestructura o el proceso de despliegue deberá reflejarse en este documento.
 
@@ -440,20 +440,40 @@ Vendedor 2 (tablet) ─┘
 
 Cuando alguien registra una venta, queda guardada en esa única base y cualquier otra persona la ve al consultar. Las reglas que ya existen protegen el trabajo simultáneo: el bloqueo de inventario impide vender dos veces la última unidad (prueba `ConcurrentSaleTest`).
 
-Esto es distinto del **funcionamiento offline** (vender sin Internet y sincronizar después), que sí requiere sincronización, resolución de conflictos y cambios grandes de arquitectura. No está implementado y solo se justifica si en el local suele faltar Internet.
+Si se cae Internet en el local, las **ventas** se pueden seguir registrando sin conexión (sección 15.4).
 
 **Hoy, en local:** el vendedor puede usar la misma base si está en la misma red Wi-Fi que el computador donde corre el sistema (`npm run dev:celular`), siempre que ese computador esté encendido.
 
-## 15.2. Ver los cambios de otros usuarios
+## 15.2. Ver los cambios de otros usuarios (implementado)
 
-Cada pantalla carga los datos **al abrirse**. Si otra persona registra algo mientras la pantalla está abierta, el cambio aparece al volver a entrar a la sección o al recargar la página. El backend siempre valida con los datos actuales (por ejemplo, no deja vender lo que otro ya vendió), así que una pantalla desactualizada no produce errores en los datos.
+Las pantallas se actualizan solas, sin recargar:
 
-Mejora posible, si se necesita ver los cambios sin recargar:
+* al volver a la pestaña o a la app (por ejemplo, al desbloquear el celular),
+* cuando vuelve la conexión,
+* cada minuto mientras la pantalla está visible.
 
-1. **Recargar al volver a la pestaña o la app** (evento `visibilitychange`). Es un cambio pequeño en el frontend y cubre el caso del celular.
-2. **Actualización periódica** (cada 30-60 segundos) en Inventario y Personalizadas.
-3. **Tiempo real** (Server-Sent Events o WebSocket). Es más trabajo y para un negocio de este tamaño normalmente no hace falta.
+Si una actualización automática falla (sin conexión), se conservan los datos que ya estaban en pantalla. Además, el backend siempre valida con los datos actuales: una pantalla con unos segundos de atraso no produce errores en los datos.
 
 ## 15.3. Copias en la nube
 
 Los servicios de PostgreSQL administrado (por ejemplo, los que ofrecen Railway, Render, Supabase, Neon o los grandes proveedores) incluyen copias automáticas y restauración a un momento exacto (*point-in-time recovery*). Los apagones en el local dejan de afectar a los datos, porque la base ya no está en ese computador. Aun así, conviene seguir haciendo una copia propia periódica con `backup-db.sh` o `backup-db.ps1` apuntando a la base de la nube, para no depender de un solo proveedor.
+
+## 15.4. Ventas sin conexión (implementado)
+
+Cuando un dispositivo no puede comunicarse con el servidor (sin Internet, Wi-Fi caído o servidor apagado):
+
+1. Aparece arriba el aviso **"Sin conexión con el servidor"**.
+2. En **Nueva venta** se usan los productos, precios y existencias guardados la última vez que hubo conexión; la pantalla dice de qué hora son.
+3. Al confirmar, la venta queda **guardada en el dispositivo** y aparece en la lista "Ventas guardadas sin conexión". Lo vendido se resta de las existencias que ve ese dispositivo.
+4. Al volver la conexión (o al abrir la app, o cada 30 segundos) las ventas se envían solas.
+5. Si el servidor rechaza una (por ejemplo, otro vendedor vendió la última unidad), queda marcada en rojo con el motivo y los botones **Reintentar** y **Descartar**.
+
+Condiciones:
+
+* El dispositivo debe haber abierto **Nueva venta** al menos una vez con conexión (así guarda el catálogo).
+* Para **reabrir** la app sin conexión se necesita la versión compilada (`npm run build`, servida en producción o con `npm run preview`). Con `npm run dev` se puede seguir vendiendo si la app ya estaba abierta cuando se fue la conexión, pero no reabrirla.
+* La sesión dura lo que indique `JWT_EXPIRATION`. Sin conexión se puede seguir vendiendo aunque venza; las ventas se envían cuando la persona vuelve a iniciar sesión con conexión. Se recomienda una duración que cubra una jornada (por ejemplo, 12 horas = `43200000`).
+* No borrar los datos del navegador ni desinstalar la app mientras haya ventas en la lista de pendientes.
+* Si un producto cambió de precio mientras no había conexión, la venta se registra con el precio vigente al recibirla.
+
+Verificado con una prueba de navegador de punta a punta: venta sin conexión, app reabierta sin conexión, conflicto con otra venta, sincronización automática, reenvío sin duplicar y actualización automática del inventario.

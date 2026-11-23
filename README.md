@@ -48,8 +48,10 @@ Todos los módulos están implementados e integrados. El sistema se ejecuta en u
 | Compras              | Entradas de inventario con verificación del total en el backend.                          |
 | Producción           | Consumo de tela y generación de mantas en una sola transacción.                           |
 | Personalizadas       | Mantas por encargo con descuento de tela, abono inicial, pagos posteriores y saldo.       |
-| App instalable (PWA) | Instalación en computador y celular, página sin conexión.                                 |
-| Copias de seguridad  | Copias automáticas cada 2 horas y al encender el equipo, prueba semanal de restauración (`docs/09-copias-de-seguridad.md`). |
+| App instalable (PWA) | Instalación en computador y celular; abre aunque no haya conexión.                        |
+| Ventas sin conexión  | Si se va Internet o el servidor, se sigue vendiendo: las ventas se guardan en el dispositivo y se envían solas al volver la conexión, sin duplicarse. |
+| Datos al día         | Las pantallas se actualizan solas al volver a la app, al volver la conexión y cada minuto. |
+| Copias de seguridad  | Copias automáticas cada 2 horas de 6:00 a 21:00 y al encender el equipo, prueba semanal de restauración (`docs/09-copias-de-seguridad.md`). |
 
 ### Garantías del backend
 
@@ -68,7 +70,7 @@ Todos los módulos están implementados e integrados. El sistema se ejecuta en u
 * Recorrido manual de los flujos críticos con datos reales.
 * Completar la lista de `docs/06-despliegue.md` → sección 14.4.
 
-La sincronización automática en la nube y el funcionamiento offline podrán evaluarse como mejoras futuras, pero **no forman parte de la implementación actual**.
+Sin conexión solo se pueden **registrar ventas** (detalles en `docs/08-frontend.md`, sección 30A). Compras, producción, ajustes y personalizadas requieren conexión.
 
 ---
 
@@ -145,7 +147,7 @@ MantasGuajiras/
 │   │   ├── sale/  purchase/  production/  order/
 │   │   └── user/
 │   ├── src/main/resources/
-│   │   ├── db/migration/            Migraciones Flyway (V1 … V19)
+│   │   ├── db/migration/            Migraciones Flyway (V1 … V20)
 │   │   ├── application.yml
 │   │   ├── application-dev.example.yml
 │   │   └── application-prod.yml
@@ -302,9 +304,9 @@ El backend es responsable de:
 
 | Prueba                     | Qué comprueba                                                                 |
 | -------------------------- | ----------------------------------------------------------------------------- |
-| `BackendApplicationTests`  | Las 19 migraciones se aplican desde cero y el esquema coincide con las entidades. |
+| `BackendApplicationTests`  | Las 20 migraciones se aplican desde cero y el esquema coincide con las entidades. |
 | `RolePermissionsTest`      | Qué puede y qué no puede hacer cada rol.                                      |
-| `ConcurrentSaleTest`       | Dos ventas simultáneas de la última unidad: solo una se registra.             |
+| `ConcurrentSaleTest`       | Dos ventas simultáneas de la última unidad: solo una se registra. Una venta sin conexión reenviada no se duplica; si al sincronizar ya no hay existencias, se rechaza. |
 | `ProductRulesTest`         | Categoría ↔ unidad, enteros en mantas, precio de compra = precio unitario.     |
 | `ImageSignatureTest`       | La foto de perfil se valida por su contenido real.                            |
 

@@ -16,7 +16,7 @@
 
 | Qué                            | Cuándo                         | Script                                   |
 | ------------------------------ | ------------------------------ | ---------------------------------------- |
-| Copia completa de la base      | Cada 2 horas en el día y al iniciar sesión (automático) | `scripts/backup/backup-db.ps1` |
+| Copia completa de la base      | Cada 2 horas de 6:00 a 21:00 y al iniciar sesión (automático) | `scripts/backup/backup-db.ps1` |
 | Prueba de que la copia sirve   | Cada domingo (automático)      | `scripts/backup/restore-test.ps1`        |
 | Recuperar datos tras un daño   | Solo en una emergencia         | `scripts/backup/restore-db.ps1`          |
 | Programar las dos primeras     | Una sola vez                   | `scripts/backup/register-scheduled-tasks.ps1` |
@@ -80,12 +80,12 @@ powershell -ExecutionPolicy Bypass -File scripts\backup\register-scheduled-tasks
 
 Crea dos tareas en el **Programador de tareas** de Windows:
 
-- **MantasGuajiras - Copias del día**: una copia cada 2 horas entre las 8:00 y las 21:00, **y otra cada vez que inicias sesión en Windows** (por ejemplo, cuando vuelve la luz y prendes el computador).
+- **MantasGuajiras - Copias del día**: una copia cada 2 horas desde las 6:00 (6, 8, 10… 20), una copia final a las 21:00 **y otra cada vez que inicias sesión en Windows** (por ejemplo, cuando vuelve la luz y prendes el computador).
 - **MantasGuajiras - Prueba semanal**: los domingos a las 21:30.
 
 Si el computador está apagado a una hora programada, la copia se hace en cuanto se encienda.
 
-Para otro horario, por ejemplo cada hora de 7 a. m. a 8 p. m.:
+Para otro horario, por ejemplo cada hora de 7 a. m. a 8 p. m. (los valores por defecto son `-EveryHours 2 -StartTime 06:00 -EndTime 21:00`):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\backup\register-scheduled-tasks.ps1 -EveryHours 1 -StartTime 07:00 -EndTime 20:00
@@ -179,7 +179,7 @@ DB_NAME=mantas_guajiras_db BACKUP_DIR=/var/backups/mantasguajiras scripts/backup
 Programación con `crontab -e`:
 
 ```text
-0 8-20/2 * * *  DB_NAME=mantas_guajiras_db BACKUP_DIR=/var/backups/mantasguajiras /ruta/scripts/backup/backup-db.sh
+0 6-20/2,21 * * *  DB_NAME=mantas_guajiras_db BACKUP_DIR=/var/backups/mantasguajiras /ruta/scripts/backup/backup-db.sh
 30 21 * * 0 DB_NAME=mantas_guajiras_db BACKUP_DIR=/var/backups/mantasguajiras /ruta/scripts/backup/restore-test.sh
 ```
 
