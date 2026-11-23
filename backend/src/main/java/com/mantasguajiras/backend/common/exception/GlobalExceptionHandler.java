@@ -157,6 +157,21 @@ public class GlobalExceptionHandler {
                                 request);
         }
 
+        /**
+         * JSON mal formado, incompleto o con un tipo de dato incorrecto
+         * (por ejemplo, texto donde va un número). Antes caía en el
+         * manejador general y respondía 500.
+         */
+        @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+        public ResponseEntity<ErrorResponse> handleNotReadable(
+                        org.springframework.http.converter.HttpMessageNotReadableException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.BAD_REQUEST,
+                                "Los datos enviados no son válidos. Revisa el formulario e intenta de nuevo.",
+                                request);
+        }
+
         /** Archivo más grande de lo permitido (foto de perfil: 20 MB). */
         @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
         public ResponseEntity<ErrorResponse> handleTooLarge(

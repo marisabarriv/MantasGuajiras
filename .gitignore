@@ -38,3 +38,6 @@
 # Ajustes locales de Claude Code (rutas de este computador)
 .claude/settings.local.json
 .claude/launch.json
+
+# Configuración local de las copias de seguridad (rutas de este computador)
+scripts/backup/backup.config.ps1

@@ -20,7 +20,7 @@ public class ProductCategoryRequest {
     private String description;
 
     @NotNull(message = "El orden de visualización es obligatorio.")
-    private int displayOrder;
+    private Integer displayOrder;
 
     @NotNull(message = "Debe indicar si la categoría está activa.")
     private Boolean active;

@@ -1,0 +1,23 @@
+# =========================================================
+# Finales de línea del repositorio.
+# Todo el texto se guarda con LF dentro de git, sin importar si se
+# trabaja en Windows, macOS o Linux. Así git no muestra cientos de
+# archivos "modificados" solo por la conversión LF <-> CRLF.
+# =========================================================
+* text=auto eol=lf
+
+# Scripts de Windows: CRLF
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+
+# Binarios: nunca convertir
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.jar  binary
+*.dump binary
