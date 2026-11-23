@@ -135,11 +135,13 @@ Toda operación que modifique el stock deberá generar el movimiento de inventar
 
 ---
 
-## RN-12. Ajustes administrativos
+## RN-12. Ajustes por conteo físico
 
-Los ajustes manuales de inventario estarán destinados a usuarios con permisos administrativos.
+**Administradores y vendedores** pueden ajustar el inventario por conteo físico: se escribe la cantidad real que hay en el local y el sistema registra la diferencia como entrada o salida.
 
-Los ajustes deberán quedar registrados como movimientos de inventario.
+El objetivo es que el administrador conozca el estado real del local sin tener que estar presente contando. Por eso cada ajuste queda registrado como movimiento de inventario con **quién lo hizo, cuándo, la diferencia y el motivo**, visible en el historial de Inventario.
+
+Los movimientos manuales "en bruto" (`/api/inventory-movements`) siguen siendo solo del administrador.
 
 ---
 
@@ -232,7 +234,7 @@ El administrador podrá ejecutar las operaciones correspondientes a sus permisos
 
 El vendedor podrá ejecutar las operaciones comerciales que tenga autorizadas.
 
-No tiene permisos para administrar datos maestros, realizar ajustes administrativos de inventario, consultar montos de ventas y compras ni administrar usuarios.
+Puede ajustar el inventario por conteo físico (RN-12). No tiene permisos para administrar datos maestros, registrar movimientos manuales de inventario, consultar montos de ventas y compras ni administrar usuarios.
 
 ---
 
@@ -249,7 +251,8 @@ Los permisos se aplican en el backend (`SecurityConfig`). El frontend solo ocult
 | Crear, editar o desactivar productos                  |      Sí       |    No    |
 | Crear, editar o desactivar categorías y unidades      |      Sí       |    No    |
 | Consultar inventario y su historial                   |      Sí       |    Sí    |
-| Ajustes y movimientos manuales de inventario          |      Sí       |    No    |
+| Ajustar inventario por conteo físico                  |      Sí       |    Sí    |
+| Movimientos manuales de inventario                    |      Sí       |    No    |
 | Producción (no muestra montos de dinero)              |      Sí       |    Sí    |
 | Mantas personalizadas y sus pagos                     |      Sí       |    Sí    |
 | Administrar usuarios                                  |      Sí       |    No    |

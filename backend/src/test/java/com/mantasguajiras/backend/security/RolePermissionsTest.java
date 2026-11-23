@@ -75,14 +75,22 @@ class RolePermissionsTest {
 
     @Test
     @WithMockUser(roles = "SELLER")
-    void vendedorNoVeMontosNiAjustaInventarioNiAdministraUsuarios() throws Exception {
+    void vendedorNoVeMontosNiHaceMovimientosManualesNiAdministraUsuarios() throws Exception {
         mvc.perform(get("/api/sales")).andExpect(status().isForbidden());
         mvc.perform(get("/api/purchases")).andExpect(status().isForbidden());
         mvc.perform(post("/api/purchases").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isForbidden());
-        mvc.perform(post("/api/inventory/adjustments").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mvc.perform(post("/api/inventory-movements").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isForbidden());
         mvc.perform(get("/users")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "SELLER")
+    void vendedorPuedeAjustarInventarioPorConteo() throws Exception {
+        // Llega al controlador (400 por cuerpo vacío), no se bloquea.
+        mvc.perform(post("/api/inventory/adjustments").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

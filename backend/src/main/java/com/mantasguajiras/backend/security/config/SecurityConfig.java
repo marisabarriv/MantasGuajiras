@@ -114,10 +114,14 @@ public class SecurityConfig {
                         )
                         .hasRole("ADMIN")
 
+                        // Movimientos manuales "en bruto" y compras: solo ADMIN.
+                        // Los AJUSTES por conteo físico (/api/inventory/adjustments)
+                        // los puede hacer cualquier usuario con sesión: el vendedor
+                        // cuenta en el local y el administrador ve el resultado y,
+                        // en el historial, quién hizo cada ajuste.
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/inventory-movements",
-                                "/api/inventory/adjustments",
                                 "/api/purchases"
                         )
                         .hasRole("ADMIN")

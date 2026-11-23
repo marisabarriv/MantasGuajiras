@@ -138,7 +138,7 @@ Unidades iniciales: **Metro (`m`)** y **Unidad (`#`)**.
 | ------ | ----------------------------- | ----- | --------------------------------------------------------------- |
 | GET    | `/api/inventory`              | Todos | Existencias de todos los productos activos con estado `OK`, `LOW` u `OUT`. |
 | GET    | `/api/inventory/{id}`         | Todos | Existencia de un producto.                                      |
-| POST   | `/api/inventory/adjustments`  | ADMIN | Ajuste por conteo físico: registra la diferencia como entrada o salida. |
+| POST   | `/api/inventory/adjustments`  | Todos | Ajuste por conteo físico: registra la diferencia como entrada o salida, con el usuario que lo hizo. |
 
 ## Movimientos de inventario — `/api/inventory-movements`
 

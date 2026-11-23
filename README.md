@@ -217,8 +217,8 @@ Incluye:
 
 ## 👥 Roles del sistema
 
-* **Administrador:** todo el sistema, incluidos productos, categorías, unidades, ajustes de inventario, compras, montos de ventas y usuarios.
-* **Vendedor:** registra ventas, consulta productos e inventario, y usa Producción y Personalizadas. No modifica datos maestros, no ajusta inventario ni ve montos de ventas y compras.
+* **Administrador:** todo el sistema, incluidos productos, categorías, unidades, compras, montos de ventas y usuarios. Revisa en el historial de Inventario los ajustes que hacen los vendedores.
+* **Vendedor:** registra ventas, consulta productos, **ajusta el inventario por conteo físico** y usa Producción y Personalizadas. No modifica datos maestros ni ve montos de ventas y compras.
 
 Los permisos se aplican en el backend (`SecurityConfig`); la tabla completa está en `docs/02-reglas-negocio.md` (RN-24A).
 
