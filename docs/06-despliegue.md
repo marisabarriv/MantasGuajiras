@@ -150,7 +150,7 @@ Se recomienda:
 * Conservar varias copias recientes.
 * Verificar periódicamente que los respaldos puedan restaurarse correctamente.
 
-**Implementado:** copia diaria automática, prueba semanal de restauración con verificación de integridad y procedimiento de recuperación. Ver **[09-copias-de-seguridad.md](09-copias-de-seguridad.md)**.
+**Implementado:** copias automáticas cada 2 horas durante el día y al iniciar sesión, prueba semanal de restauración con verificación de integridad y procedimiento de recuperación. Ver **[09-copias-de-seguridad.md](09-copias-de-seguridad.md)**.
 
 ---
 
@@ -423,3 +423,37 @@ git archive --format=zip -o MantasGuajiras.zip HEAD
 ```
 
 Ese ZIP contiene únicamente los archivos versionados en git: sin claves, sin dependencias y sin copias de la base de datos.
+
+---
+
+# 15. Varios usuarios y dispositivos (nube)
+
+## 15.1. Una sola base de datos, no sincronización
+
+En la nube **no hace falta sincronizar bases de datos**. Hay **una sola** base PostgreSQL y un solo backend; el administrador, los vendedores y cualquier celular o computador se conectan al mismo backend por Internet:
+
+```text
+Administrador (PC) ──┐
+Vendedor (celular) ──┼──HTTPS──► Backend (Spring Boot) ──► PostgreSQL (única)
+Vendedor 2 (tablet) ─┘
+```
+
+Cuando alguien registra una venta, queda guardada en esa única base y cualquier otra persona la ve al consultar. Las reglas que ya existen protegen el trabajo simultáneo: el bloqueo de inventario impide vender dos veces la última unidad (prueba `ConcurrentSaleTest`).
+
+Esto es distinto del **funcionamiento offline** (vender sin Internet y sincronizar después), que sí requiere sincronización, resolución de conflictos y cambios grandes de arquitectura. No está implementado y solo se justifica si en el local suele faltar Internet.
+
+**Hoy, en local:** el vendedor puede usar la misma base si está en la misma red Wi-Fi que el computador donde corre el sistema (`npm run dev:celular`), siempre que ese computador esté encendido.
+
+## 15.2. Ver los cambios de otros usuarios
+
+Cada pantalla carga los datos **al abrirse**. Si otra persona registra algo mientras la pantalla está abierta, el cambio aparece al volver a entrar a la sección o al recargar la página. El backend siempre valida con los datos actuales (por ejemplo, no deja vender lo que otro ya vendió), así que una pantalla desactualizada no produce errores en los datos.
+
+Mejora posible, si se necesita ver los cambios sin recargar:
+
+1. **Recargar al volver a la pestaña o la app** (evento `visibilitychange`). Es un cambio pequeño en el frontend y cubre el caso del celular.
+2. **Actualización periódica** (cada 30-60 segundos) en Inventario y Personalizadas.
+3. **Tiempo real** (Server-Sent Events o WebSocket). Es más trabajo y para un negocio de este tamaño normalmente no hace falta.
+
+## 15.3. Copias en la nube
+
+Los servicios de PostgreSQL administrado (por ejemplo, los que ofrecen Railway, Render, Supabase, Neon o los grandes proveedores) incluyen copias automáticas y restauración a un momento exacto (*point-in-time recovery*). Los apagones en el local dejan de afectar a los datos, porque la base ya no está en ese computador. Aun así, conviene seguir haciendo una copia propia periódica con `backup-db.sh` o `backup-db.ps1` apuntando a la base de la nube, para no depender de un solo proveedor.
