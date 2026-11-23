@@ -40,9 +40,6 @@ function StatusBadge({ status }) {
 
 function InventoryPage() {
 
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const isAdmin = user.role === "ADMIN";
-
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -379,18 +376,18 @@ function InventoryPage() {
                                             Ver historial
                                         </button>
 
-                                        {isAdmin && (
-                                            <button
-                                                type="button"
-                                                className="inv-button-primary"
-                                                onClick={() => {
-                                                    setSuccessMessage("");
-                                                    setAdjustItem(item);
-                                                }}
-                                            >
-                                                Ajustar
-                                            </button>
-                                        )}
+                                        {/* Todos los roles ajustan por conteo físico;
+                                            el historial muestra quién lo hizo. */}
+                                        <button
+                                            type="button"
+                                            className="inv-button-primary"
+                                            onClick={() => {
+                                                setSuccessMessage("");
+                                                setAdjustItem(item);
+                                            }}
+                                        >
+                                            Ajustar
+                                        </button>
 
                                     </div>
 

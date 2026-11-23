@@ -142,7 +142,7 @@ Entre sus responsabilidades se encuentran:
 * Administrar usuarios.
 * Administrar productos y datos maestros.
 * Gestionar inventario.
-* Realizar ajustes administrativos de inventario.
+* Revisar los ajustes de inventario que hacen los vendedores.
 * Consultar información administrativa.
 * Gestionar las funcionalidades correspondientes a su rol.
 
@@ -157,6 +157,7 @@ Entre sus responsabilidades se encuentran:
 * Aplicar precios especiales dentro de una venta cuando corresponda.
 * Consultar información necesaria para realizar sus operaciones.
 * Registrar producción y mantas personalizadas.
+* Ajustar el inventario por conteo físico en el local.
 
 Los permisos son controlados por el backend; la matriz completa está en `02-reglas-negocio.md` (RN-24A).
 

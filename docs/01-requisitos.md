@@ -125,7 +125,7 @@ El stock actual no corresponde al valor de `minimumStock`.
 
 ## RF-07. Ajustes de inventario
 
-El administrador deberá poder realizar ajustes manuales de inventario.
+Administradores y vendedores deberán poder ajustar el inventario por conteo físico. Cada ajuste registra quién lo hizo, para que el administrador pueda revisarlo.
 
 Cada ajuste deberá generar el movimiento de inventario correspondiente.
 

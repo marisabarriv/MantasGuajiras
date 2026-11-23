@@ -204,7 +204,7 @@ La navegación se implementa con **React Router** (`App.jsx`).
 | `/sale`           | `NewSalePage`       | Todos los roles                         |
 | `/custom-orders`  | `CustomOrdersPage`  | Todos los roles (valores incluidos)     |
 | `/products`       | `ProductsPage`      | Todos consultan; solo ADMIN crea y edita |
-| `/inventory`      | `InventoryPage`     | Todos consultan; solo ADMIN ajusta      |
+| `/inventory`      | `InventoryPage`     | Todos los roles (consultar y ajustar)   |
 | `/production`     | `ProductionPage`    | Todos los roles                         |
 | `/profile`        | `ProfilePage`       | Todos los roles                         |
 | `/sales`          | `SalesPage`         | Solo ADMIN (`RequireAdmin`)             |
@@ -271,7 +271,7 @@ En dispositivos con pantallas pequeñas, el diseño puede reorganizar los elemen
 | `NewSalePage`       | Punto de venta: búsqueda, escáner, carrito, precio especial por producto, protección contra doble envío. |
 | `CustomOrdersPage`  | Mantas personalizadas: registro con tela usada, abono inicial, pagos posteriores y saldo; filtro pagadas/pendientes. |
 | `ProductsPage`      | Lista por categoría, búsqueda y escáner. ADMIN: crear y editar (`ProductForm`). Vendedor: solo consulta. |
-| `InventoryPage`     | Existencias con estado (agotado, bajo, normal) e historial de movimientos. ADMIN: ajuste por conteo físico. |
+| `InventoryPage`     | Existencias con estado (agotado, bajo, normal), historial de movimientos con quién hizo cada uno, y ajuste por conteo físico (todos los roles). |
 | `ProductionPage`    | Registrar producción (tela consumida → mantas generadas) e historial. Sin montos de dinero.       |
 | `SalesPage`         | Historial de ventas con montos (ADMIN).                                                           |
 | `PurchasesPage`     | Registrar compras e historial (ADMIN).                                                            |
