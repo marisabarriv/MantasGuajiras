@@ -5,10 +5,10 @@
 | **Proyecto**             | Mantas Guajiras      |
 | **Documento**            | Visión del Proyecto  |
 | **Código**               | DOC-00               |
-| **Versión**              | v0.4.0               |
-| **Estado**               | En desarrollo        |
+| **Versión**              | v1.0.0-rc.1         |
+| **Estado**               | Versión candidata    |
 | **Responsable**          | Equipo de Desarrollo |
-| **Última actualización** | 05/09/2026           |
+| **Última actualización** | 23/11/2026           |
 
 ---
 
@@ -18,6 +18,7 @@
 | ------- | ---------- | ---------------------------------------- | -------------------- |
 | v0.1.0  | 29/07/2026 | Creación inicial del documento.          | Equipo de Desarrollo |
 | v0.4.0  | 05/09/2026 | Actualización de la visión del proyecto. | Equipo de Desarrollo |
+| v1.0.0-rc.1 | 23/11/2026 | Alineación con la implementación real tras la auditoría técnica. | Equipo de Desarrollo |
 
 ---
 
@@ -79,7 +80,7 @@ Celular ─────┘          ▼
                          ▼
                      PostgreSQL
 
-La posibilidad de sincronización en la nube y funcionamiento offline corresponde a una evolución futura del proyecto y no a una característica actualmente implementada.
+Desde la versión `v1.0.0-rc.1` se pueden registrar ventas sin conexión, que se envían solas al servidor cuando vuelve la conexión. El resto de operaciones requiere conexión.
 
 ---
 
@@ -106,7 +107,7 @@ Desarrollar un sistema de gestión que permita administrar de manera organizada 
 
 # 5. Alcance
 
-El sistema contempla progresivamente funcionalidades relacionadas con:
+El sistema implementa (versión `v1.0.0-rc.1`) funcionalidades relacionadas con:
 
 * Autenticación de usuarios.
 * Gestión de usuarios y roles.
@@ -118,12 +119,13 @@ El sistema contempla progresivamente funcionalidades relacionadas con:
 * Compras.
 * Ventas.
 * Producción.
-* Pedidos.
-* Pagos y demás funcionalidades administrativas que correspondan al modelo del sistema.
+* Mantas personalizadas (pedidos por encargo).
+* Pagos y saldos de las personalizadas.
+* Copias de seguridad con prueba de restauración.
 
-El frontend y backend se desarrollarán de forma integrada.
+El frontend y el backend están integrados en todos los módulos.
 
-Las funcionalidades de sincronización en la nube, funcionamiento offline, facturación electrónica, integraciones externas y otras ampliaciones podrán incorporarse posteriormente.
+Las funcionalidades de funcionamiento sin conexión para otras operaciones además de las ventas, facturación electrónica, integraciones externas y otras ampliaciones podrán incorporarse posteriormente.
 
 ---
 
@@ -140,7 +142,7 @@ Entre sus responsabilidades se encuentran:
 * Administrar usuarios.
 * Administrar productos y datos maestros.
 * Gestionar inventario.
-* Realizar ajustes administrativos de inventario.
+* Revisar los ajustes de inventario que hacen los vendedores.
 * Consultar información administrativa.
 * Gestionar las funcionalidades correspondientes a su rol.
 
@@ -154,8 +156,10 @@ Entre sus responsabilidades se encuentran:
 * Consultar productos disponibles.
 * Aplicar precios especiales dentro de una venta cuando corresponda.
 * Consultar información necesaria para realizar sus operaciones.
+* Registrar producción y mantas personalizadas.
+* Ajustar el inventario por conteo físico en el local.
 
-Los permisos definitivos serán controlados por el backend.
+Los permisos son controlados por el backend; la matriz completa está en `02-reglas-negocio.md` (RN-24A).
 
 ---
 
@@ -180,7 +184,7 @@ Durante el desarrollo se adoptan los siguientes principios:
 Una vez consolidada la versión inicial del sistema, podrán evaluarse funcionalidades como:
 
 * Sincronización con la nube.
-* Funcionamiento offline con sincronización posterior.
+* Funcionamiento sin conexión para compras, producción y personalizadas.
 * Acceso desde múltiples equipos mediante infraestructura centralizada.
 * Reportes avanzados.
 * Estadísticas de ventas.

@@ -3,7 +3,11 @@ package com.mantasguajiras.backend.sale.service.impl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -49,7 +53,24 @@ public class SaleServiceImpl implements SaleService {
     @Override
     public SaleResponse create(SaleRequest saleRequest) {
 
+        // Reenvío de una venta que ya llegó (por ejemplo, se cortó la
+        // conexión justo después de guardarla y el dispositivo reintenta):
+        // se devuelve la existente y NO se descuenta el inventario otra vez.
+        if (saleRequest.getClientRequestId() != null) {
+
+            Optional<Sale> existing =
+                    saleRepository.findByClientRequestId(
+                            saleRequest.getClientRequestId());
+
+            if (existing.isPresent()) {
+                return saleMapper.toResponse(existing.get());
+            }
+        }
+
         Sale sale = saleMapper.toEntity(saleRequest);
+
+        sale.setOfflineCreatedAt(
+                toServerTime(saleRequest.getOfflineCreatedAt()));
 
         List<SaleItem> saleItems =
                 buildSaleItems(saleRequest, sale);
@@ -446,5 +467,25 @@ public class SaleServiceImpl implements SaleService {
                 2,
                 RoundingMode.HALF_UP
         );
+    }
+
+    /**
+     * Hora de una venta hecha sin conexión, convertida a la zona del
+     * servidor. Una hora futura (reloj del dispositivo adelantado) se
+     * reemplaza por la hora actual.
+     */
+    private static LocalDateTime toServerTime(OffsetDateTime offlineCreatedAt) {
+
+        if (offlineCreatedAt == null) {
+            return null;
+        }
+
+        LocalDateTime local = offlineCreatedAt
+                .atZoneSameInstant(ZoneId.systemDefault())
+                .toLocalDateTime();
+
+        LocalDateTime now = LocalDateTime.now();
+
+        return local.isAfter(now) ? now : local;
     }
 }

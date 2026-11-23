@@ -19,11 +19,16 @@ const SaleService = {
     },
 
 
-    /** Registrar una venta (cualquier usuario con sesión). */
-    create(sale) {
+    /**
+     * Registrar una venta (cualquier usuario con sesión).
+     * sale.clientRequestId evita duplicarla si se reenvía.
+     * Opciones: { redirectOn401 } (false al sincronizar en segundo plano).
+     */
+    create(sale, { redirectOn401 = true } = {}) {
         return request("/api/sales", {
             method: "POST",
             body: sale,
+            redirectOn401,
             fallbackMessage: "No fue posible registrar la venta.",
         });
     },

@@ -21,6 +21,7 @@ public interface SaleMapper {
     @Mapping(target = "items", ignore = true)
     @Mapping(target = "total", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "offlineCreatedAt", ignore = true)
     Sale toEntity(SaleRequest request);
 
     @Mapping(target = "items", source = "items")
@@ -43,6 +44,8 @@ public interface SaleMapper {
     @Mapping(target = "items", ignore = true)
     @Mapping(target = "total", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "clientRequestId", ignore = true)
+    @Mapping(target = "offlineCreatedAt", ignore = true)
     void updateEntity(
         SaleRequest request,
         @MappingTarget Sale sale

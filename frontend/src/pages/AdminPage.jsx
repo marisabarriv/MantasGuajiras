@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import useAutoRefresh from "../hooks/useAutoRefresh";
 
 import Modal from "../components/Modal";
 import LoadError from "../components/LoadError";
@@ -35,6 +36,7 @@ function AdminPage() {
     const [loadError, setLoadError] = useState("");  // error al cargar la lista
     const [message, setMessage] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
+    const { refreshKey, takeSilent } = useAutoRefresh();
     const [search, setSearch] = useState("");
 
     // Modales
@@ -54,6 +56,8 @@ function AdminPage() {
     useEffect(() => {
 
         let cancelled = false;
+        // Recarga automática: si falla, se conservan los datos actuales.
+        const silent = takeSilent();
 
         UserService.findAll()
             .then((data) => {
@@ -63,7 +67,7 @@ function AdminPage() {
                 }
             })
             .catch((failure) => {
-                if (!cancelled) {
+                if (!cancelled && !silent) {
                     setLoadError(failure.message);
                 }
             })
@@ -77,7 +81,7 @@ function AdminPage() {
             cancelled = true;
         };
 
-    }, [reloadKey]);
+    }, [reloadKey, refreshKey, takeSilent]);
 
 
     const pendingCount = users.filter((user) => !user.active).length;

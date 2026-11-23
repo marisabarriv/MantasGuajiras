@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import useAutoRefresh from "../hooks/useAutoRefresh";
 
 import InventoryService from "../services/InventoryService";
 import {
@@ -19,10 +20,13 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
     const [movements, setMovements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const { refreshKey, takeSilent } = useAutoRefresh();
 
     useEffect(() => {
 
         let cancelled = false;
+        // Recarga automática: si falla, se conservan los datos actuales.
+        const silent = takeSilent();
 
         InventoryService.findMovements(productId)
             .then((data) => {
@@ -32,7 +36,7 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
                 }
             })
             .catch((loadError) => {
-                if (!cancelled) {
+                if (!cancelled && !silent) {
                     setError(loadError.message);
                 }
             })
@@ -46,7 +50,7 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
             cancelled = true;
         };
 
-    }, [productId, reloadKey]);
+    }, [productId, reloadKey, refreshKey, takeSilent]);
 
 
     if (loading) {
