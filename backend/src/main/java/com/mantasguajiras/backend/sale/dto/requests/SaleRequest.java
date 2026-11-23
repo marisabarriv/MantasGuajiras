@@ -1,5 +1,6 @@
 package com.mantasguajiras.backend.sale.dto.requests;
 
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 import jakarta.validation.Valid;
@@ -18,6 +19,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SaleRequest {
 
+    @Size(max = 255, message = "Las observaciones no pueden superar los 255 caracteres.")
     private String observations;
 
     @NotNull(message = "Los productos de la venta son obligatorios.")
