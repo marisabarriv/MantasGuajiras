@@ -6,8 +6,8 @@
 #   DB_NAME=mantas_guajiras_db
 #   BACKUP_DIR=$HOME/mantasguajiras-backups
 #   RETENTION_DAYS=30 MIN_KEEP=7 COPY_TO=   (segunda copia, opcional)
-# Programar con cron, por ejemplo cada 2 horas de 8:00 a 20:00:
-#   0 8-20/2 * * * /ruta/scripts/backup/backup-db.sh
+# Programar con cron, por ejemplo cada 2 horas de 6:00 a 20:00 y a las 21:00:
+#   0 6-20/2,21 * * * /ruta/scripts/backup/backup-db.sh
 # =========================================================
 set -euo pipefail
 

@@ -23,7 +23,7 @@
 #>
 param(
     [ValidateRange(1, 12)] [int] $EveryHours = 2,
-    [string] $StartTime = '08:00',
+    [string] $StartTime = '06:00',
     [string] $EndTime = '21:00',
     [string] $TestTime = '21:30'
 )
@@ -55,6 +55,10 @@ $repeating.Repetition = (New-ScheduledTaskTrigger -Once -At $StartTime `
         -RepetitionInterval (New-TimeSpan -Hours $EveryHours) `
         -RepetitionDuration ($end - $start)).Repetition
 
+# Copia final exactamente a la hora de cierre (la repetición puede no
+# caer justo en -EndTime, por ejemplo cada 2 h desde las 6:00 termina a las 20:00).
+$closing = New-ScheduledTaskTrigger -Daily -At $EndTime
+
 # Copia al iniciar sesión (2 minutos después, para que PostgreSQL ya esté arriba).
 $atLogon = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
 $atLogon.Delay = 'PT2M'
@@ -65,7 +69,7 @@ Unregister-ScheduledTask -TaskName 'MantasGuajiras - Copia diaria' -Confirm:$fal
 Register-ScheduledTask -TaskName 'MantasGuajiras - Copias del día' `
     -Description "Copia de seguridad de MantasGuajiras cada $EveryHours h ($StartTime a $EndTime) y al iniciar sesión." `
     -Action (New-ScriptAction 'backup-db.ps1') `
-    -Trigger @($repeating, $atLogon) `
+    -Trigger @($repeating, $closing, $atLogon) `
     -Settings $settings -Force | Out-Null
 
 Register-ScheduledTask -TaskName 'MantasGuajiras - Prueba semanal' `
@@ -75,7 +79,7 @@ Register-ScheduledTask -TaskName 'MantasGuajiras - Prueba semanal' `
     -Settings $settings -Force | Out-Null
 
 Write-Host "Tareas creadas:"
-Write-Host "  - Copia cada $EveryHours hora(s) entre $StartTime y $EndTime, y al iniciar sesión en Windows"
+Write-Host "  - Copia cada $EveryHours hora(s) desde las $StartTime, una final a las $EndTime y otra al iniciar sesión en Windows"
 Write-Host "  - Prueba de restauración los domingos a las $TestTime"
 Write-Host "Revísalas en: Inicio > Programador de tareas > Biblioteca del Programador de tareas."
 Write-Host "El historial queda en el archivo backup.log de la carpeta de copias."
