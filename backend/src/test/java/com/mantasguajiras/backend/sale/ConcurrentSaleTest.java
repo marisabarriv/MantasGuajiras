@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -31,6 +32,8 @@ import com.mantasguajiras.backend.productcategory.entity.ProductCategory;
 import com.mantasguajiras.backend.productcategory.repository.ProductCategoryRepository;
 import com.mantasguajiras.backend.sale.dto.requests.SaleItemRequest;
 import com.mantasguajiras.backend.sale.dto.requests.SaleRequest;
+import com.mantasguajiras.backend.sale.dto.response.SaleResponse;
+import com.mantasguajiras.backend.sale.repository.SaleRepository;
 import com.mantasguajiras.backend.sale.service.SaleService;
 import com.mantasguajiras.backend.unit.entity.Unit;
 import com.mantasguajiras.backend.unit.repository.UnitRepository;
@@ -50,6 +53,7 @@ class ConcurrentSaleTest {
     @Autowired private InventoryRepository inventoryRepository;
     @Autowired private ProductCategoryRepository categoryRepository;
     @Autowired private UnitRepository unitRepository;
+    @Autowired private SaleRepository saleRepository;
 
     @BeforeEach
     void loginAsAdmin() {
@@ -194,5 +198,50 @@ class ConcurrentSaleTest {
 
         assertThatThrownBy(() -> productService.create(wrong))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void ventaSinConexionReenviadaNoSeDuplica() {
+
+        UUID productId = createBlanket("5").getId();
+        UUID clientRequestId = UUID.randomUUID();
+        OffsetDateTime soldAt = OffsetDateTime.now().minusHours(3);
+
+        SaleRequest offlineSale = saleOf(productId, "2");
+        offlineSale.setClientRequestId(clientRequestId);
+        offlineSale.setOfflineCreatedAt(soldAt);
+
+        SaleResponse first = saleService.create(offlineSale);
+        // El dispositivo no recibió la respuesta y la envía otra vez.
+        SaleResponse second = saleService.create(offlineSale);
+
+        assertThat(second.getId()).isEqualTo(first.getId());
+        assertThat(saleRepository.findByClientRequestId(clientRequestId)).isPresent();
+        assertThat(inventoryRepository.findById(productId).orElseThrow().getQuantity())
+                .as("el inventario se descuenta una sola vez")
+                .isEqualByComparingTo("3");
+        assertThat(first.getOfflineCreatedAt())
+                .as("se conserva la hora real de la venta")
+                .isNotNull()
+                .isBefore(first.getCreatedAt());
+    }
+
+    @Test
+    void ventaSinConexionSinExistenciasAlSincronizarSeRechaza() {
+
+        UUID productId = createBlanket("1").getId();
+
+        // Mientras un dispositivo estaba sin conexión, otro vendió la última unidad.
+        saleService.create(saleOf(productId, "1"));
+
+        SaleRequest offlineSale = saleOf(productId, "1");
+        offlineSale.setClientRequestId(UUID.randomUUID());
+        offlineSale.setOfflineCreatedAt(OffsetDateTime.now().minusMinutes(30));
+
+        assertThatThrownBy(() -> saleService.create(offlineSale))
+                .isInstanceOf(RuntimeException.class);
+
+        assertThat(inventoryRepository.findById(productId).orElseThrow().getQuantity())
+                .isEqualByComparingTo("0");
     }
 }

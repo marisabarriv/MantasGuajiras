@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import useAutoRefresh from "../hooks/useAutoRefresh";
 
 import Modal from "../components/Modal";
 import LoadError from "../components/LoadError";
@@ -43,6 +44,7 @@ function ProductionPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
+    const { refreshKey, takeSilent } = useAutoRefresh();
 
     const [formOpen, setFormOpen] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
@@ -51,6 +53,8 @@ function ProductionPage() {
     useEffect(() => {
 
         let cancelled = false;
+        // Recarga automática: si falla, se conservan los datos actuales.
+        const silent = takeSilent();
 
         ProductionService.findAll()
             .then((data) => {
@@ -60,7 +64,7 @@ function ProductionPage() {
                 }
             })
             .catch((loadError) => {
-                if (!cancelled) {
+                if (!cancelled && !silent) {
                     setError(loadError.message);
                 }
             })
@@ -74,7 +78,7 @@ function ProductionPage() {
             cancelled = true;
         };
 
-    }, [reloadKey]);
+    }, [reloadKey, refreshKey, takeSilent]);
 
 
     // Resumen del mes: mantas fabricadas y tela usada.

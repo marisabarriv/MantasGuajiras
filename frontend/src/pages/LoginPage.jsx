@@ -5,6 +5,7 @@ import AuthService from "../services/AuthService";
 import InstallAppButton from "../components/InstallAppButton";
 import PasswordInput from "../components/PasswordInput";
 import { clearSession, hasValidSession, saveSession } from "../utils/session";
+import { syncPendingSales } from "../utils/offlineSync";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -46,6 +47,9 @@ function LoginPage() {
       const data = await AuthService.login(identifier.trim(), password);
 
       saveSession(data);
+
+      // Ventas hechas sin conexión que esperaban una sesión válida.
+      syncPendingSales();
 
       navigate("/sale", { replace: true });
     } catch (error) {

@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 
-import { getToken, hasValidSession } from "../utils/session";
+import { getToken, getUser, hasValidSession } from "../utils/session";
 
 /**
  * Protege las páginas privadas: sin sesión (o con la sesión vencida)
@@ -11,7 +11,14 @@ import { getToken, hasValidSession } from "../utils/session";
  */
 function RequireAuth({ children }) {
 
-    if (!hasValidSession()) {
+    // Sin Internet no se puede volver a iniciar sesión. Si este dispositivo
+    // ya tenía una sesión, se deja seguir trabajando (vender sin conexión);
+    // nada llega al servidor hasta iniciar sesión otra vez con conexión.
+    const offlineWithPreviousSession =
+        !hasValidSession() && navigator.onLine === false
+        && Boolean(getToken()) && Boolean(getUser().username);
+
+    if (!hasValidSession() && !offlineWithPreviousSession) {
 
         const hadSession = Boolean(getToken());
 

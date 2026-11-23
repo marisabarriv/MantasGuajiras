@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import useAutoRefresh from "../hooks/useAutoRefresh";
 
 import ProductForm from "../components/ProductForm";
 import Modal from "../components/Modal";
@@ -32,6 +33,7 @@ function ProductsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
+    const { refreshKey, takeSilent } = useAutoRefresh();
 
     const [filter, setFilter] = useState("ALL");
     const [search, setSearch] = useState("");
@@ -45,6 +47,8 @@ function ProductsPage() {
     useEffect(() => {
 
         let cancelled = false;
+        // Recarga automática: si falla, se conservan los datos actuales.
+        const silent = takeSilent();
 
         Promise.all([
             ProductService.findAll(true),
@@ -60,7 +64,7 @@ function ProductsPage() {
                 }
             })
             .catch((loadError) => {
-                if (!cancelled) {
+                if (!cancelled && !silent) {
                     setError(loadError.message || "No fue posible cargar los productos.");
                 }
             })
@@ -74,7 +78,7 @@ function ProductsPage() {
             cancelled = true;
         };
 
-    }, [reloadKey]);
+    }, [reloadKey, refreshKey, takeSilent]);
 
 
     const categoryName = (id) =>

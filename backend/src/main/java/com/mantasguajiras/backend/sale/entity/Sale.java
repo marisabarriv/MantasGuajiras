@@ -7,8 +7,10 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "sale")
@@ -37,4 +39,15 @@ public class Sale extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
+
+    /**
+     * Identificador que genera el dispositivo para esta venta. Evita
+     * registrarla dos veces si se reenvía (ventas sin conexión).
+     */
+    @Column(name = "client_request_id", unique = true)
+    private UUID clientRequestId;
+
+    /** Hora real de la venta si se hizo sin conexión; NULL si se registró en línea. */
+    @Column(name = "offline_created_at")
+    private LocalDateTime offlineCreatedAt;
 }

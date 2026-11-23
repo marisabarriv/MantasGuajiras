@@ -6,7 +6,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 /**
  * Arranca la aplicación completa contra la base de pruebas.
- * Si pasa, significa que las migraciones Flyway (V1…V19) se aplican
+ * Si pasa, significa que las migraciones Flyway (V1…V20) se aplican
  * desde cero y que el esquema resultante coincide con las entidades
  * (ddl-auto: validate).
  */
