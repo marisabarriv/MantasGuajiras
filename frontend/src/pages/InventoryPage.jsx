@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import useAutoRefresh from "../hooks/useAutoRefresh";
 
 import Modal from "../components/Modal";
 import BarcodeScanModal from "../components/BarcodeScanModal";
@@ -46,6 +47,7 @@ function InventoryPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
+    const { refreshKey, takeSilent } = useAutoRefresh();
 
     const [tab, setTab] = useState("stock");
     const [filter, setFilter] = useState("ALL");
@@ -65,6 +67,8 @@ function InventoryPage() {
     useEffect(() => {
 
         let cancelled = false;
+        // Recarga automática: si falla, se conservan los datos actuales.
+        const silent = takeSilent();
 
         InventoryService.findAll()
             .then((data) => {
@@ -74,7 +78,7 @@ function InventoryPage() {
                 }
             })
             .catch((loadError) => {
-                if (!cancelled) {
+                if (!cancelled && !silent) {
                     setError(loadError.message);
                 }
             })
@@ -88,7 +92,7 @@ function InventoryPage() {
             cancelled = true;
         };
 
-    }, [reloadKey]);
+    }, [reloadKey, refreshKey, takeSilent]);
 
 
     // =========================================

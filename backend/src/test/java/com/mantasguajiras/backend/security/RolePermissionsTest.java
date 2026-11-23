@@ -103,4 +103,10 @@ class RolePermissionsTest {
         mvc.perform(post("/api/product-categories").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void rutaInexistenteResponde404() throws Exception {
+        mvc.perform(get("/api/no-existe")).andExpect(status().isNotFound());
+    }
 }

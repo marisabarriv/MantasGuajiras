@@ -172,6 +172,33 @@ public class GlobalExceptionHandler {
                                 request);
         }
 
+        /**
+         * Una restricción de la base de datos rechazó la operación (por
+         * ejemplo, la misma venta sin conexión enviada dos veces al mismo
+         * tiempo). Se responde 409 para que el dispositivo reintente: en el
+         * reintento la venta ya existe y se devuelve sin duplicarla.
+         */
+        @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+        public ResponseEntity<ErrorResponse> handleDataIntegrity(
+                        org.springframework.dao.DataIntegrityViolationException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.CONFLICT,
+                                "La operación choca con un registro existente. Actualiza la pantalla e intenta de nuevo.",
+                                request);
+        }
+
+        /** Ruta que no existe (antes caía en el manejador general y respondía 500). */
+        @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+        public ResponseEntity<ErrorResponse> handleNoResource(
+                        org.springframework.web.servlet.resource.NoResourceFoundException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.NOT_FOUND,
+                                "La dirección solicitada no existe.",
+                                request);
+        }
+
         /** Archivo más grande de lo permitido (foto de perfil: 20 MB). */
         @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
         public ResponseEntity<ErrorResponse> handleTooLarge(

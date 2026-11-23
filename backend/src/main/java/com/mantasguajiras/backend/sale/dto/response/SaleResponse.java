@@ -24,4 +24,7 @@ public class SaleResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<SaleItemResponse> items;
+    private UUID clientRequestId;
+    /** Hora real de la venta si se hizo sin conexión; null si fue en línea. */
+    private LocalDateTime offlineCreatedAt;
 }

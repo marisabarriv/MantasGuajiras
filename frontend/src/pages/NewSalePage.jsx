@@ -1,10 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import Modal from "../components/Modal";
 import BarcodeScanModal from "../components/BarcodeScanModal";
 import ProductService from "../services/ProductService";
 import InventoryService from "../services/InventoryService";
 import SaleService from "../services/SaleService";
+import { isConnectionError } from "../services/apiClient";
+import useAutoRefresh from "../hooks/useAutoRefresh";
+import {
+  addPendingSale,
+  loadCatalog,
+  newClientRequestId,
+  removePendingSale,
+  saveCachedInventory,
+  saveCatalog,
+  usePendingSales,
+} from "../utils/offlineStore";
+import { onSalesSynced, retryRejectedSale } from "../utils/offlineSync";
 import {
   formatNumber,
   formatQuantity,
@@ -12,6 +24,13 @@ import {
 } from "../utils/inventoryFormat";
 
 import "../styles/new-sale.css";
+import "../styles/offline.css";
+
+const formatSavedAt = (iso) =>
+  new Date(iso).toLocaleString("es-CO", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
 
 const money = (value) =>
   `$${Number(value || 0).toLocaleString("es-CO", {
@@ -38,6 +57,19 @@ function NewSalePage() {
 
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState("");
+
+  // Sin conexión: hora del catálogo guardado en el dispositivo que se
+  // está mostrando (null = datos en vivo del servidor).
+  const [offlineCatalogAt, setOfflineCatalogAt] = useState(null);
+
+  // Ventas hechas sin conexión en este dispositivo (de este usuario).
+  const pendingSales = usePendingSales();
+  const myPendingSales = pendingSales.filter(
+    (sale) => sale.username === user.username,
+  );
+
+  const { refreshKey, takeSilent } = useAutoRefresh();
+  const [syncedKey, setSyncedKey] = useState(0);
 
   const [selectedCategory, setSelectedCategory] = useState("");
   const [search, setSearch] = useState("");
@@ -80,8 +112,46 @@ function NewSalePage() {
     setStock(map);
   };
 
+  const applyCatalog = (productsData, categoriesData, inventoryData) => {
+    // Solo productos activos se pueden vender.
+    setProducts(
+      (Array.isArray(productsData) ? productsData : []).filter(
+        (product) => product.active !== false,
+      ),
+    );
+
+    const activeCategories = (
+      Array.isArray(categoriesData) ? [...categoriesData] : []
+    )
+      .filter((category) => category.active !== false)
+      .sort((a, b) => {
+        const nameA = String(a.name || "").trim().toLowerCase();
+        const nameB = String(b.name || "").trim().toLowerCase();
+
+        if (nameA === "manta") return -1;
+        if (nameB === "manta") return 1;
+        if (nameA === "tela") return -1;
+        if (nameB === "tela") return 1;
+
+        return 0;
+      });
+
+    setCategories(activeCategories);
+
+    setSelectedCategory((current) =>
+      activeCategories.some((category) => category.id === current)
+        ? current
+        : activeCategories[0]?.id || "",
+    );
+
+    applyStock(inventoryData);
+  };
+
+  // Se vuelve a cargar al volver a la app, al volver la conexión y
+  // cada minuto (refreshKey), además de la primera vez.
   useEffect(() => {
     let cancelled = false;
+    const silent = takeSilent();
 
     Promise.all([
       ProductService.findAll(),
@@ -93,39 +163,46 @@ function NewSalePage() {
           return;
         }
 
-        // Solo productos activos se pueden vender.
-        setProducts(
-          (Array.isArray(productsData) ? productsData : []).filter(
-            (product) => product.active !== false,
-          ),
-        );
+        applyCatalog(productsData, categoriesData, inventoryData);
+        setProductsError("");
+        setOfflineCatalogAt(null);
 
-        const activeCategories = (
-          Array.isArray(categoriesData) ? [...categoriesData] : []
-        )
-          .filter((category) => category.active !== false)
-          .sort((a, b) => {
-            const nameA = String(a.name || "").trim().toLowerCase();
-            const nameB = String(b.name || "").trim().toLowerCase();
-
-            if (nameA === "manta") return -1;
-            if (nameB === "manta") return 1;
-            if (nameA === "tela") return -1;
-            if (nameB === "tela") return 1;
-
-            return 0;
-          });
-
-        setCategories(activeCategories);
-
-        if (activeCategories.length > 0) {
-          setSelectedCategory(activeCategories[0].id);
-        }
-
-        applyStock(inventoryData);
+        // Copia para poder vender si después se va la conexión.
+        saveCatalog({
+          products: productsData,
+          categories: categoriesData,
+          inventory: inventoryData,
+        });
       })
       .catch((error) => {
-        if (!cancelled) {
+        if (cancelled) {
+          return;
+        }
+
+        if (isConnectionError(error)) {
+          // En una recarga automática se conservan los datos en pantalla.
+          if (silent) {
+            setOfflineCatalogAt((current) => current || loadCatalog()?.savedAt || null);
+            return;
+          }
+
+          const catalog = loadCatalog();
+
+          if (catalog) {
+            applyCatalog(catalog.products, catalog.categories, catalog.inventory);
+            setOfflineCatalogAt(catalog.savedAt);
+            setProductsError("");
+            return;
+          }
+
+          setProductsError(
+            "No hay conexión con el servidor y este dispositivo todavía no tiene productos guardados. " +
+              "Abre «Nueva venta» al menos una vez con conexión para poder vender sin ella.",
+          );
+          return;
+        }
+
+        if (!silent) {
           setProductsError(
             error.message || "No fue posible cargar los productos.",
           );
@@ -140,22 +217,53 @@ function NewSalePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+    // applyCatalog solo usa setters de estado.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey, syncedKey, takeSilent]);
 
-  const reloadStock = () => {
+  // Cuando se envían ventas guardadas, las existencias cambiaron.
+  useEffect(() => onSalesSynced(() => setSyncedKey((key) => key + 1)), []);
+
+  function reloadStock() {
     InventoryService.findAll()
-      .then(applyStock)
+      .then((inventoryData) => {
+        applyStock(inventoryData);
+        saveCachedInventory(inventoryData);
+        setOfflineCatalogAt(null);
+      })
       .catch(() => {
         // Si falla, se conserva el último dato; el backend
         // valida igualmente las existencias al vender.
       });
-  };
+  }
 
   // =========================================
   // AYUDANTES DE PRODUCTO
   // =========================================
 
-  const getAvailable = (productId) => Number(stock[productId]?.quantity || 0);
+  // Lo vendido sin conexión todavía no está descontado en el servidor:
+  // se resta aquí para no vender dos veces lo mismo desde este dispositivo.
+  const reservedOffline = useMemo(() => {
+    const totals = {};
+    pendingSales
+      .filter((sale) => sale.status === "PENDING")
+      .forEach((sale) =>
+        sale.items.forEach((item) => {
+          totals[item.productId] =
+            (totals[item.productId] || 0) + Number(item.quantity || 0);
+        }),
+      );
+    return totals;
+  }, [pendingSales]);
+
+  const getAvailable = (productId) =>
+    round2(
+      Math.max(
+        0,
+        Number(stock[productId]?.quantity || 0) -
+          (reservedOffline[productId] || 0),
+      ),
+    );
 
   const getUnit = (productId) => ({
     unitAbbreviation: stock[productId]?.unitAbbreviation,
@@ -490,28 +598,62 @@ function NewSalePage() {
           };
     });
 
+    // Mismo identificador si la venta termina guardada sin conexión:
+    // si el servidor alcanzó a recibirla, no se registra dos veces.
+    const clientRequestId = newClientRequestId();
+
+    const finishCart = () => {
+      setCart([]);
+      setCartMessage("");
+      setConfirmOpen(false);
+    };
+
     try {
-      const sale = await SaleService.create({ items });
+      const sale = await SaleService.create({ items, clientRequestId });
 
       setCompletedSale({
         total: sale.total ?? cartTotal,
         lines: cart.length,
+        offline: false,
       });
 
-      setCart([]);
-      setCartMessage("");
-      setConfirmOpen(false);
-
+      finishCart();
       reloadStock();
     } catch (error) {
-      setSaleError(
-        error instanceof TypeError
-          ? "No hay conexión con el servidor. La venta NO se registró. Revisa la conexión e inténtalo de nuevo."
-          : error.message || "No fue posible registrar la venta.",
-      );
+      if (isConnectionError(error)) {
+        // Sin conexión: la venta se guarda en el dispositivo y se envía sola después.
+        const saved = addPendingSale({
+          clientRequestId,
+          username: user.username,
+          createdAt: new Date().toISOString(),
+          items,
+          lines: cart.map((item) => ({
+            name: item.name,
+            quantity: round2(item.quantity),
+            unit: item.wholeUnit ? "und." : "m",
+            price: round2(item.price),
+          })),
+          estimatedTotal: round2(cartTotal),
+        });
 
-      // Las existencias pudieron cambiar (otra venta, un ajuste...).
-      reloadStock();
+        if (saved) {
+          setCompletedSale({
+            total: cartTotal,
+            lines: cart.length,
+            offline: true,
+          });
+          finishCart();
+        } else {
+          setSaleError(
+            "No hay conexión y no se pudo guardar la venta en este dispositivo (almacenamiento lleno o bloqueado). La venta NO se registró: anótala en papel.",
+          );
+        }
+      } else {
+        setSaleError(error.message || "No fue posible registrar la venta.");
+
+        // Las existencias pudieron cambiar (otra venta, un ajuste...).
+        reloadStock();
+      }
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -537,6 +679,88 @@ function NewSalePage() {
             </p>
           </div>
         </header>
+
+        {offlineCatalogAt && (
+          <p className="pos-offline-note" role="status">
+            <strong>Vendiendo sin conexión.</strong> Productos, precios y
+            existencias guardados el {formatSavedAt(offlineCatalogAt)}; pueden
+            haber cambiado. El servidor los confirma al recibir la venta.
+          </p>
+        )}
+
+        {myPendingSales.length > 0 && (
+          <section className="offline-sales" aria-label="Ventas guardadas sin conexión">
+            <h2>Ventas guardadas sin conexión ({myPendingSales.length})</h2>
+            <p>
+              Están en este dispositivo. Se envían solas cuando vuelve la
+              conexión; no cierres sesión ni borres los datos del navegador
+              hasta que desaparezcan de esta lista.
+            </p>
+
+            <ul>
+              {myPendingSales.map((sale) => {
+                const rejected = sale.status === "REJECTED";
+
+                return (
+                  <li
+                    key={sale.clientRequestId}
+                    className={`offline-sale ${rejected ? "is-rejected" : ""}`}
+                  >
+                    <div className="offline-sale-info">
+                      <strong>
+                        {formatSavedAt(sale.createdAt)} ·{" "}
+                        {money(sale.estimatedTotal)}
+                      </strong>
+                      <span>
+                        {sale.lines
+                          .map(
+                            (line) =>
+                              `${line.name} × ${formatNumber(line.quantity)} ${line.unit}`,
+                          )
+                          .join(", ")}
+                      </span>
+                      {rejected ? (
+                        <span className="offline-sale-error">
+                          No se registró: {sale.error}
+                        </span>
+                      ) : (
+                        <span>Pendiente de envío</span>
+                      )}
+                    </div>
+
+                    {rejected && (
+                      <div className="offline-sale-actions">
+                        <button
+                          type="button"
+                          className="inv-button-secondary"
+                          onClick={() => retryRejectedSale(sale.clientRequestId)}
+                        >
+                          Reintentar
+                        </button>
+                        <button
+                          type="button"
+                          className="inv-button-secondary"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                "¿Descartar esta venta? No quedará registrada en el sistema. " +
+                                  "Hazlo solo si la anulaste con el cliente o la registraste de otra forma.",
+                              )
+                            ) {
+                              removePendingSale(sale.clientRequestId);
+                            }
+                          }}
+                        >
+                          Descartar
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
 
         {/* CONTENIDO PRINCIPAL */}
 
@@ -994,7 +1218,7 @@ function NewSalePage() {
       <Modal
         open={Boolean(completedSale)}
         onClose={() => setCompletedSale(null)}
-        title="Venta registrada"
+        title={completedSale?.offline ? "Venta guardada sin conexión" : "Venta registrada"}
       >
         {completedSale && (
           <div className="pos-confirm">
@@ -1003,10 +1227,24 @@ function NewSalePage() {
                 ✓
               </span>
               <div>
-                <p>La venta se guardó correctamente.</p>
-                <p>
-                  Total: <strong>{money(completedSale.total)}</strong>
-                </p>
+                {completedSale.offline ? (
+                  <>
+                    <p>
+                      No hay conexión: la venta quedó guardada en este
+                      dispositivo y se enviará sola cuando vuelva la conexión.
+                    </p>
+                    <p>
+                      Total estimado: <strong>{money(completedSale.total)}</strong>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>La venta se guardó correctamente.</p>
+                    <p>
+                      Total: <strong>{money(completedSale.total)}</strong>
+                    </p>
+                  </>
+                )}
               </div>
             </div>
 

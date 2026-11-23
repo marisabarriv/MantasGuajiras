@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import useAutoRefresh from "../hooks/useAutoRefresh";
 
 import Modal from "../components/Modal";
 import LoadError from "../components/LoadError";
@@ -31,6 +32,7 @@ function CustomOrdersPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
+    const { refreshKey, takeSilent } = useAutoRefresh();
 
     const [filter, setFilter] = useState("ALL");
     const [search, setSearch] = useState("");
@@ -50,6 +52,8 @@ function CustomOrdersPage() {
     useEffect(() => {
 
         let cancelled = false;
+        // Recarga automática: si falla, se conservan los datos actuales.
+        const silent = takeSilent();
 
         OrderService.findAll()
             .then((data) => {
@@ -59,7 +63,7 @@ function CustomOrdersPage() {
                 }
             })
             .catch((loadError) => {
-                if (!cancelled) {
+                if (!cancelled && !silent) {
                     setError(loadError.message);
                 }
             })
@@ -73,7 +77,7 @@ function CustomOrdersPage() {
             cancelled = true;
         };
 
-    }, [reloadKey]);
+    }, [reloadKey, refreshKey, takeSilent]);
 
 
     const pending = orders.filter((order) => order.status === "PENDING");
