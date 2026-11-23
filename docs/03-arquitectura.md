@@ -5,10 +5,10 @@
 | **Proyecto**             | Mantas Guajiras          |
 | **Documento**            | Arquitectura del Sistema |
 | **Código**               | DOC-03                   |
-| **Versión**              | v0.4.0                   |
-| **Estado**               | En desarrollo            |
+| **Versión**              | v1.0.0-rc.1             |
+| **Estado**               | Versión candidata        |
 | **Responsable**          | Equipo de Desarrollo     |
-| **Última actualización** | 05/09/2026               |
+| **Última actualización** | 23/11/2026               |
 
 ---
 
@@ -18,6 +18,7 @@
 | ------- | ---------- | --------------------------------------------- | -------------------- |
 | v0.1.0  | 29/07/2026 | Creación inicial del documento.               | Equipo de Desarrollo |
 | v0.4.0  | 05/09/2026 | Actualización de la arquitectura del sistema. | Equipo de Desarrollo |
+| v1.0.0-rc.1 | 23/11/2026 | Alineación con la implementación real tras la auditoría técnica. | Equipo de Desarrollo |
 
 ---
 
@@ -441,6 +442,6 @@ Se priorizarán cambios funcionales necesarios y se evitarán refactorizaciones 
 
 La arquitectura descrita corresponde al estado actual del proyecto Mantas Guajiras.
 
-El sistema se encuentra en desarrollo y puede incorporar nuevos módulos y funcionalidades a medida que avance el proyecto.
+El sistema está funcionalmente completo (versión candidata v1.0.0-rc.1) y puede incorporar nuevos módulos y funcionalidades según las necesidades del negocio.
 
 Cuando se realicen cambios importantes en la arquitectura, este documento deberá actualizarse para mantener la documentación alineada con la implementación real del sistema.

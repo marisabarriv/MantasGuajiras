@@ -5,10 +5,10 @@
 | **Proyecto**             | Mantas Guajiras      |
 | **Documento**            | Reglas de Negocio    |
 | **Código**               | DOC-02               |
-| **Versión**              | v0.4.0               |
-| **Estado**               | En desarrollo        |
+| **Versión**              | v1.0.0-rc.1         |
+| **Estado**               | Versión candidata    |
 | **Responsable**          | Equipo de Desarrollo |
-| **Última actualización** | 05/09/2026           |
+| **Última actualización** | 23/11/2026           |
 
 ---
 
@@ -18,6 +18,7 @@
 | ------- | ---------- | ---------------------------------------- | -------------------- |
 | v0.1.0  | 29/07/2026 | Creación inicial del documento.          | Equipo de Desarrollo |
 | v0.4.0  | 05/09/2026 | Actualización de las reglas funcionales. | Equipo de Desarrollo |
+| v1.0.0-rc.1 | 23/11/2026 | Alineación con la implementación real tras la auditoría técnica. | Equipo de Desarrollo |
 
 ---
 
@@ -51,6 +52,10 @@ La unidad utilizada depende del tipo de producto.
 | **Manta** | Unidad entera (`#`) |
 | **Tela**  | Metro               |
 
+El backend rechaza una manta registrada en metros o una tela registrada en `#`, aunque la petición no venga del formulario.
+
+Si un producto ya tiene existencias o movimientos de inventario, **no se puede cambiar su unidad** (ni pasarlo de Manta a Tela o al revés), porque cambiaría el significado de todas sus cantidades históricas. En ese caso se crea un producto nuevo y se desactiva el anterior.
+
 ---
 
 ## RN-03. Cantidad de mantas
@@ -76,6 +81,8 @@ La cantidad podrá contener valores decimales.
 Cada producto tendrá un precio base asociado.
 
 El precio de compra y el precio unitario se consideran actualmente como el mismo concepto dentro del modelo funcional del sistema.
+
+El backend lo garantiza: si no se envía precio de compra se usa el precio unitario, y si se envía uno distinto la operación se rechaza.
 
 ---
 
@@ -225,7 +232,32 @@ El administrador podrá ejecutar las operaciones correspondientes a sus permisos
 
 El vendedor podrá ejecutar las operaciones comerciales que tenga autorizadas.
 
-No deberá tener permisos para realizar ajustes administrativos de inventario ni administrar usuarios si dichas operaciones están restringidas al administrador.
+No tiene permisos para administrar datos maestros, realizar ajustes administrativos de inventario, consultar montos de ventas y compras ni administrar usuarios.
+
+---
+
+## RN-24A. Matriz de permisos (implementada)
+
+Los permisos se aplican en el backend (`SecurityConfig`). El frontend solo oculta las opciones que el rol no puede usar.
+
+| Operación                                             | Administrador | Vendedor |
+| ----------------------------------------------------- | :-----------: | :------: |
+| Registrar ventas                                      |      Sí       |    Sí    |
+| Consultar el historial y los montos de ventas         |      Sí       |    No    |
+| Registrar y consultar compras                         |      Sí       |    No    |
+| Consultar productos, categorías y unidades            |      Sí       |    Sí    |
+| Crear, editar o desactivar productos                  |      Sí       |    No    |
+| Crear, editar o desactivar categorías y unidades      |      Sí       |    No    |
+| Consultar inventario y su historial                   |      Sí       |    Sí    |
+| Ajustes y movimientos manuales de inventario          |      Sí       |    No    |
+| Producción (no muestra montos de dinero)              |      Sí       |    Sí    |
+| Mantas personalizadas y sus pagos                     |      Sí       |    Sí    |
+| Administrar usuarios                                  |      Sí       |    No    |
+| Perfil propio (foto y contraseña)                     |      Sí       |    Sí    |
+
+Producción y Personalizadas están abiertas a ambos roles por decisión del negocio. Si eso cambia, basta con agregar la regla correspondiente en `SecurityConfig`.
+
+Estas reglas están cubiertas por la prueba automática `RolePermissionsTest`.
 
 ---
 
