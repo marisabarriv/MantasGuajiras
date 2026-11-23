@@ -5,10 +5,10 @@
 | **Proyecto**             | Mantas Guajiras        |
 | **Documento**            | Despliegue del Sistema |
 | **Código**               | DOC-06                 |
-| **Versión**              | v0.4.0                 |
-| **Estado**               | En desarrollo          |
+| **Versión**              | v1.0.0-rc.1           |
+| **Estado**               | Versión candidata      |
 | **Responsable**          | Equipo de Desarrollo   |
-| **Última actualización** | 05/09/2026             |
+| **Última actualización** | 23/11/2026             |
 
 ---
 
@@ -18,6 +18,7 @@
 | ------- | ---------- | --------------------------------------------- | -------------------- |
 | v0.1.0  | 29/07/2026 | Creación inicial del documento.               | Equipo de Desarrollo |
 | v0.4.0  | 05/09/2026 | Actualización de la estrategia de despliegue. | Equipo de Desarrollo |
+| v1.0.0-rc.1 | 23/11/2026 | Alineación con la implementación real tras la auditoría técnica. | Equipo de Desarrollo |
 
 ---
 
@@ -27,7 +28,9 @@ Este documento describe la estrategia de despliegue del sistema **Mantas Guajira
 
 El objetivo es establecer una forma organizada de ejecutar y mantener los componentes del sistema, considerando el frontend, backend y base de datos.
 
-Actualmente el sistema se encuentra en desarrollo y utiliza una arquitectura web con React, Spring Boot y PostgreSQL.
+El sistema está funcionalmente completo (versión candidata `v1.0.0-rc.1`) y por ahora se ejecuta en un computador local. Utiliza una arquitectura web con React, Spring Boot y PostgreSQL.
+
+La sección 14 describe los pasos concretos de instalación, configuración y despliegue.
 
 ---
 
@@ -147,7 +150,7 @@ Se recomienda:
 * Conservar varias copias recientes.
 * Verificar periódicamente que los respaldos puedan restaurarse correctamente.
 
-La frecuencia definitiva de los respaldos se establecerá de acuerdo con las necesidades del negocio y el entorno de producción.
+**Implementado:** copia diaria automática, prueba semanal de restauración con verificación de integridad y procedimiento de recuperación. Ver **[09-copias-de-seguridad.md](09-copias-de-seguridad.md)**.
 
 ---
 
@@ -256,6 +259,17 @@ La evolución del sistema se realizará de forma progresiva.
 
 * Desarrollo e integración progresiva del frontend.
 
+**Versión 1.0.0-rc.1 (actual)**
+
+* Módulos funcionales completos: productos, inventario, ventas, compras, producción, personalizadas y pagos, usuarios.
+* Permisos por rol aplicados en el backend.
+* Pruebas automatizadas de permisos, reglas de producto, ventas concurrentes y migraciones.
+* Copias de seguridad automáticas con prueba de restauración.
+
+**Versión 1.0.0**
+
+* Primera versión usada con los datos reales del negocio, después de completar la lista de la sección 14.4.
+
 **Versiones posteriores**
 
 * Integración completa de funcionalidades.
@@ -277,3 +291,135 @@ La estrategia podrá adaptarse cuando se defina la infraestructura definitiva de
 Actualmente no se considera implementado un sistema de funcionamiento offline ni una sincronización automática entre bases de datos locales y una base de datos centralizada en la nube.
 
 Cualquier modificación importante relacionada con la infraestructura o el proceso de despliegue deberá reflejarse en este documento.
+
+
+---
+
+# 14. Guía práctica
+
+## 14.1. Instalación local (desarrollo)
+
+Requisitos: Java 21, Node.js 20 o superior, PostgreSQL 16 o superior, Git.
+
+```bash
+git clone https://github.com/marisabarriv/MantasGuajiras.git
+```
+
+**Base de datos.** Crear la base vacía (Flyway crea las tablas al arrancar):
+
+```bash
+createdb -U postgres mantas_guajiras_db
+```
+
+**Backend.**
+
+1. Copiar `backend/src/main/resources/application-dev.example.yml` como `application-dev.yml` y poner la contraseña de PostgreSQL.
+2. Copiar `backend/.env.example` como `backend/.env` y completar `JWT_SECRET` y los datos del administrador inicial.
+3. Arrancar desde la carpeta `backend`:
+
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+   En Windows: `mvnw.cmd spring-boot:run`.
+
+`backend/.env` se carga automáticamente (`spring.config.import` en `application.yml`) **cuando el backend se arranca desde la carpeta `backend`**. Las variables de entorno reales del sistema tienen prioridad sobre ese archivo. Formato: `CLAVE=valor`, sin comillas.
+
+**Frontend.**
+
+1. Copiar `frontend/.env.example` como `frontend/.env`.
+2. Desde la carpeta `frontend`:
+
+   ```bash
+   npm ci
+   ```
+
+   ```bash
+   npm run dev
+   ```
+
+**Pruebas del backend.** Usan una base aparte, nunca la de trabajo:
+
+```bash
+createdb -U postgres mantas_guajiras_test
+```
+
+```bash
+./mvnw test
+```
+
+Si tu usuario o contraseña de PostgreSQL no son `postgres`/`postgres`, usa las variables `TEST_DB_USERNAME` y `TEST_DB_PASSWORD` (o `TEST_DB_URL`).
+
+## 14.2. Variables de entorno
+
+| Variable                  | Perfil    | Descripción                                                        |
+| ------------------------- | --------- | ------------------------------------------------------------------ |
+| `SPRING_PROFILES_ACTIVE`  | todos     | `dev` (por defecto) o `prod`.                                       |
+| `JWT_SECRET`              | todos     | Clave de firma de sesiones. Mínimo 32 caracteres. Distinta por entorno. |
+| `JWT_EXPIRATION`          | todos     | Duración de la sesión en milisegundos.                              |
+| `INITIAL_ADMIN_USERNAME`  | todos     | Administrador que se crea si no existe ninguno.                     |
+| `INITIAL_ADMIN_PHONE`     | todos     | Teléfono de ese administrador.                                      |
+| `INITIAL_ADMIN_PASSWORD`  | todos     | Contraseña inicial (4 a 12 caracteres). Cambiarla al primer ingreso. |
+| `DB_URL`                  | prod      | `jdbc:postgresql://servidor:5432/mantas_guajiras_db`                |
+| `DB_USERNAME`             | prod      | Usuario de la aplicación en PostgreSQL (no `postgres`).             |
+| `DB_PASSWORD`             | prod      | Contraseña de ese usuario.                                          |
+| `CORS_ALLOWED_ORIGINS`    | prod      | Dominio(s) del frontend separados por comas. Por defecto: `localhost`. |
+| `VITE_API_URL`            | frontend  | Dirección del backend al compilar el frontend.                      |
+
+## 14.3. Producción
+
+**Backend.**
+
+```bash
+./mvnw -DskipTests package
+```
+
+```bash
+SPRING_PROFILES_ACTIVE=prod java -jar target/backend-1.0.0-rc.1.jar
+```
+
+El perfil `prod` toma la conexión, las claves y el administrador inicial **solo** de variables de entorno y desactiva Swagger.
+
+**Frontend.** Con `VITE_API_URL` apuntando al backend real:
+
+```bash
+npm run build
+```
+
+El resultado queda en `frontend/dist` y se publica en cualquier servidor web (Nginx, Caddy, IIS, un hosting estático...). Como es una aplicación de una sola página, el servidor debe responder `index.html` para cualquier ruta desconocida.
+
+**CORS.** Si frontend y backend están en dominios distintos (`app.ejemplo.com` y `api.ejemplo.com`), definir `CORS_ALLOWED_ORIGINS=https://app.ejemplo.com`. Si se sirven desde el mismo dominio mediante un proxy inverso (recomendado), CORS no interviene.
+
+**PostgreSQL.**
+
+* Crear un usuario propio para la aplicación, dueño solo de su base:
+
+  ```sql
+  CREATE USER mantas_app WITH PASSWORD 'una_contraseña_larga';
+  CREATE DATABASE mantas_guajiras_db OWNER mantas_app;
+  ```
+
+* No exponer el puerto 5432 a Internet; solo el backend debe conectarse.
+
+## 14.4. Lista mínima antes de usar datos reales
+
+- [ ] Configuración de producción separada de la de desarrollo (`SPRING_PROFILES_ACTIVE=prod`).
+- [ ] `JWT_SECRET` nuevo, largo y distinto del de desarrollo.
+- [ ] Contraseña del administrador inicial cambiada después del primer ingreso.
+- [ ] PostgreSQL con usuario propio y sin acceso desde Internet.
+- [ ] HTTPS en el dominio del frontend y del backend.
+- [ ] `CORS_ALLOWED_ORIGINS` con el dominio real (o mismo origen mediante proxy).
+- [ ] Copias automáticas programadas **y** una prueba de restauración exitosa (`docs/09-copias-de-seguridad.md`).
+- [ ] Segunda copia fuera del equipo o servidor (`CopyTo`).
+- [ ] `./mvnw test` en verde.
+- [ ] Recorrido manual de los flujos críticos: venta normal, venta con precio especial, compra, producción, ajuste de inventario, personalizada con abono y pago final, inicio de sesión como vendedor para confirmar que no puede editar productos.
+
+## 14.5. Compartir el proyecto sin claves
+
+Nunca comprimir la carpeta del proyecto a mano: incluiría `.env`, `application-dev.yml` y `node_modules`. Para entregar una copia del código, usar:
+
+```bash
+git archive --format=zip -o MantasGuajiras.zip HEAD
+```
+
+Ese ZIP contiene únicamente los archivos versionados en git: sin claves, sin dependencias y sin copias de la base de datos.

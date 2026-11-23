@@ -5,10 +5,10 @@
 | **Proyecto**             | Mantas Guajiras         |
 | **Documento**            | Diseño de Base de Datos |
 | **Código**               | DOC-04                  |
-| **Versión**              | v0.4.0                  |
-| **Estado**               | En desarrollo           |
+| **Versión**              | v1.0.0-rc.1            |
+| **Estado**               | Versión candidata       |
 | **Responsable**          | Equipo de Desarrollo    |
-| **Última actualización** | 05/09/2026              |
+| **Última actualización** | 23/11/2026              |
 
 ---
 
@@ -18,6 +18,7 @@
 | ------- | ---------- | ------------------------------------------ | -------------------- |
 | v0.1.0  | 29/07/2026 | Creación inicial del documento.            | Equipo de Desarrollo |
 | v0.4.0  | 05/09/2026 | Actualización del modelo de base de datos. | Equipo de Desarrollo |
+| v1.0.0-rc.1 | 23/11/2026 | Alineación con la implementación real tras la auditoría técnica. | Equipo de Desarrollo |
 
 ---
 
@@ -333,3 +334,22 @@ El modelo utiliza una estructura generalizada de productos e inventario, evitand
 La base de datos podrá ampliarse conforme se incorporen nuevas funcionalidades, manteniendo la integridad y compatibilidad con la información existente.
 
 Los cambios futuros deberán reflejarse en las migraciones correspondientes y, cuando sean relevantes para la estructura del sistema, actualizar este documento.
+
+---
+
+# Anexo A. Notas de mantenimiento de migraciones
+
+Las migraciones están en `backend/src/main/resources/db/migration` (V1 a V19). La carpeta `database/exports` solo guarda una exportación del esquema como referencia.
+
+## Migraciones vacías históricas
+
+`V6__insert_source_types.sql`, `V11__add_profile_pic.sql` y `V12__add_profile_pic.sql` están vacías. Quedaron de versiones anteriores y **no deben borrarse ni modificarse**: Flyway guarda en `flyway_schema_history` una huella (checksum) de cada versión aplicada, y si un archivo desaparece o cambia, la validación falla al arrancar. Toda modificación nueva del esquema va en una migración con un número mayor (V20, V21…).
+
+## Tipo de movimiento `ADJUSTMENT`
+
+`DataInitializer` crea el tipo de movimiento `ADJUSTMENT`, pero la lógica de inventario solo registra movimientos `IN` u `OUT`. Un ajuste se registra como `IN` u `OUT` por la diferencia entre el conteo físico y el inventario, y se identifica por su **tipo de origen** `ADJUSTMENT`. El registro `ADJUSTMENT` de `movement_type` se conserva para no alterar bases que ya están en uso; no se debe usar para nuevos movimientos.
+
+## Verificación
+
+- La prueba `BackendApplicationTests` aplica las 19 migraciones sobre una base vacía y comprueba que el esquema coincide con las entidades (`ddl-auto: validate`).
+- `scripts/backup/integrity-check.sql` comprueba que el inventario de cada producto sea igual a la suma de sus movimientos. Se ejecuta en cada prueba de restauración (ver `docs/09-copias-de-seguridad.md`).

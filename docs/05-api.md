@@ -5,10 +5,10 @@
 | **Proyecto**             | Mantas Guajiras          |
 | **Documento**            | Especificación de la API |
 | **Código**               | DOC-05                   |
-| **Versión**              | v0.4.0                   |
-| **Estado**               | En desarrollo            |
+| **Versión**              | v1.0.0-rc.1             |
+| **Estado**               | Versión candidata        |
 | **Responsable**          | Equipo de Desarrollo     |
-| **Última actualización** | 05/09/2026               |
+| **Última actualización** | 23/11/2026               |
 
 ---
 
@@ -18,6 +18,7 @@
 | ------- | ---------- | ------------------------------------------------------- | -------------------- |
 | v0.1.0  | 29/07/2026 | Creación inicial del documento.                         | Equipo de Desarrollo |
 | v0.4.0  | 05/09/2026 | Actualización de la API según la implementación actual. | Equipo de Desarrollo |
+| v1.0.0-rc.1 | 23/11/2026 | Alineación con la implementación real tras la auditoría técnica. | Equipo de Desarrollo |
 
 ---
 
@@ -58,126 +59,134 @@ No se utiliza actualmente un prefijo `/api/v1`.
 
 # 4. Módulos de la API
 
-## Productos
+Endpoints implementados. Columna **Rol**: `Público` (sin sesión), `Todos` (cualquier usuario con sesión), `ADMIN` (solo administrador). Los permisos se aplican en `SecurityConfig`.
 
-Los endpoints actualmente implementados para productos son:
+## Autenticación — `/auth`
 
-GET     /api/products
-GET     /api/products/{id}
-POST    /api/products
-PUT     /api/products/{id}
-DELETE  /api/products/{id}
+| Método | Ruta              | Rol     | Descripción                                                    |
+| ------ | ----------------- | ------- | -------------------------------------------------------------- |
+| POST   | `/auth/login`     | Público | Inicia sesión con usuario o teléfono. Devuelve el token JWT.   |
+| POST   | `/auth/register`  | Público | Registro de vendedor. La cuenta queda pendiente de aprobación. |
 
-Estas operaciones permiten:
+## Perfil propio — `/api/me`
 
-* Consultar productos activos.
-* Consultar un producto específico.
-* Crear productos.
-* Actualizar productos.
-* Desactivar productos.
+| Método | Ruta                  | Rol   | Descripción                                          |
+| ------ | --------------------- | ----- | ---------------------------------------------------- |
+| GET    | `/api/me`             | Todos | Datos del usuario de la sesión.                      |
+| PATCH  | `/api/me/password`    | Todos | Cambiar la propia contraseña.                        |
+| PUT    | `/api/me/photo`       | Todos | Subir foto (`multipart/form-data`, campo `file`). JPG, PNG, WEBP o GIF, máximo 20 MB; se verifica el contenido real del archivo. |
+| GET    | `/api/me/photo`       | Todos | Obtener la foto.                                     |
+| DELETE | `/api/me/photo`       | Todos | Quitar la foto.                                      |
 
-El código interno del producto es generado por el backend.
+## Usuarios — `/users`
 
-El código de barras se valida para evitar duplicados.
+| Método | Ruta                          | Rol   | Descripción                                   |
+| ------ | ----------------------------- | ----- | --------------------------------------------- |
+| GET    | `/users`                      | ADMIN | Listar usuarios.                              |
+| GET    | `/users/{id}`                 | ADMIN | Consultar un usuario.                         |
+| POST   | `/users`                      | ADMIN | Crear usuario.                                |
+| PUT    | `/users/{id}`                 | ADMIN | Editar usuario (datos, rol, activar).         |
+| PATCH  | `/users/{id}/reset-password`  | ADMIN | Restablecer contraseña.                       |
+| PATCH  | `/users/{id}/promote`         | ADMIN | Convertir en administrador.                   |
+| DELETE | `/users/{id}`                 | ADMIN | Desactivar (no se borra). No permite dejar el sistema sin administradores activos. |
 
-Las categorías y unidades utilizadas por los productos se consultan mediante endpoints independientes.
+## Productos — `/api/products`
 
----
+| Método | Ruta                  | Rol   | Descripción                                                      |
+| ------ | --------------------- | ----- | ---------------------------------------------------------------- |
+| GET    | `/api/products`       | Todos | Productos activos. Con `?includeInactive=true`, también los inactivos. |
+| GET    | `/api/products/{id}`  | Todos | Consultar un producto.                                           |
+| POST   | `/api/products`       | ADMIN | Crear producto. Acepta `initialStock` (genera un movimiento de entrada). |
+| PUT    | `/api/products/{id}`  | ADMIN | Editar producto. No modifica el inventario.                      |
+| DELETE | `/api/products/{id}`  | ADMIN | Desactivar producto (no se borra).                               |
 
-## Categorías de productos
+Validaciones al crear o editar:
 
-Endpoint actualmente implementado:
+* La categoría y la unidad existen, están activas y **corresponden entre sí** (Manta → `#`, Tela → metro).
+* `purchasePrice` igual a `unitPrice` (si no se envía, se toma `unitPrice`).
+* En mantas, `minimumStock` e `initialStock` son enteros.
+* No se cambia la unidad de un producto que ya tiene existencias o movimientos.
+* `name` hasta 100 caracteres; `barcode` hasta 50 y único.
 
+## Categorías — `/api/product-categories`
 
-GET     /api/product-categories
+| Método | Ruta                            | Rol   | Descripción             |
+| ------ | ------------------------------- | ----- | ----------------------- |
+| GET    | `/api/product-categories`       | Todos | Listar categorías.      |
+| GET    | `/api/product-categories/{id}`  | Todos | Consultar una categoría.|
+| POST   | `/api/product-categories`       | ADMIN | Crear categoría.        |
+| PUT    | `/api/product-categories/{id}`  | ADMIN | Editar categoría.       |
+| DELETE | `/api/product-categories/{id}`  | ADMIN | Eliminar categoría.     |
 
-Las categorías permiten clasificar los productos.
+Categorías iniciales (creadas al arrancar): **Tela** y **Manta**.
 
-Actualmente se utilizan categorías correspondientes a:
+## Unidades — `/api/unit`
 
-* Manta.
-* Tela.
+| Método | Ruta              | Rol   | Descripción          |
+| ------ | ----------------- | ----- | -------------------- |
+| GET    | `/api/unit`       | Todos | Listar unidades.     |
+| GET    | `/api/unit/{id}`  | Todos | Consultar una unidad.|
+| POST   | `/api/unit`       | ADMIN | Crear unidad.        |
+| PUT    | `/api/unit/{id}`  | ADMIN | Editar unidad.       |
+| DELETE | `/api/unit/{id}`  | ADMIN | Eliminar unidad.     |
 
----
+Unidades iniciales: **Metro (`m`)** y **Unidad (`#`)**.
 
-## Unidades
+## Inventario — `/api/inventory`
 
-Endpoint actualmente implementado:
+| Método | Ruta                          | Rol   | Descripción                                                     |
+| ------ | ----------------------------- | ----- | --------------------------------------------------------------- |
+| GET    | `/api/inventory`              | Todos | Existencias de todos los productos activos con estado `OK`, `LOW` u `OUT`. |
+| GET    | `/api/inventory/{id}`         | Todos | Existencia de un producto.                                      |
+| POST   | `/api/inventory/adjustments`  | ADMIN | Ajuste por conteo físico: registra la diferencia como entrada o salida. |
 
-GET     /api/unit
+## Movimientos de inventario — `/api/inventory-movements`
 
-Las unidades permiten determinar cómo se maneja la cantidad de un producto.
+| Método | Ruta                               | Rol   | Descripción                                         |
+| ------ | ---------------------------------- | ----- | --------------------------------------------------- |
+| GET    | `/api/inventory-movements`         | Todos | Historial, del más reciente al más antiguo. Filtro opcional `?productId=`. |
+| GET    | `/api/inventory-movements/{id}`    | Todos | Consultar un movimiento.                            |
+| POST   | `/api/inventory-movements`         | ADMIN | Movimiento manual.                                  |
 
-Actualmente:
+## Ventas — `/api/sales`
 
-* Las mantas utilizan unidades enteras (`#`).
-* Las telas utilizan metros.
+| Método | Ruta               | Rol   | Descripción                                                              |
+| ------ | ------------------ | ----- | ------------------------------------------------------------------------ |
+| POST   | `/api/sales`       | Todos | Registrar venta. El backend recalcula precios y total, y descuenta el inventario. |
+| GET    | `/api/sales`       | ADMIN | Historial de ventas con montos.                                          |
+| GET    | `/api/sales/{id}`  | ADMIN | Detalle de una venta.                                                    |
+| PUT    | `/api/sales/{id}`  | ADMIN | Rechazado: las ventas no se modifican después de registrarse.           |
+| DELETE | `/api/sales/{id}`  | ADMIN | Rechazado: las ventas no se eliminan.                                    |
 
----
+## Compras — `/api/purchases`
 
-## Inventario
+| Método | Ruta                   | Rol   | Descripción                                                          |
+| ------ | ---------------------- | ----- | -------------------------------------------------------------------- |
+| POST   | `/api/purchases`       | ADMIN | Registrar compra. El backend recalcula el total y lo compara con el recibido. |
+| GET    | `/api/purchases`       | ADMIN | Historial de compras.                                                |
+| GET    | `/api/purchases/{id}`  | ADMIN | Detalle de una compra.                                               |
+| PUT / DELETE | `/api/purchases/{id}` | ADMIN | Rechazados: las compras no se modifican ni eliminan.          |
 
-La gestión del inventario se encuentra relacionada con los productos y los movimientos de inventario.
+## Producción — `/api/productions`
 
-La existencia actual corresponde al valor almacenado en `Inventory.quantity`.
+| Método | Ruta                     | Rol   | Descripción                                                          |
+| ------ | ------------------------ | ----- | -------------------------------------------------------------------- |
+| POST   | `/api/productions`       | Todos | Registrar producción: descuenta tela y suma mantas en una sola transacción. |
+| GET    | `/api/productions`       | Todos | Historial de producción.                                             |
+| GET    | `/api/productions/{id}`  | Todos | Detalle.                                                             |
+| PUT / DELETE | `/api/productions/{id}` | Todos | Rechazados: la producción no se modifica ni elimina.         |
 
-Los movimientos de inventario permiten registrar entradas y salidas producidas por diferentes operaciones del sistema.
+## Mantas personalizadas — `/api/orders`
 
----
+| Método | Ruta                          | Rol   | Descripción                                                         |
+| ------ | ----------------------------- | ----- | ------------------------------------------------------------------- |
+| GET    | `/api/orders`                 | Todos | Listar. Filtro opcional `?status=PAID` (pagadas) o `?status=PENDING` (con saldo).          |
+| GET    | `/api/orders/{id}`            | Todos | Detalle con pagos.                                                  |
+| POST   | `/api/orders`                 | Todos | Registrar: nombre, cliente, valor, abono inicial y tela usada (se descuenta del inventario). |
+| POST   | `/api/orders/{id}/payments`   | Todos | Registrar un pago. No puede superar el saldo pendiente.             |
+| PUT / DELETE | `/api/orders/{id}`      | Todos | Rechazados: las personalizadas no se modifican ni eliminan.         |
 
-## Movimientos de inventario
-
-El sistema cuenta con un módulo para gestionar los movimientos de inventario.
-
-Las operaciones relacionadas con movimientos se realizan desde el backend y permiten registrar información como:
-
-* Producto.
-* Tipo de movimiento.
-* Tipo de origen.
-* Identificador del origen.
-* Cantidad.
-* Observaciones.
-
-Los tipos principales de movimiento son:
-
-IN
-OUT
-
-Los movimientos pueden estar relacionados con operaciones como:
-
-* Compra.
-* Venta.
-* Producción.
-* Ajuste.
-
-El acceso directo del vendedor a operaciones genéricas de modificación de inventario no forma parte del flujo normal de ventas.
-
----
-
-## Producción
-
-La producción utiliza los productos existentes para registrar el consumo de materia prima y la generación de productos terminados.
-
-Una producción puede:
-
-* Consumir tela.
-* Generar mantas.
-* Registrar los movimientos correspondientes.
-* Actualizar el inventario.
-
-Las operaciones de producción se realizan de manera transaccional.
-
----
-
-## Ventas
-
-El módulo de ventas permite registrar productos, cantidades y precios aplicados a una venta.
-
-El precio utilizado en una venta puede corresponder al precio normal del producto o a un precio especial establecido específicamente para esa compra.
-
-El precio especial se aplica únicamente a la venta correspondiente y no modifica el precio base del producto.
-
-Al completar una venta se genera el movimiento de inventario correspondiente.
+La manta personalizada se entrega al cliente: **no** aumenta el inventario de mantas terminadas.
 
 ---
 
@@ -208,7 +217,10 @@ La API utiliza códigos HTTP para indicar el resultado de las operaciones.
 | 403    | Sin permisos                    |
 | 404    | Recurso no encontrado           |
 | 409    | Conflicto de información        |
+| 413    | Archivo demasiado grande (foto) |
 | 500    | Error interno del servidor      |
+
+Un JSON mal formado o con un tipo de dato incorrecto responde `400` con un mensaje claro (no `500`).
 
 ---
 
@@ -222,12 +234,16 @@ Authorization: Bearer <token>
 
 La autorización depende del rol asignado al usuario.
 
-Actualmente se contemplan principalmente los roles:
+Roles: `ADMIN` (administrador) y `SELLER` (vendedor).
 
-* Administrador.
-* Vendedor.
+* Sin token o con token vencido → `401`: el frontend vuelve al inicio de sesión.
+* Con token pero sin permiso → `403`.
 
-Las restricciones de acceso son controladas por el backend.
+La columna **Rol** de la sección 4 resume los permisos; la matriz completa está en `02-reglas-negocio.md` (RN-24A) y está verificada por la prueba `RolePermissionsTest`.
+
+**CORS:** los orígenes permitidos se configuran con `CORS_ALLOWED_ORIGINS` (por defecto, cualquier puerto de `localhost`).
+
+**Swagger** (`/swagger-ui`) está disponible en desarrollo y desactivado en el perfil `prod`.
 
 ---
 
@@ -300,6 +316,8 @@ Los endpoints se validan desde el frontend mediante las operaciones correspondie
 Por decisión del proyecto, las pruebas funcionales de los endpoints no se realizan mediante Swagger como herramienta principal.
 
 El frontend permite comprobar el comportamiento real de la API dentro del flujo de uso de la aplicación.
+
+Además, el backend tiene pruebas automatizadas (`./mvnw test`) que llaman a la API con cada rol y verifican los permisos (`RolePermissionsTest`), y pruebas de servicio para ventas concurrentes y reglas de producto. Ver la sección **Pruebas** del README.
 
 ---
 

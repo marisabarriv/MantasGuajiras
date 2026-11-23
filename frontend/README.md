@@ -1,16 +1,24 @@
-# React + Vite
+# Mantas Guajiras — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web (React + Vite) del sistema Mantas Guajiras. Documentación completa: [`docs/08-frontend.md`](../docs/08-frontend.md).
 
-Currently, two official plugins are available:
+## Configuración
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Copia `.env.example` como `.env`:
 
-## React Compiler
+```text
+VITE_API_URL=http://localhost:8080
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Comandos
 
-## Expanding the ESLint configuration
+| Comando               | Para qué                                                                  |
+| --------------------- | ------------------------------------------------------------------------- |
+| `npm ci`              | Instala las dependencias exactas de `package-lock.json`.                   |
+| `npm run dev`         | Desarrollo en este computador: http://localhost:5173                      |
+| `npm run dev:celular` | Desarrollo accesible desde el celular en la misma red Wi-Fi (HTTPS + proxy al backend; necesario para la cámara). |
+| `npm run lint`        | Revisión con ESLint.                                                       |
+| `npm run build`       | Compilación de producción en `dist/`.                                      |
+| `npm run preview`     | Sirve localmente la compilación de `dist/`.                                |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Si `npm run build` falla con un error de un módulo nativo (por ejemplo, Rolldown), casi siempre es porque `node_modules` se copió desde otro sistema operativo: bórralo y ejecuta `npm ci` de nuevo.

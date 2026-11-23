@@ -2,9 +2,9 @@
 
 > Sistema de gestión para el control de inventario, producción y ventas del negocio **Mantas Guajiras**.
 
-> **Versión:** `v0.4.0`
+> **Versión:** `v1.0.0-rc.1`
 
-> **Estado:** 🚧 En desarrollo
+> **Estado:** ✅ Funcionalmente completo · 🔧 En preparación para producción (se usa en local)
 
 ---
 
@@ -16,7 +16,7 @@ El sistema permite gestionar productos, inventario, ventas y producción mediant
 
 La aplicación está diseñada como una plataforma web responsive, adaptable a computadores, laptops, tablets y celulares.
 
-Actualmente el proyecto se encuentra en desarrollo y en proceso de integración entre el frontend y el backend.
+Todos los módulos están implementados e integrados. El sistema se ejecuta en un computador local; la puesta en producción sigue la lista de `docs/06-despliegue.md` (sección 14.4).
 
 ---
 
@@ -34,60 +34,65 @@ Actualmente el proyecto se encuentra en desarrollo y en proceso de integración 
 
 ---
 
-## 🚧 Implementado actualmente
+## ✅ Implementado
 
-### Backend
+### Módulos
 
-* Estructura base del backend con Spring Boot.
-* Java 21.
-* Gestión de usuarios y autenticación mediante JWT.
-* Gestión de productos.
-* Gestión de categorías de productos.
-* Gestión de unidades.
-* Gestión de inventario.
-* Registro de movimientos de inventario.
-* Registro de compras.
-* Registro de producción.
-* Registro de ventas.
-* Manejo de precios normales y precios especiales en ventas.
-* Descuentos personalizados por producto dentro de una venta.
-* Validaciones y reglas de negocio.
-* Manejo de errores específicos.
-* Persistencia mediante JPA/Hibernate.
-* Migraciones de base de datos mediante Flyway.
-* Base de datos PostgreSQL.
+| Módulo               | Qué hace                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| Autenticación        | Inicio de sesión con JWT, contraseñas cifradas con BCrypt, aviso de sesión vencida.       |
+| Usuarios             | Registro de vendedores con aprobación del administrador, roles, restablecer contraseña, perfil con foto. |
+| Productos            | Mantas (`#`) y telas (metros), código interno automático, código de barras, activar/desactivar. |
+| Inventario           | Existencias separadas del producto, historial de movimientos, alertas de stock bajo, ajustes por conteo físico. |
+| Ventas               | Carrito, escáner de códigos, precio especial por producto, descuento, protección contra doble envío. |
+| Compras              | Entradas de inventario con verificación del total en el backend.                          |
+| Producción           | Consumo de tela y generación de mantas en una sola transacción.                           |
+| Personalizadas       | Mantas por encargo con descuento de tela, abono inicial, pagos posteriores y saldo.       |
+| App instalable (PWA) | Instalación en computador y celular, página sin conexión.                                 |
+| Copias de seguridad  | Copia diaria automática y prueba semanal de restauración (`docs/09-copias-de-seguridad.md`). |
 
-### Frontend
+### Garantías del backend
 
-* Aplicación web desarrollada con React.
-* Vite.
-* JavaScript y JSX.
-* CSS.
-* React Router.
-* Integración con la API REST.
-* Autenticación mediante token JWT.
-* Página de inicio de sesión.
-* Registro de usuarios.
-* Gestión de productos.
-* Gestión de producción.
-* Registro de nuevas ventas.
-* Carrito de venta.
-* Aplicación de precios especiales por producto durante la venta.
-* Interfaz responsive para diferentes tamaños de pantalla.
+* Los cálculos de precios, totales y descuentos se repiten en el servidor.
+* El inventario nunca queda negativo; las mantas solo admiten cantidades enteras.
+* Bloqueo de la fila de inventario para que dos ventas simultáneas no vendan la misma unidad.
+* Una manta no puede quedar en metros ni una tela en `#`; no se cambia la unidad de un producto con historial.
+* Ventas, compras y producciones registradas no se editan ni se borran (trazabilidad).
+* Permisos por rol aplicados en el servidor (ver **Roles**).
 
 ---
 
-## 📌 Pendiente
+## 📌 Pendiente para producción
 
-* Completar la integración de todos los módulos del frontend con el backend.
-* Completar las reglas de negocio que aún se encuentren en desarrollo.
-* Realizar pruebas funcionales completas.
-* Validar el sistema con datos reales.
-* Preparar la implementación local definitiva.
-* Definir y preparar el entorno de producción.
-* Implementar funcionalidades adicionales conforme evolucionen las necesidades del negocio.
+* Elegir dónde se instalará (servidor o equipo dedicado) y configurar HTTPS y dominio.
+* Recorrido manual de los flujos críticos con datos reales.
+* Completar la lista de `docs/06-despliegue.md` → sección 14.4.
 
 La sincronización automática en la nube y el funcionamiento offline podrán evaluarse como mejoras futuras, pero **no forman parte de la implementación actual**.
+
+---
+
+## ⚡ Inicio rápido (local)
+
+Requisitos: Java 21, Node.js 20+, PostgreSQL 16+.
+
+```bash
+createdb -U postgres mantas_guajiras_db
+```
+
+1. `backend/src/main/resources/application-dev.example.yml` → copiar como `application-dev.yml` y poner la contraseña de PostgreSQL.
+2. `backend/.env.example` → copiar como `backend/.env` y completar.
+3. `frontend/.env.example` → copiar como `frontend/.env`.
+
+```bash
+cd backend && ./mvnw spring-boot:run
+```
+
+```bash
+cd frontend && npm ci && npm run dev
+```
+
+En Windows el backend se arranca con `mvnw.cmd spring-boot:run`. Guía completa: `docs/06-despliegue.md`, sección 14.
 
 ---
 
@@ -130,34 +135,48 @@ La sincronización automática en la nube y el funcionamiento offline podrán ev
 ```text
 MantasGuajiras/
 │
-├── backend/
+├── backend/                         Spring Boot (Java 21)
+│   ├── src/main/java/com/mantasguajiras/backend/
+│   │   ├── common/                  DTO, excepciones y utilidades compartidas
+│   │   ├── config/                  CORS, datos iniciales, Jackson, OpenAPI
+│   │   ├── security/                JWT, filtro y permisos por rol
+│   │   ├── product/  productcategory/  unit/
+│   │   ├── inventory/  inventorymovement/  movementtype/  sourcetype/
+│   │   ├── sale/  purchase/  production/  order/
+│   │   └── user/
+│   ├── src/main/resources/
+│   │   ├── db/migration/            Migraciones Flyway (V1 … V19)
+│   │   ├── application.yml
+│   │   ├── application-dev.example.yml
+│   │   └── application-prod.yml
+│   ├── src/test/                    Pruebas automatizadas
+│   ├── .env.example
+│   └── pom.xml
 │
-├── frontend/
-│   ├── public/
+├── frontend/                        React + Vite
+│   ├── public/                      Íconos, manifiesto PWA, página sin conexión
 │   ├── src/
-│   │   ├── assets/
 │   │   ├── components/
 │   │   ├── pages/
-│   │   ├── services/
+│   │   ├── services/                Llamadas a la API
+│   │   ├── styles/
+│   │   ├── utils/
 │   │   ├── App.jsx
-│   │   ├── App.css
-│   │   ├── index.css
 │   │   └── main.jsx
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.js
+│   ├── .env.example
+│   └── package.json
 │
 ├── database/
-│   ├── migrations/
-│   └── seeds/
+│   └── exports/                     Exportación del esquema (referencia)
+│
+├── scripts/
+│   └── backup/                      Copias de seguridad y prueba de restauración
 │
 ├── docs/
 │   ├── diagrams/
 │   │   ├── architecture/
-│   │   ├── business-flows/
 │   │   ├── erd/
-│   │   └── use-cases/
-│   │
+│   │   └── exports/
 │   ├── 00-vision.md
 │   ├── 01-requisitos.md
 │   ├── 02-reglas-negocio.md
@@ -165,7 +184,9 @@ MantasGuajiras/
 │   ├── 04-base-de-datos.md
 │   ├── 05-api.md
 │   ├── 06-despliegue.md
-│   └── 07-modelo-datos.md
+│   ├── 07-modelo-de-datos.md
+│   ├── 08-frontend.md
+│   └── 09-copias-de-seguridad.md
 │
 └── README.md
 ```
@@ -184,20 +205,20 @@ Incluye:
 * Arquitectura del sistema.
 * Modelo de base de datos.
 * Documentación de la API.
-* Estrategia de despliegue.
+* Estrategia de despliegue e instalación paso a paso.
 * Modelo de datos.
+* Frontend.
+* Copias de seguridad y recuperación.
 * Diagramas técnicos y funcionales.
 
 ---
 
 ## 👥 Roles del sistema
 
-El sistema contempla inicialmente dos roles principales:
+* **Administrador:** todo el sistema, incluidos productos, categorías, unidades, ajustes de inventario, compras, montos de ventas y usuarios.
+* **Vendedor:** registra ventas, consulta productos e inventario, y usa Producción y Personalizadas. No modifica datos maestros, no ajusta inventario ni ve montos de ventas y compras.
 
-* **Administrador:** administración general del sistema y acceso a las funcionalidades administrativas.
-* **Vendedor:** operaciones relacionadas con ventas y las funcionalidades permitidas por su rol.
-
-Los permisos y restricciones se aplican desde el backend.
+Los permisos se aplican en el backend (`SecurityConfig`); la tabla completa está en `docs/02-reglas-negocio.md` (RN-24A).
 
 ---
 
@@ -277,21 +298,29 @@ El backend es responsable de:
 
 ## 🧪 Pruebas
 
-Las funcionalidades del sistema se validan principalmente mediante la interacción del frontend con la API.
+**Automáticas (backend)** — `./mvnw test`, contra una base de pruebas separada (`mantas_guajiras_test`):
 
-Los endpoints **no se prueban mediante Swagger como parte del flujo establecido del proyecto**.
+| Prueba                     | Qué comprueba                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| `BackendApplicationTests`  | Las 19 migraciones se aplican desde cero y el esquema coincide con las entidades. |
+| `RolePermissionsTest`      | Qué puede y qué no puede hacer cada rol.                                      |
+| `ConcurrentSaleTest`       | Dos ventas simultáneas de la última unidad: solo una se registra.             |
+| `ProductRulesTest`         | Categoría ↔ unidad, enteros en mantas, precio de compra = precio unitario.     |
+| `ImageSignatureTest`       | La foto de perfil se valida por su contenido real.                            |
 
-Las pruebas funcionales se realizan sobre las funcionalidades reales de la aplicación y su integración con el backend.
+**Frontend:** `npm run lint` y `npm run build`.
+
+**Manuales:** recorrido de los flujos críticos desde la interfaz (lista en `docs/06-despliegue.md`, sección 14.4).
 
 ---
 
 ## 🚀 Estado del proyecto
 
-**Versión actual:** `v0.4.0`
+**Versión actual:** `v1.0.0-rc.1` (versión candidata)
 
-**Estado:** 🚧 En desarrollo
+**Estado:** funcionalmente completo, en uso local, en preparación para producción.
 
-La versión actual representa una etapa de desarrollo en la que el backend cuenta con una base funcional consolidada y el frontend se encuentra en desarrollo e integración con la API.
+La versión `v1.0.0` corresponderá a la primera puesta en uso con los datos reales del negocio.
 
 ---
 
@@ -305,6 +334,7 @@ El proyecto utiliza versionado semántico para identificar los principales hitos
 | **v0.2.0**                | Diseño e implementación inicial de la base de datos.                                                                          |
 | **v0.3.0**                | Inicio del desarrollo del backend y establecimiento de la arquitectura y lógica base.                                         |
 | **v0.4.0**                | Consolidación del backend e inicio del desarrollo e integración del frontend.                                                 |
+| **v1.0.0-rc.1**           | Todos los módulos integrados, permisos por rol, pruebas automatizadas y copias de seguridad. Versión candidata.             |
 | **Versiones posteriores** | Integración completa, pruebas funcionales, validación con datos reales, preparación para producción y nuevas funcionalidades. |
 | **v1.0.0**                | Primera versión estable destinada al uso oficial del negocio.                                                                 |
 
@@ -386,4 +416,4 @@ La tecnología se adapta al negocio, no el negocio a la tecnología.
 
 ## 📜 Licencia
 
-Actualmente este proyecto es de uso privado y se encuentra en desarrollo.
+Este proyecto es de uso privado.

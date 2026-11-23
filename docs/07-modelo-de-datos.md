@@ -5,10 +5,10 @@
 | **Proyecto**             | Mantas Guajiras      |
 | **Documento**            | Modelo de Datos      |
 | **Código**               | DOC-07               |
-| **Versión**              | v0.4.0               |
-| **Estado**               | En desarrollo        |
+| **Versión**              | v1.0.0-rc.1         |
+| **Estado**               | Versión candidata    |
 | **Responsable**          | Equipo de Desarrollo |
-| **Última actualización** | 05/09/2026           |
+| **Última actualización** | 23/11/2026           |
 
 ---
 
@@ -18,6 +18,7 @@
 | ------- | ---------- | ----------------------------------------------------------------- | -------------------- |
 | v0.2.0  | 29/07/2026 | Creación inicial del modelo de datos.                             | Equipo de Desarrollo |
 | v0.4.0  | 05/09/2026 | Actualización del modelo de datos según la implementación actual. | Equipo de Desarrollo |
+| v1.0.0-rc.1 | 23/11/2026 | Alineación con la implementación real tras la auditoría técnica. | Equipo de Desarrollo |
 
 ---
 
@@ -116,8 +117,9 @@ El modelo actual se organiza principalmente en los siguientes grupos.
 
 ## Seguridad
 
-* User
-* Role
+* User (`app_user`)
+* Role (`ADMIN`, `SELLER`)
+* UserProfileImage (`user_profile_image`): foto de perfil, separada de los datos del usuario.
 
 ---
 
@@ -165,6 +167,27 @@ El módulo de producción registra las operaciones en las que se consume un prod
 
 ---
 
+## Compras
+
+* Purchase (`purchase`) y PurchaseItem (`purchase_item`): cada compra genera entradas de inventario.
+
+---
+
+## Mantas personalizadas
+
+* Order (`orders`): nombre de la manta, cliente, valor acordado (`total`), total pagado (`paid_amount`), tela usada (`fabric_product_id`, `fabric_quantity`), observaciones y quién la registró.
+* OrderPayment (`order_payment`): cada pago (abono inicial y posteriores) con su valor, fecha y usuario.
+
+El saldo pendiente se calcula como `total - paid_amount`; el estado (pagada o pendiente) se calcula, no se almacena. Al registrar la personalizada se genera una salida de inventario de la tela con origen `ORDER`. No se crea entrada de mantas terminadas.
+
+---
+
+## Trazabilidad por usuario
+
+Ventas, compras, producciones, movimientos de inventario y personalizadas guardan `created_by` (el usuario que hizo la operación).
+
+---
+
 # 5. Relaciones principales
 
 Las relaciones principales del modelo incluyen:
@@ -174,6 +197,9 @@ Las relaciones principales del modelo incluyen:
 * `Unit` → `Product` (1:N)
 * `Product` → `Inventory` (1:1)
 * `Product` → `InventoryMovement` (1:N)
+* `Order` → `OrderPayment` (1:N)
+* `Product` (tela) → `Order` (1:N)
+* `User` → operaciones registradas (`created_by`, 1:N)
 
 En las operaciones comerciales:
 
@@ -364,7 +390,7 @@ Cada cambio estructural importante debe registrarse mediante una nueva migració
 
 Las migraciones permiten conservar el historial de cambios realizados sobre el modelo de datos.
 
-No se deben modificar innecesariamente migraciones que ya forman parte del historial del proyecto.
+No se deben modificar migraciones que ya forman parte del historial del proyecto: Flyway compara su huella al arrancar. Las migraciones están en `backend/src/main/resources/db/migration` (V1 a V19); ver el Anexo A de `04-base-de-datos.md`.
 
 ---
 
@@ -372,7 +398,7 @@ No se deben modificar innecesariamente migraciones que ya forman parte del histo
 
 Los diagramas entidad-relación (ERD) del sistema se almacenarán en:
 
-```text id="c7j8is"
+```text
 docs/
 └── diagrams/
     └── erd/
