@@ -49,7 +49,7 @@ Todos los módulos están implementados e integrados. El sistema se ejecuta en u
 | Producción           | Consumo de tela y generación de mantas en una sola transacción.                           |
 | Personalizadas       | Mantas por encargo con descuento de tela, abono inicial, pagos posteriores y saldo.       |
 | App instalable (PWA) | Instalación en computador y celular, página sin conexión.                                 |
-| Copias de seguridad  | Copia diaria automática y prueba semanal de restauración (`docs/09-copias-de-seguridad.md`). |
+| Copias de seguridad  | Copias automáticas cada 2 horas y al encender el equipo, prueba semanal de restauración (`docs/09-copias-de-seguridad.md`). |
 
 ### Garantías del backend
 

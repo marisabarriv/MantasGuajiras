@@ -27,7 +27,8 @@ $BackupConfig = @{
     # Copias más antiguas que esto se borran...
     RetentionDays = 30
     # ...pero siempre se conservan al menos estas (las más recientes).
-    MinKeep       = 7
+    # Con copias cada 2 horas, 50 copias cubren más de 3 días.
+    MinKeep       = 50
 
     # Segunda copia fuera de este disco (MUY recomendado):
     # una carpeta de OneDrive/Google Drive o una memoria USB.

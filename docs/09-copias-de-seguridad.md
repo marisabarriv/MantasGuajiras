@@ -16,7 +16,7 @@
 
 | Qué                            | Cuándo                         | Script                                   |
 | ------------------------------ | ------------------------------ | ---------------------------------------- |
-| Copia completa de la base      | Todos los días (automático)    | `scripts/backup/backup-db.ps1`           |
+| Copia completa de la base      | Cada 2 horas en el día y al iniciar sesión (automático) | `scripts/backup/backup-db.ps1` |
 | Prueba de que la copia sirve   | Cada domingo (automático)      | `scripts/backup/restore-test.ps1`        |
 | Recuperar datos tras un daño   | Solo en una emergencia         | `scripts/backup/restore-db.ps1`          |
 | Programar las dos primeras     | Una sola vez                   | `scripts/backup/register-scheduled-tasks.ps1` |
@@ -80,10 +80,43 @@ powershell -ExecutionPolicy Bypass -File scripts\backup\register-scheduled-tasks
 
 Crea dos tareas en el **Programador de tareas** de Windows:
 
-- **MantasGuajiras - Copia diaria**: todos los días a las 21:00.
+- **MantasGuajiras - Copias del día**: una copia cada 2 horas entre las 8:00 y las 21:00, **y otra cada vez que inicias sesión en Windows** (por ejemplo, cuando vuelve la luz y prendes el computador).
 - **MantasGuajiras - Prueba semanal**: los domingos a las 21:30.
 
-Si el computador está apagado a esa hora, la tarea corre en cuanto se encienda. Para otra hora: `... register-scheduled-tasks.ps1 -BackupTime 19:00 -TestTime 19:30`.
+Si el computador está apagado a una hora programada, la copia se hace en cuanto se encienda.
+
+Para otro horario, por ejemplo cada hora de 7 a. m. a 8 p. m.:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\backup\register-scheduled-tasks.ps1 -EveryHours 1 -StartTime 07:00 -EndTime 20:00
+```
+
+Volver a ejecutarlo reemplaza la programación anterior. Cada copia tarda pocos segundos y no interrumpe a quien esté vendiendo.
+
+---
+
+### 1.5. Cortes de luz: qué se pierde y qué no
+
+**PostgreSQL no pierde las operaciones ya guardadas cuando se va la luz.** Antes de responder "venta registrada", escribe la operación en su diario en el disco (WAL). Al volver a arrancar, la reconstruye desde ahí.
+
+| Situación cuando se va la luz                     | Qué pasa                                                                 |
+| ------------------------------------------------- | ------------------------------------------------------------------------ |
+| Venta que ya mostró "registrada"                  | **Se conserva.**                                                         |
+| Venta que se estaba guardando en ese instante     | No queda nada a medias: o se guardó completa o no se guardó. Revisa el historial y regístrala de nuevo si no aparece. |
+| Formulario a medio llenar en la pantalla          | Se pierde lo escrito (no se había enviado).                             |
+| El disco se daña por el apagón (poco frecuente)   | Aquí es donde se usan las copias: se pierde lo hecho después de la última copia. Con copias cada 2 horas, como máximo 2 horas. |
+
+Para que esta protección funcione, PostgreSQL debe tener activadas tres opciones que vienen activadas por defecto. Compruébalo una vez en pgAdmin (Query Tool) o en `psql`:
+
+```sql
+SHOW fsync;              -- debe decir: on
+SHOW synchronous_commit; -- debe decir: on
+SHOW full_page_writes;   -- debe decir: on
+```
+
+Si alguna dice `off`, cámbiala a `on` en `postgresql.conf` y reinicia el servicio de PostgreSQL.
+
+**Recomendación de hardware:** una UPS (regulador con batería, conocida como "no break") para el computador y el módem. Con 10 a 15 minutos de batería se puede terminar la venta y apagar el equipo normalmente. Es la protección más efectiva contra los apagones.
 
 ---
 
@@ -125,7 +158,7 @@ La base temporal se elimina al terminar. **Tu base de trabajo nunca se modifica.
 6. Arranca el backend y revisa inventario, últimas ventas y usuarios.
 7. Cuando confirmes que todo está bien, puedes conservar la base dañada un tiempo por si hace falta revisarla, y borrarla después desde pgAdmin.
 
-Las operaciones hechas **después** de la copia usada se pierden y hay que registrarlas de nuevo. Por eso la copia es diaria.
+Las operaciones hechas **después** de la copia usada se pierden y hay que registrarlas de nuevo. Por eso las copias se hacen varias veces al día.
 
 ---
 
@@ -146,7 +179,7 @@ DB_NAME=mantas_guajiras_db BACKUP_DIR=/var/backups/mantasguajiras scripts/backup
 Programación con `crontab -e`:
 
 ```text
-0 21 * * *  DB_NAME=mantas_guajiras_db BACKUP_DIR=/var/backups/mantasguajiras /ruta/scripts/backup/backup-db.sh
+0 8-20/2 * * *  DB_NAME=mantas_guajiras_db BACKUP_DIR=/var/backups/mantasguajiras /ruta/scripts/backup/backup-db.sh
 30 21 * * 0 DB_NAME=mantas_guajiras_db BACKUP_DIR=/var/backups/mantasguajiras /ruta/scripts/backup/restore-test.sh
 ```
 
