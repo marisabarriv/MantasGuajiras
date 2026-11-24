@@ -1,4 +1,5 @@
 import { clearSession, getToken } from "../utils/session";
+import { discardUnsaved } from "../utils/unsavedChanges";
 import { setServerReachable } from "../utils/connectivity";
 
 // Sin VITE_API_URL (kit de despliegue, mismo dominio): rutas relativas.
@@ -38,6 +39,8 @@ function handleExpiredSession() {
     clearSession();
 
     if (window.location.pathname !== "/") {
+        // Salida forzada: no preguntar por datos sin guardar (ya no se pueden enviar).
+        discardUnsaved();
         window.location.assign("/?sesion=expirada");
     }
 }

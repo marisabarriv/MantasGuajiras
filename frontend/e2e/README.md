@@ -14,6 +14,7 @@
 10. Recorrido por las 9 páginas como administrador y como vendedor: todas cargan, sin errores de JavaScript, menú y botones según el rol.
 11. Actualización automática del inventario y ausencia de violaciones de la política de seguridad (CSP).
 12. El servidor falla al guardar una venta (por ejemplo, la base de datos se cae): la venta queda en el dispositivo y se envía sola, una vez, cuando el servidor se recupera.
+13. Aviso al salir con datos sin guardar: carrito con productos o formulario a medio llenar; se puede quedar o salir.
 
 Se ejecuta sola en GitHub Actions (`.github/workflows/ci.yml`) en cada push.
 

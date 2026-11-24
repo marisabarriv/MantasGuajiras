@@ -10,6 +10,8 @@
 #   0 6-20/2,21 * * * /ruta/scripts/backup/backup-db.sh
 # =========================================================
 set -euo pipefail
+# Las copias contienen todos los datos del negocio: solo el dueño las lee.
+umask 077
 
 DB_NAME="${DB_NAME:-mantas_guajiras_db}"
 BACKUP_DIR="${BACKUP_DIR:-$HOME/mantasguajiras-backups}"

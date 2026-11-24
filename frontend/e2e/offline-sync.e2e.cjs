@@ -87,9 +87,16 @@ async function uiLogin(page, username, password) {
 }
 
 async function uiLogout(page) {
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Cerrar sesión' }).click();
-    await page.waitForURL(APP + '/');
+    // Acepta los avisos de esta salida (ventas pendientes, datos sin guardar)
+    // y deja de escuchar al terminar, para no responder diálogos ajenos.
+    const accept = (dialog) => dialog.accept().catch(() => {});
+    page.on('dialog', accept);
+    try {
+        await page.getByRole('button', { name: 'Cerrar sesión' }).click();
+        await page.waitForURL(APP + '/');
+    } finally {
+        page.off('dialog', accept);
+    }
 }
 
 async function sell(page, productName) {
@@ -525,6 +532,30 @@ const pendingIds = (page) => page.evaluate(() =>
         .catch(() => {});
     check(serverDownId && (await salesWith(adminToken, serverDownId)).length === 1, 'cuando el servidor se recupera, se envía sola y una sola vez');
     check(await stockOf(adminToken, grande.id) === 4, 'existencias 5 → 4');
+
+    // -----------------------------------------------------------
+    step('13. Aviso al salir con datos sin guardar');
+    await page.goto(APP + '/sale');
+    await page.locator('.product-card', { hasText: grande.name }).getByRole('button', { name: 'Agregar' }).click();
+    let asked = '';
+    page.once('dialog', (dialog) => { asked = dialog.message(); dialog.dismiss(); });
+    await page.locator('.sidebar-nav').getByRole('link', { name: 'Inventario' }).click();
+    await page.waitForTimeout(300);
+    check(/sin guardar/.test(asked) && page.url().endsWith('/sale'), 'con productos en el carrito, pregunta antes de cambiar de pantalla y se puede quedar');
+    check(await page.locator('.pos-cart-row', { hasText: grande.name }).count() === 1, 'el carrito sigue intacto');
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.locator('.sidebar-nav').getByRole('link', { name: 'Inventario' }).click();
+    check(await page.waitForURL('**/inventory', { timeout: 5000 }).then(() => true, () => false), 'si confirma, cambia de pantalla');
+    await page.locator('.inv-row', { hasText: grande.name }).getByRole('button', { name: 'Ajustar' }).click();
+    await page.fill('#adjustReason', 'a medio escribir');
+    asked = '';
+    page.once('dialog', (dialog) => { asked = dialog.message(); dialog.dismiss(); });
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    check(Boolean(asked) && await page.locator('#adjustReason').isVisible(), 'formulario a medio llenar: Escape pregunta y no lo cierra');
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.keyboard.press('Escape');
+    check(await page.locator('#adjustReason').waitFor({ state: 'detached', timeout: 5000 }).then(() => true, () => false), 'si confirma, se cierra');
 
     await browser.close();
 

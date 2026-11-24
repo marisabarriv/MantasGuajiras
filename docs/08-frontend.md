@@ -867,6 +867,7 @@ Verificación: `npm run lint` y `npm run build` sin errores.
 | `hooks/useAutoRefresh.js`         | Recarga silenciosa de cada pantalla.                                             |
 | `hooks/useShowMore.js` y `components/ShowMoreButton.jsx` | Listas largas de a 100 filas con "Ver más" (ventas y movimientos). |
 | `utils/period.js`                 | Periodos de los historiales: últimos N días, fechas locales AAAA-MM-DD y validación del máximo de 93 días. |
+| `utils/unsavedChanges.js` y `hooks/useUnsavedChanges.js` | Aviso al salir con datos sin guardar: carrito o formularios. Pregunta al cambiar de pantalla, cerrar sesión, cerrar una ventana con X o Escape (`Modal guardUnsaved`) y al recargar. |
 | `public/sw.js`                    | Guarda **solo el código** de la app (index.html, `/assets/`, íconos) para abrirla sin conexión. Nunca guarda respuestas de la API. |
 
 **Compras, producción, personalizadas y pagos** usan el mismo mecanismo en línea: cada formulario genera su `clientRequestId` al abrirse y lo conserva en los reintentos. Si falla la conexión al guardar, el mensaje indica que se puede volver a pulsar sin riesgo de duplicar.

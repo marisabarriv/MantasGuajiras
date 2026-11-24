@@ -198,7 +198,9 @@ MantasGuajiras/
 │   ├── 10-certificacion.md          Matriz de certificación: criterios, estado y evidencia
 │   ├── 11-pendientes-responsable.md Tareas que solo puede hacer la dueña del proyecto
 │   ├── 12-rendimiento-y-monitoreo.md Prueba de carga, estado del sistema, log y respuesta a incidentes
-│   └── 13-produccion.md             Instalación en un servidor con el kit deploy/ (HTTPS, copias, actualizar y volver atrás)
+│   ├── 13-produccion.md             Instalación en un servidor con el kit deploy/ (HTTPS, copias, actualizar y volver atrás)
+│   ├── 14-manual-de-usuario.md      Manual para administrador y vendedor, con capturas (docs/manual/)
+│   └── 15-aceptacion.md             Los 24 escenarios de aceptación, criterios del negocio y acta
 │
 └── README.md
 ```
@@ -224,6 +226,8 @@ Incluye:
 * Certificación de calidad (matriz de criterios) y pendientes de la responsable.
 * Rendimiento, monitoreo y respuesta a incidentes.
 * Puesta en producción con el kit `deploy/`.
+* Manual de usuario y guía de aceptación.
+* Historial de versiones: `CHANGELOG.md`.
 * Diagramas técnicos y funcionales.
 
 ---
@@ -345,7 +349,9 @@ El backend es responsable de:
 
 **Frontend:** `npm run lint` y `npm run build`.
 
-**Punta a punta** (`frontend/e2e/offline-sync.e2e.cjs`): navegador real contra backend y base de prueba. Cubre ventas sin conexión, app reabierta sin conexión, corte de conexión justo al enviar (no duplica), conflicto con otro vendedor y "Reintentar", dispositivo compartido entre vendedores, compra con corte de conexión al guardar (no duplica), motivo obligatorio y filtros del historial, dos pestañas sincronizando a la vez, sesión vencida sin conexión, dispositivo sin espacio, recorrido por las 9 páginas con cada rol, actualización automática y ausencia de violaciones de la CSP (11 escenarios). Instrucciones en `frontend/e2e/README.md`.
+**Punta a punta** (`frontend/e2e/offline-sync.e2e.cjs`): navegador real contra backend y base de prueba. Cubre ventas sin conexión, app reabierta sin conexión, corte de conexión justo al enviar (no duplica), conflicto con otro vendedor y "Reintentar", dispositivo compartido entre vendedores, compra con corte de conexión al guardar (no duplica), motivo obligatorio y filtros del historial, dos pestañas sincronizando a la vez, sesión vencida sin conexión, dispositivo sin espacio, recorrido por las 9 páginas con cada rol, actualización automática, ausencia de violaciones de la CSP, servidor caído al guardar y aviso al salir con datos sin guardar (13 escenarios). Instrucciones en `frontend/e2e/README.md`.
+
+**Ensayo de aceptación** (`frontend/e2e/acceptance.e2e.cjs`): los 24 escenarios del checklist de aceptación por la interfaz, el vendedor en tamaño de celular y el administrador en computador (24/24). Prepara la aceptación de la responsable del negocio (`docs/15-aceptacion.md`).
 
 **Estado de certificación:** `docs/10-certificacion.md` lista cada criterio de calidad con su estado (verificado, pendiente o fallido) y la evidencia que lo respalda.
 

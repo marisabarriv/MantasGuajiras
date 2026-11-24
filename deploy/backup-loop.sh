@@ -9,6 +9,8 @@
 # backups/backup.log.
 # =========================================================
 set -uo pipefail
+# Copias legibles solo por su dueño (root en el servidor).
+umask 077
 
 HOURS=" ${BACKUP_HOURS:-6 8 10 12 14 16 18 20 21} "
 last=""

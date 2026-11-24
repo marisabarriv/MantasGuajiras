@@ -59,10 +59,11 @@ Cada criterio tiene **prioridad**, **estado** y **evidencia**. Un criterio solo 
 | `T-per` | `DateRangeTest` (8), `HistoryAndMonitoringHttpTest` (4) y `MonitoringUnitTest` (3): historiales por periodo, estado del sistema, registro de operaciones y rechazos, peticiones lentas, alertas | `backend/src/test` |
 | `LOAD` | Prueba de carga con 3 años de datos (33.000 ventas): 15 y 40 usuarios simultáneos, antes y después de las correcciones; integridad comprobada | 24/11/2026; `docs/12` §2; `scripts/perf` |
 | `SQL` | Conteo de consultas por historial con `log_statement`: 3 por historial de ventas o movimientos (antes, varias por cada venta) | 24/11/2026; `docs/12` §1 |
-| `E2E` | `frontend/e2e/offline-sync.e2e.cjs` (12 escenarios, 53 comprobaciones, navegador real), también por HTTPS a través del kit de producción | se ejecuta en CI (dos veces) |
+| `E2E` | `frontend/e2e/offline-sync.e2e.cjs` (13 escenarios, 58 comprobaciones, navegador real), también por HTTPS a través del kit de producción | se ejecuta en CI (dos veces) |
 | `KIT` | Kit `deploy/` instalado desde cero: 18/18 comprobaciones de `verify.sh`; solo 80/443 abiertos; PostgreSQL inaccesible; usuario de base sin privilegios; E2E por HTTPS; copia y prueba de restauración; importación de datos (41.259 ventas) | 24/11/2026; `docs/13` §8; trabajo *Kit de producción* en la CI |
 | `DRILL` | Simulacros sobre el kit: PostgreSQL `kill -9` y corte de luz con ventas en curso (0 de 13.159 confirmadas perdidas), backend caído, actualización con copia previa (≈9 s sin servicio) y versión rota con vuelta atrás automática | 24/11/2026; `docs/13` §8 |
 | `T-db` | `DatabaseDownTest` (3): base caída → 503, nunca 401 ni 500 | `backend/src/test` |
+| `ACC` | Ensayo de aceptación `frontend/e2e/acceptance.e2e.cjs`: los 24 escenarios del checklist por la interfaz (vendedor en celular, administrador en computador), **24/24, 69 comprobaciones**; 3 corridas seguidas sin fallas; también por HTTPS en el kit | 24/11/2026; CI en cada cambio |
 | `CI` | GitHub Actions: backend + frontend + E2E. Ejecución #1 en verde (24/11/2026) | pestaña **Actions** |
 | `BKP` | Pruebas de los scripts de respaldo contra PostgreSQL: copia sana, archivo dañado, inventario alterado, falta de `.sha256`, retención en `CopyTo` | sesión del 23-24/11/2026; `scripts/backup` |
 | `AUD` | `npm audit`: 0 vulnerabilidades (producción y desarrollo) tras `npm audit fix` | 24/11/2026 |
@@ -393,29 +394,29 @@ Ninguno puede quedar abierto para dar 10/10.
 | -- | -------- | --- | ------ | ---------------- |
 | UX-01 | Todas las páginas cargan | A | ✅ | `E2E` esc. 10: las 9 páginas cargan como administrador y como vendedor, sin errores de JavaScript |
 | UX-02 | Navegación coherente | M | ⏳ | `MAN` |
-| UX-03 | Formularios validan obligatorios | A | ⏳ | Implementado; falta revisión sistemática |
+| UX-03 | Formularios validan obligatorios | A | ✅ | Obligatorios y valores inválidos en productos, ajustes, producción, compras y usuarios, ensayados por la interfaz (`ACC` 3, 5, 7, 14, 18) |
 | UX-04 | Errores con causa | A | ✅ | Mensaje real del backend (`apiClient`); `E2E` (motivo del rechazo) |
 | UX-05 | Estados de carga | M | ⏳ | Implementados; falta revisión |
 | UX-06 | Sin envíos dobles | A | ✅ | `REV` + identificador estable en formularios (`E2E` esc. 5) |
 | UX-07 | Confirmación en acciones destructivas | A | ⏳ | Descartar venta y cerrar sesión con pendientes ✅; falta revisar desactivar usuario o producto |
 | UX-08 | Tablas legibles | M | ⏳ | `MAN` |
-| UX-09 | Filtros | M | ⏳ | Falta prueba |
-| UX-10 | Sin pérdida de datos de formularios | M | ⏳ | Falta revisión |
+| UX-09 | Filtros | M | ✅ | Filtros por origen, usuario y fechas (`ACC` 8, `T-mov`, `E2E` 6); periodos de ventas (`T-per`) |
+| UX-10 | Sin pérdida de datos de formularios | M | ✅ | Carrito y formularios se conservan ante rechazos y sin espacio (`E2E` 9, `ACC` 12) y avisan antes de salir (`E2E` 13) |
 | UX-11 | Pendiente frente a confirmada | A | ✅ | `E2E` |
 | UX-12 | Fotos | M | ✅ | `MAN` |
 | UX-13 | Éxito solo si se completó | A | ✅ | `E2E` (registrada frente a guardada sin conexión) |
 | UX-14 | Permisos reflejados | A | ✅ | `E2E` esc. 10: menú, crear productos y ajustar según el rol |
 | UX-15 | Errores de red | A | ✅ | `E2E` |
 | UX-16 | Estados vacíos | Bj | ⏳ | Implementados en varias pantallas; falta revisión |
-| UX-17 | Tamaños de pantalla | M | ⏳ | Diseño responsive; falta prueba en celular |
+| UX-17 | Tamaños de pantalla | M | ✅ | Flujos del vendedor ensayados en tamaño de celular (Pixel 7) y del administrador en computador (`ACC`). Falta confirmar en un celular real durante la aceptación (`docs/15` §3) |
 | UX-18 | Teclado | M | ⏳ | Falta auditoría |
 | UX-19 | Etiquetas | M | ⏳ | Falta auditoría |
 | UX-20 | Consistencia visual | Bj | ⏳ | — |
 | UX-21 | Ortografía | Bj | ⏳ | — |
-| UX-22 | Diálogos | M | ⏳ | `Modal` con Escape; falta revisión |
-| UX-23 | Evitar perder información al salir | M | ❌ | Sin aviso al salir con un formulario a medio llenar |
+| UX-22 | Diálogos | M | ✅ | Ventanas con X y Escape; las de formularios preguntan antes de cerrarse con datos (`E2E` 13, `ACC`) |
+| UX-23 | Evitar perder información al salir | M | ✅ | Aviso antes de salir con carrito o formulario a medio llenar (menú, cerrar sesión, X/Escape y recargar); `E2E` escenario 13 |
 | UX-24 | Errores de sesión | A | ✅ | 401 → inicio con aviso de sesión vencida (`REV`, `E2E`) |
-| UX-25 | Retroalimentación tras cada operación | M | ⏳ | — |
+| UX-25 | Retroalimentación tras cada operación | M | ✅ | Cada operación confirma con un mensaje (venta, compra, producción, ajuste, usuario, personalizada), comprobado en `ACC` |
 
 **WCAG 2.2 AA:** ⏳ pendiente (contraste, foco visible, teclado, lectores de pantalla).
 
@@ -470,7 +471,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | BKP-08 | Segunda ubicación | A | ⏳ | Ídem |
 | BKP-09 | Retención | M | ✅ | `BKP` |
 | BKP-10 | Retención en principal y secundaria | M | ✅ | `BKP` (24/11) |
-| BKP-11 | Protección contra acceso no autorizado | A | ❌ | Copias sin cifrar; dependen de los permisos de la carpeta |
+| BKP-11 | Protección contra acceso no autorizado | A | ⏳ | Copias con permisos `600` (solo su dueño) en el servidor y en Linux; en Windows, dentro de la carpeta personal del usuario. Copia en la nube **cifrada** con `rclone crypt` (`docs/13` §6), al configurarla (`docs/11` #21) |
 | BKP-12 | Restaurar base completa | B | ✅ | `BKP` (restaurada y verificada) |
 | BKP-13 | En entorno aislado | A | ✅ | Base temporal |
 | BKP-14 | Integridad tras restaurar | A | ✅ | `integrity-check.sql` |
@@ -593,26 +594,28 @@ Referencias para la revisión final: OWASP ASVS nivel 2 y OWASP Top 10.
 | DOC-08 | Roles y permisos | A | ✅ | `docs/02` RN-24A |
 | DOC-09 | Reglas de inventario | A | ✅ | `docs/02` |
 | DOC-10 | Proceso de ventas | A | ✅ | `docs/02`, `docs/08` |
-| DOC-11 | Proceso de compras | M | ⏳ | Breve |
-| DOC-12 | Producción y pedidos | M | ⏳ | Breve |
+| DOC-11 | Proceso de compras | M | ✅ | `docs/14` §10 (compras) y §5 (su efecto en el inventario) |
+| DOC-12 | Producción y pedidos | M | ✅ | `docs/14` §6 (producción) y §4 (personalizadas con abonos y pagos) |
 | DOC-13 | Offline | A | ✅ | `docs/06` §15.4, `docs/08` §30A |
 | DOC-14 | Copias y restauración | A | ✅ | `docs/09` |
 | DOC-15 | Despliegue | A | ✅ | `docs/13-produccion.md`: opciones, instalación paso a paso, actualizar, volver atrás, copias, seguridad y pruebas |
 | DOC-16 | Rollback | A | ✅ | `docs/09` §4.1 |
-| DOC-17 | Manual de usuario | A | ❌ | — |
+| DOC-17 | Manual de usuario | A | ✅ | `docs/14-manual-de-usuario.md`: administrador y vendedor, con capturas reales del ensayo (`ACC`) |
 | DOC-18 | Solución de problemas | M | ✅ | Servidor: `docs/12` §6; copias: `docs/09`; sin conexión: `docs/06` §15.4 |
 | DOC-19 | Coincide con el sistema | A | ✅ | Revisado el 23-24/11 |
-| DOC-20 | Historial de versiones | M | ❌ | Sin `CHANGELOG` |
+| DOC-20 | Historial de versiones | M | ✅ | `CHANGELOG.md` desde las versiones iniciales hasta la Fase 8 |
 
 ## 20. Aceptación del negocio
 
-NEG-01 a NEG-14: ⏳ **pendientes de validación por la responsable del negocio** con el checklist de 24 escenarios de la auditoría (productos, inventario, ventas, compras y producción, usuarios y seguridad, offline). Cada escenario aprobado se registra aquí con fecha.
+NEG-01 a NEG-14: ⏳ **pendientes de validación por la responsable del negocio**. Guía, preguntas y acta para firmar: **`docs/15-aceptacion.md`**.
+
+Preparación ya hecha: los 24 escenarios del checklist de la auditoría se ensayaron por la interfaz, **24/24 correctos** (`ACC`). El recorrido humano confirma que eso es lo que la tienda necesita, con precios y procedimientos reales. Cada escenario aprobado se registra aquí con fecha.
 
 ---
 
 ## Resumen
 
-Conteo automático de la matriz (24/11/2026, después de la Fase 7). Evolución: inicio 189 ✅ → Fase 1 256 → Fase 2 258 → Fases 3-4 275 → Fase 5 288 → Fase 6 315 → Fase 7 324 ✅.
+Conteo automático de la matriz (24/11/2026, después de la Fase 8). Evolución: inicio 189 ✅ → Fase 1 256 → Fase 2 258 → Fases 3-4 275 → Fase 5 288 → Fase 6 315 → Fase 7 324 → Fase 8 335 ✅.
 
 | Área | Criterios | ✅ | ⏳ | ❌ |
 | ---- | --------- | -- | -- | -- |
@@ -626,17 +629,17 @@ Conteo automático de la matriz (24/11/2026, después de la Fase 7). Evolución:
 | 8. Producción y pedidos personalizados | 18 | 17 | 1 | 0 |
 | 9. Usuarios, roles y seguridad | 25 | 24 | 1 | 0 |
 | 10. Funcionamiento offline y sincronización | 20 | 20 | 0 | 0 |
-| 11. Frontend y experiencia de usuario | 25 | 9 | 15 | 1 |
+| 11. Frontend y experiencia de usuario | 25 | 16 | 9 | 0 |
 | 12. Fotografías y archivos | 12 | 9 | 3 | 0 |
 | 13. Rendimiento | 15 | 13 | 2 | 0 |
-| 14. Copias de seguridad y recuperación | 20 | 16 | 3 | 1 |
+| 14. Copias de seguridad y recuperación | 20 | 16 | 4 | 0 |
 | 15. Logs, monitoreo y observabilidad | 15 | 14 | 1 | 0 |
 | 16. Pruebas automatizadas y calidad continua | 25 | 24 | 1 | 0 |
 | 17. Infraestructura y despliegue | 20 | 14 | 6 | 0 |
 | 18. Errores y resiliencia | 12 | 12 | 0 | 0 |
-| 19. Documentación y operación | 20 | 16 | 2 | 2 |
+| 19. Documentación y operación | 20 | 20 | 0 | 0 |
 | 20. Aceptación del negocio | 14 | 0 | 14 | 0 |
-| **Total** | **387** | **324** (84 %) | **59** | **4** |
+| **Total** | **387** | **335** (87 %) | **52** | **0** |
 
 Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por comprobar en el equipo del negocio** (10: ejecutar las copias `.ps1` en Windows).
 
@@ -651,4 +654,4 @@ Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por c
 | **5. Calidad** ✅ | Hecha el 24/11/2026: cobertura 92 % con umbral en el build; 13 pruebas nuevas (104 en total) incluido el recorrido completo por HTTP; orden aleatorio; código muerto eliminado; `.editorconfig`; E2E por todas las páginas y roles. **Queda en manos de la dueña:** proteger `main` (`docs/06` §14.6) | QA-18/24, ARQ-09/13/17, UX-01/14 |
 | **6. Rendimiento** ✅ | Hecha el 24/11/2026: prueba de carga con 3 años de datos y 40 usuarios (encontró que el servidor se quedaba sin memoria y daba 123 errores 500; corregido); historiales por periodo; N+1 eliminado; listas de a 100; estado del sistema (`/actuator/health`); log a archivo con rotación y una línea por operación; guía de incidentes (`docs/12`); 15 pruebas nuevas (119 en total). **Queda en manos de la dueña:** confirmar cuántas personas usan la app a la vez | REN-*, DB-17/18, API-12, OBS-*, RES-10, DOC-18 |
 | **7. Producción** ✅ | Hecha el 24/11/2026: kit `deploy/` (Docker, HTTPS automático, mismo dominio, PostgreSQL cerrado, copias, reinicio automático); `deploy.sh` con copia previa, verificación y vuelta atrás automática; `import-data.sh`; versión visible; simulacros de caída de la base, corte de luz y versión rota sin perder ventas; corregido el 401 con la base caída (ahora 503 y la venta queda en el dispositivo); CI instala el kit y repite la E2E por HTTPS. **Queda en manos de la dueña:** servidor, dominio e instalación (`docs/11` #17-23) | DEP-*, RES-01/09, DOC-15 |
-| **8. Aceptación** | Recorrido de los 24 escenarios con la responsable del negocio; manual de usuario | NEG-*, DOC-17 |
+| **8. Aceptación** ⏳ | Preparada el 24/11/2026: los 24 escenarios ensayados por la interfaz (24/24, `ACC`); manual de usuario con capturas (`docs/14`); guía, criterios del negocio y acta (`docs/15`); aviso al salir con datos sin guardar; copias legibles solo por su dueño; `CHANGELOG.md`. **Falta lo que solo hace la dueña:** recorrer los escenarios con datos reales y firmar el acta (`docs/11` #15-16) | NEG-*, DOC-11/12/17/20, UX-*, BKP-11 |
