@@ -54,6 +54,23 @@ class DatabaseDownTest {
     }
 
     @Test
+    void conexionPerdidaAMitadDeUnaVentaResponde503() {
+
+        // Lo que ocurrió en el simulacro: la base se cayó durante la transacción.
+        Exception ex = new org.springframework.orm.jpa.JpaSystemException(new RuntimeException(
+                "Unable to rollback against JDBC Connection",
+                new java.sql.SQLException("An I/O error occurred while sending to the backend.", "08006")));
+
+        ResponseEntity<ErrorResponse> response = new GlobalExceptionHandler()
+                .handleGeneral(ex, new MockHttpServletRequest("POST", "/api/sales"));
+
+        assertThat(response.getStatusCode().value()).isEqualTo(503);
+        assertThat(GlobalExceptionHandler.isDatabaseConnectionLost(new IllegalStateException("otro"))).isFalse();
+        assertThat(GlobalExceptionHandler.isDatabaseConnectionLost(
+                new java.sql.SQLException("se apagó", "57P01"))).isTrue();
+    }
+
+    @Test
     void baseCaidaDuranteUnaOperacionResponde503() {
 
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/sales");

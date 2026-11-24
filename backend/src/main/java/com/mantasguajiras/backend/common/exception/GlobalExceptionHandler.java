@@ -268,6 +268,23 @@ public class GlobalExceptionHandler {
                                 request);
         }
 
+        /**
+         * ¿La causa es la conexión con la base? Códigos SQLSTATE 08xxx
+         * (conexión) y 57P0x (el servidor se apagó o reinició).
+         */
+        static boolean isDatabaseConnectionLost(Throwable ex) {
+                for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
+                        if (cause instanceof java.sql.SQLException sql && sql.getSQLState() != null
+                                        && (sql.getSQLState().startsWith("08") || sql.getSQLState().startsWith("57P"))) {
+                                return true;
+                        }
+                        if (cause.getCause() == cause) {
+                                break;
+                        }
+                }
+                return false;
+        }
+
         private ResponseEntity<ErrorResponse> build(
                         HttpStatus status,
                         String message,
@@ -287,6 +304,12 @@ public class GlobalExceptionHandler {
         public ResponseEntity<ErrorResponse> handleGeneral(
                         Exception ex,
                         HttpServletRequest request) {
+
+                // Conexión con PostgreSQL perdida a mitad de una operación (la
+                // base se cayó o se está reiniciando): es temporal → 503.
+                if (isDatabaseConnectionLost(ex)) {
+                        return handleDatabaseDown(ex, request);
+                }
 
                 // Error no previsto: se registra con un código corto que también
                 // ve el usuario, para encontrarlo en el log. Al usuario no se le
