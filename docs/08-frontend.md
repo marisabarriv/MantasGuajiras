@@ -271,9 +271,9 @@ En dispositivos con pantallas pequeñas, el diseño puede reorganizar los elemen
 | `NewSalePage`       | Punto de venta: búsqueda, escáner, carrito, precio especial por producto, protección contra doble envío. |
 | `CustomOrdersPage`  | Mantas personalizadas: registro con tela usada, abono inicial, pagos posteriores y saldo; filtro pagadas/pendientes. |
 | `ProductsPage`      | Lista por categoría, búsqueda y escáner. ADMIN: crear y editar (`ProductForm`). Vendedor: solo consulta. |
-| `InventoryPage`     | Existencias con estado (agotado, bajo, normal), historial de movimientos con quién hizo cada uno, y ajuste por conteo físico (todos los roles). |
+| `InventoryPage`     | Existencias con estado (agotado, bajo, normal), historial de movimientos con quién hizo cada uno (filtros por producto, tipo, origen, usuario y fechas; sin fechas, los últimos 30 días, máximo 3 meses) y ajuste por conteo físico con motivo obligatorio (todos los roles). |
 | `ProductionPage`    | Registrar producción (tela consumida → mantas generadas) e historial. Sin montos de dinero.       |
-| `SalesPage`         | Historial de ventas con montos (ADMIN).                                                           |
+| `SalesPage`         | Historial de ventas con montos (ADMIN) por periodo: atajos Hoy / 7 días / 30 días / 3 meses y fechas Desde–Hasta (máximo 93 días). Resumen de lo vendido hoy y en el periodo. |
 | `PurchasesPage`     | Registrar compras e historial (ADMIN).                                                            |
 | `AdminPage`         | Activar cuentas nuevas, cambiar roles, restablecer contraseñas, desactivar usuarios (ADMIN).     |
 | `ProfilePage`       | Datos propios, foto de perfil y cambio de contraseña.                                             |
@@ -848,6 +848,7 @@ Versión `1.0.0-rc.1`: todos los módulos del backend tienen su pantalla e integ
 * App instalable (PWA) que abre sin conexión.
 * Ventas sin conexión con sincronización automática (sección 30A).
 * Actualización automática de los datos de cada pantalla (`hooks/useAutoRefresh.js`).
+* Historiales por periodo y listas largas por partes, para que sigan rápidos con años de datos (`docs/12-rendimiento-y-monitoreo.md`).
 * Diseño responsive para computador, tablet y celular.
 
 Verificación: `npm run lint` y `npm run build` sin errores.
@@ -864,7 +865,12 @@ Verificación: `npm run lint` y `npm run build` sin errores.
 | `utils/offlineSync.js`            | Envía la cola: al abrir la app, al volver la conexión, al volver a la app, cada 30 s y tras iniciar sesión. Una sincronización a la vez. |
 | `components/ConnectionBanner.jsx` | Aviso superior: sin conexión, enviando, rechazadas.                             |
 | `hooks/useAutoRefresh.js`         | Recarga silenciosa de cada pantalla.                                             |
+| `hooks/useShowMore.js` y `components/ShowMoreButton.jsx` | Listas largas de a 100 filas con "Ver más" (ventas y movimientos). |
+| `utils/period.js`                 | Periodos de los historiales: últimos N días, fechas locales AAAA-MM-DD y validación del máximo de 93 días. |
+| `utils/unsavedChanges.js` y `hooks/useUnsavedChanges.js` | Aviso al salir con datos sin guardar: carrito o formularios. Pregunta al cambiar de pantalla, cerrar sesión, cerrar una ventana con X o Escape (`Modal guardUnsaved`) y al recargar. |
 | `public/sw.js`                    | Guarda **solo el código** de la app (index.html, `/assets/`, íconos) para abrirla sin conexión. Nunca guarda respuestas de la API. |
+
+**Compras, producción, personalizadas y pagos** usan el mismo mecanismo en línea: cada formulario genera su `clientRequestId` al abrirse y lo conserva en los reintentos. Si falla la conexión al guardar, el mensaje indica que se puede volver a pulsar sin riesgo de duplicar.
 
 **Por qué no se duplican ventas.** Cada intento de venta genera un `clientRequestId`. Si la conexión se corta justo después de enviar, el servidor pudo haberla guardado sin que el dispositivo lo sepa; al reenviarla con el mismo identificador, el servidor devuelve la venta existente.
 
@@ -947,6 +953,14 @@ El frontend debe:
 * Manejar respuestas de autenticación.
 * No confiar únicamente en validaciones del cliente.
 * Mostrar correctamente los errores de autorización o autenticación.
+
+Medidas implementadas:
+
+* **CSP** en la versión compilada (`vite.config.js`, plugin `mantas-csp`): `script-src 'self'`, `connect-src` limitado al sitio y al backend (`VITE_API_URL`), `object-src 'none'`. No se aplica con `npm run dev`, porque Vite necesita scripts en línea para la recarga en caliente.
+* Al **cerrar sesión con ventas sin enviar**, se pide confirmación y se explica que quedan guardadas a nombre de quien las hizo.
+* La sesión se lee siempre desde `utils/session.js`.
+
+Riesgos aceptados y recomendaciones de operación: `06-despliegue.md`, sección 14.4A.
 
 ---
 

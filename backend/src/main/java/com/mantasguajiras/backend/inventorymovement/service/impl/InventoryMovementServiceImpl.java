@@ -1,5 +1,12 @@
 package com.mantasguajiras.backend.inventorymovement.service.impl;
 
+import com.mantasguajiras.backend.common.query.DateRange;
+import com.mantasguajiras.backend.inventorymovement.dto.requests.MovementFilter;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+
 import com.mantasguajiras.backend.common.exception.BusinessException;
 import com.mantasguajiras.backend.common.exception.ResourceNotFoundException;
 import com.mantasguajiras.backend.inventory.entity.Inventory;
@@ -47,25 +54,67 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
         // CONSULTAS
         // =========================================================
 
+        private static final java.util.Set<String> MOVEMENT_TYPES = java.util.Set.of("IN", "OUT");
+
+        private static final java.util.Set<String> SOURCE_TYPES =
+                        java.util.Set.of("SALE", "PURCHASE", "PRODUCTION", "ORDER", "ADJUSTMENT");
+
         @Override
         @Transactional(readOnly = true)
-        public List<InventoryMovementResponse> findAll() {
+        public List<InventoryMovementResponse> search(MovementFilter filter) {
 
-                return inventoryMovementRepository.findAllByOrderByCreatedAtDesc()
+                String type = upperOrNull(filter.type());
+                String source = upperOrNull(filter.source());
+                String username = filter.username() != null && !filter.username().isBlank()
+                                ? filter.username().trim().toLowerCase()
+                                : null;
+
+                if (type != null && !MOVEMENT_TYPES.contains(type)) {
+                        throw new IllegalArgumentException(
+                                        "Tipo de movimiento no válido: usa IN (entradas) u OUT (salidas).");
+                }
+
+                if (source != null && !SOURCE_TYPES.contains(source)) {
+                        throw new IllegalArgumentException(
+                                        "Origen no válido: usa SALE, PURCHASE, PRODUCTION, ORDER o ADJUSTMENT.");
+                }
+
+                // Siempre un periodo: sin fechas, los últimos 30 días; máximo 93.
+                DateRange range = DateRange.resolve(filter.from(), filter.to());
+
+                Specification<InventoryMovement> specification = (root, query, cb) -> {
+
+                        List<Predicate> predicates = new java.util.ArrayList<>();
+
+                        if (filter.productId() != null) {
+                                predicates.add(cb.equal(root.get("product").get("id"), filter.productId()));
+                        }
+                        if (type != null) {
+                                predicates.add(cb.equal(root.get("movementType").get("name"), type));
+                        }
+                        if (source != null) {
+                                predicates.add(cb.equal(root.get("sourceType").get("name"), source));
+                        }
+                        if (username != null) {
+                                predicates.add(cb.equal(
+                                                cb.lower(root.join("createdBy", JoinType.LEFT).get("username")),
+                                                username));
+                        }
+                        predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), range.start()));
+                        predicates.add(cb.lessThan(root.get("createdAt"), range.endExclusive()));
+
+                        return cb.and(predicates.toArray(Predicate[]::new));
+                };
+
+                return inventoryMovementRepository
+                                .findAll(specification, Sort.by(Sort.Direction.DESC, "createdAt"))
                                 .stream()
                                 .map(inventoryMovementMapper::toResponse)
                                 .toList();
         }
 
-        @Override
-        @Transactional(readOnly = true)
-        public List<InventoryMovementResponse> findByProduct(UUID productId) {
-
-                return inventoryMovementRepository
-                                .findByProductIdOrderByCreatedAtDesc(productId)
-                                .stream()
-                                .map(inventoryMovementMapper::toResponse)
-                                .toList();
+        private static String upperOrNull(String value) {
+                return value != null && !value.isBlank() ? value.trim().toUpperCase() : null;
         }
 
         @Override

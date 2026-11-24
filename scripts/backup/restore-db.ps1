@@ -14,7 +14,9 @@
 #>
 param(
     [Parameter(Mandatory = $true)] [string] $BackupFile,
-    [string] $TargetDatabase = 'mantas_guajiras_db_restaurada'
+    [string] $TargetDatabase = 'mantas_guajiras_db_restaurada',
+    # Solo para copias antiguas sin .sha256, si sabes que son buenas.
+    [switch] $AllowMissingHash
 )
 
 . (Join-Path $PSScriptRoot 'common.ps1')
@@ -24,12 +26,7 @@ $connArgs = Get-ConnArgs $cfg
 
 if (-not (Test-Path $BackupFile)) { throw "No existe el archivo $BackupFile." }
 
-if (Test-Path "$BackupFile.sha256") {
-    $expected = (Get-Content "$BackupFile.sha256" -Raw).Trim()
-    if ($expected -ne (Get-FileHash -Algorithm SHA256 $BackupFile).Hash) {
-        throw 'La huella SHA-256 no coincide: el archivo está dañado. Usa otra copia.'
-    }
-}
+Assert-BackupHash $cfg $BackupFile $AllowMissingHash.IsPresent
 
 $exists = & (Get-PgTool $cfg 'psql') @connArgs --dbname postgres --tuples-only --no-align `
     --command "SELECT 1 FROM pg_database WHERE datname = '$TargetDatabase'"

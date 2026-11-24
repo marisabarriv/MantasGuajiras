@@ -41,3 +41,8 @@
 
 # Configuración local de las copias de seguridad (rutas de este computador)
 scripts/backup/backup.config.ps1
+
+# Kit de despliegue: copias y datos locales del servidor
+deploy/backups/
+deploy/backups-copia/
+deploy/.version-actual

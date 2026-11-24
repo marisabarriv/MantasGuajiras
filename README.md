@@ -60,13 +60,15 @@ Todos los módulos están implementados e integrados. El sistema se ejecuta en u
 * Bloqueo de la fila de inventario para que dos ventas simultáneas no vendan la misma unidad.
 * Una manta no puede quedar en metros ni una tela en `#`; no se cambia la unidad de un producto con historial.
 * Ventas, compras y producciones registradas no se editan ni se borran (trazabilidad).
+* Ninguna operación se registra dos veces por un reintento tras un corte de conexión (ventas, compras, producción, personalizadas y pagos).
 * Permisos por rol aplicados en el servidor (ver **Roles**).
+* Bloqueo temporal tras 5 intentos fallidos de inicio de sesión.
 
 ---
 
 ## 📌 Pendiente para producción
 
-* Elegir dónde se instalará (servidor o equipo dedicado) y configurar HTTPS y dominio.
+* Elegir dónde se instalará (recomendado: servidor en la nube) y el dominio. El **kit de instalación** ya está listo y probado: `deploy/` y **`docs/13-produccion.md`** (HTTPS automático, copias, actualizar con vuelta atrás automática, importar los datos del PC).
 * Recorrido manual de los flujos críticos con datos reales.
 * Completar la lista de `docs/06-despliegue.md` → sección 14.4.
 
@@ -147,7 +149,7 @@ MantasGuajiras/
 │   │   ├── sale/  purchase/  production/  order/
 │   │   └── user/
 │   ├── src/main/resources/
-│   │   ├── db/migration/            Migraciones Flyway (V1 … V20)
+│   │   ├── db/migration/            Migraciones Flyway (V1 … V21)
 │   │   ├── application.yml
 │   │   ├── application-dev.example.yml
 │   │   └── application-prod.yml
@@ -171,8 +173,12 @@ MantasGuajiras/
 ├── database/
 │   └── exports/                     Exportación del esquema (referencia)
 │
+├── deploy/                          Kit de producción: Docker Compose, Caddy (HTTPS),
+│                                    deploy.sh, verify.sh, import-data.sh
+│
 ├── scripts/
-│   └── backup/                      Copias de seguridad y prueba de restauración
+│   ├── backup/                      Copias de seguridad y prueba de restauración
+│   └── perf/                        Prueba de carga (docs/12)
 │
 ├── docs/
 │   ├── diagrams/
@@ -188,7 +194,13 @@ MantasGuajiras/
 │   ├── 06-despliegue.md
 │   ├── 07-modelo-de-datos.md
 │   ├── 08-frontend.md
-│   └── 09-copias-de-seguridad.md
+│   ├── 09-copias-de-seguridad.md
+│   ├── 10-certificacion.md          Matriz de certificación: criterios, estado y evidencia
+│   ├── 11-pendientes-responsable.md Tareas que solo puede hacer la dueña del proyecto
+│   ├── 12-rendimiento-y-monitoreo.md Prueba de carga, estado del sistema, log y respuesta a incidentes
+│   ├── 13-produccion.md             Instalación en un servidor con el kit deploy/ (HTTPS, copias, actualizar y volver atrás)
+│   ├── 14-manual-de-usuario.md      Manual para administrador y vendedor, con capturas (docs/manual/)
+│   └── 15-aceptacion.md             Los 24 escenarios de aceptación, criterios del negocio y acta
 │
 └── README.md
 ```
@@ -211,6 +223,11 @@ Incluye:
 * Modelo de datos.
 * Frontend.
 * Copias de seguridad y recuperación.
+* Certificación de calidad (matriz de criterios) y pendientes de la responsable.
+* Rendimiento, monitoreo y respuesta a incidentes.
+* Puesta en producción con el kit `deploy/`.
+* Manual de usuario y guía de aceptación.
+* Historial de versiones: `CHANGELOG.md`.
 * Diagramas técnicos y funcionales.
 
 ---
@@ -304,13 +321,43 @@ El backend es responsable de:
 
 | Prueba                     | Qué comprueba                                                                 |
 | -------------------------- | ----------------------------------------------------------------------------- |
-| `BackendApplicationTests`  | Las 20 migraciones se aplican desde cero y el esquema coincide con las entidades. |
+| `BackendApplicationTests`  | Las 21 migraciones se aplican desde cero y el esquema coincide con las entidades. |
+| `SalePricingTest`          | Precio especial ($80.000 → $70.000 = 12,5 %), varios productos, precio histórico, rechazos, producto desactivado, ventas inmodificables. |
+| `PurchaseFlowTest`         | Compras: entradas de inventario, total, productos no comprables o inactivos, sin cambios parciales, reintento sin duplicar. |
+| `ProductionFlowTest`       | Producción: consumo de tela y mantas generadas, tela insuficiente, validaciones, reintento sin duplicar. |
+| `CustomOrderFlowTest`      | Personalizadas: abono, pagos, saldo, límites, reintentos de la personalizada y de cada pago sin duplicar. |
+| `MovementFilterTest`       | Ajuste 15 → 12 con motivo y usuario; filtros del historial por tipo, origen, usuario y fechas. |
+| `ProductNameTest`          | No se permiten nombres de producto repetidos (mayúsculas, espacios, productos desactivados). |
+| `SimultaneousRetryTest`    | La misma venta o compra enviada 4 veces a la vez se registra una sola vez. |
+| `AuthenticationSecurityTest` | Inicio de sesión real: contraseñas cifradas y nunca en respuestas, mensajes genéricos, token vencido o alterado, usuario desactivado, vendedor sin poder crear administradores, registro pendiente, bloqueo tras 5 intentos. |
+| `LoginAttemptServiceTest`  | El bloqueo dura lo configurado y se levanta solo. |
+| `BusinessFlowHttpTest`     | Recorrido completo por HTTP: datos maestros → compra → producción → venta → personalizada y pagos → inventario → historial → usuarios → perfil y foto. |
+| `UserManagementTest`       | Usuarios: duplicados, roles, no cambiarse el propio rol, contraseñas, foto de perfil (tipo real, 20 MB). |
+| `LastAdminRuleTest`        | Nunca se queda el sistema sin un administrador activo. |
+| `CatalogAdminTest`         | Categorías y unidades: alta, edición, duplicados, desactivación. |
+| `InventoryQueryTest`       | Estados agotado/bajo/normal, ajustes inválidos, movimientos manuales solo como ajuste. |
+| `ApiValidationTest`        | Datos inválidos enviados por HTTP responden 400/404/405 con mensaje claro, nunca 500. |
 | `RolePermissionsTest`      | Qué puede y qué no puede hacer cada rol.                                      |
 | `ConcurrentSaleTest`       | Dos ventas simultáneas de la última unidad: solo una se registra. Una venta sin conexión reenviada no se duplica; si al sincronizar ya no hay existencias, se rechaza. |
 | `ProductRulesTest`         | Categoría ↔ unidad, enteros en mantas, precio de compra = precio unitario.     |
 | `ImageSignatureTest`       | La foto de perfil se valida por su contenido real.                            |
+| `UnexpectedErrorLoggingTest` | Un error no previsto queda en el log con un código de referencia y el usuario no ve detalles internos. |
+| `DateRangeTest`, `HistoryAndMonitoringHttpTest` | Historiales por periodo (30 días por defecto, máximo 93), estado del sistema (`/actuator/health`) sin detalles internos y registro de operaciones con usuario y motivo del rechazo, sin contraseñas. |
+| `MonitoringUnitTest` | Peticiones lentas registradas sin parámetros; alerta en el log si la base o el disco fallan y aviso al recuperarse. |
+
+**Cobertura (JaCoCo):** 92 % de líneas del backend (119 pruebas) (91 % en las reglas de negocio críticas). El build falla si baja del 85 % de líneas o del 65 % de ramas. Informe: `backend/target/site/jacoco/index.html` tras `./mvnw test`, y como artefacto `cobertura-backend` en cada ejecución de la CI. Las pruebas se ejecutan en orden aleatorio para detectar dependencias ocultas entre ellas.
 
 **Frontend:** `npm run lint` y `npm run build`.
+
+**Punta a punta** (`frontend/e2e/offline-sync.e2e.cjs`): navegador real contra backend y base de prueba. Cubre ventas sin conexión, app reabierta sin conexión, corte de conexión justo al enviar (no duplica), conflicto con otro vendedor y "Reintentar", dispositivo compartido entre vendedores, compra con corte de conexión al guardar (no duplica), motivo obligatorio y filtros del historial, dos pestañas sincronizando a la vez, sesión vencida sin conexión, dispositivo sin espacio, recorrido por las 9 páginas con cada rol, actualización automática, ausencia de violaciones de la CSP, servidor caído al guardar y aviso al salir con datos sin guardar (13 escenarios). Instrucciones en `frontend/e2e/README.md`.
+
+**Ensayo de aceptación** (`frontend/e2e/acceptance.e2e.cjs`): los 24 escenarios del checklist de aceptación por la interfaz, el vendedor en tamaño de celular y el administrador en computador (24/24). Prepara la aceptación de la responsable del negocio (`docs/15-aceptacion.md`).
+
+**Estado de certificación:** `docs/10-certificacion.md` lista cada criterio de calidad con su estado (verificado, pendiente o fallido) y la evidencia que lo respalda.
+
+**Integración continua:** `.github/workflows/ci.yml` ejecuta todo lo anterior en cada push y pull request (pestaña **Actions** de GitHub), además de un escaneo de vulnerabilidades conocidas en las dependencias del backend y del frontend (OSV-Scanner). Dependabot (`.github/dependabot.yml`) propone actualizaciones cada semana.
+
+**Rendimiento:** prueba de carga con 3 años de datos y 40 usuarios simultáneos, sin errores de servidor y con p95 por debajo de 270 ms (`docs/12-rendimiento-y-monitoreo.md`; scripts en `scripts/perf/`).
 
 **Manuales:** recorrido de los flujos críticos desde la interfaz (lista en `docs/06-despliegue.md`, sección 14.4).
 
@@ -320,7 +367,7 @@ El backend es responsable de:
 
 **Versión actual:** `v1.0.0-rc.1` (versión candidata)
 
-**Estado:** funcionalmente completo, en uso local, en preparación para producción.
+**Estado:** funcionalmente completo, en uso local; kit de producción listo y probado (`docs/13-produccion.md`), a la espera de elegir servidor y dominio.
 
 La versión `v1.0.0` corresponderá a la primera puesta en uso con los datos reales del negocio.
 

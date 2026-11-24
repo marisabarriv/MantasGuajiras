@@ -65,7 +65,7 @@ Endpoints implementados. Columna **Rol**: `Público` (sin sesión), `Todos` (cua
 
 | Método | Ruta              | Rol     | Descripción                                                    |
 | ------ | ----------------- | ------- | -------------------------------------------------------------- |
-| POST   | `/auth/login`     | Público | Inicia sesión con usuario o teléfono. Devuelve el token JWT.   |
+| POST   | `/auth/login`     | Público | Inicia sesión con usuario o teléfono. Devuelve el token JWT. Mensaje único ante usuario o contraseña incorrectos. Tras 5 fallos seguidos, ese usuario queda bloqueado 15 minutos → `429`. |
 | POST   | `/auth/register`  | Público | Registro de vendedor. La cuenta queda pendiente de aprobación. |
 
 ## Perfil propio — `/api/me`
@@ -106,7 +106,8 @@ Validaciones al crear o editar:
 * `purchasePrice` igual a `unitPrice` (si no se envía, se toma `unitPrice`).
 * En mantas, `minimumStock` e `initialStock` son enteros.
 * No se cambia la unidad de un producto que ya tiene existencias o movimientos.
-* `name` hasta 100 caracteres; `barcode` hasta 50 y único.
+* `name` hasta 100 caracteres y **único** (sin distinguir mayúsculas ni espacios sobrantes; incluye productos desactivados) → si se repite, `409`.
+* `barcode` hasta 50 y único.
 
 ## Categorías — `/api/product-categories`
 
@@ -138,13 +139,13 @@ Unidades iniciales: **Metro (`m`)** y **Unidad (`#`)**.
 | ------ | ----------------------------- | ----- | --------------------------------------------------------------- |
 | GET    | `/api/inventory`              | Todos | Existencias de todos los productos activos con estado `OK`, `LOW` u `OUT`. |
 | GET    | `/api/inventory/{id}`         | Todos | Existencia de un producto.                                      |
-| POST   | `/api/inventory/adjustments`  | Todos | Ajuste por conteo físico: registra la diferencia como entrada o salida, con el usuario que lo hizo. |
+| POST   | `/api/inventory/adjustments`  | Todos | Ajuste por conteo físico: registra la diferencia como entrada o salida, con el usuario que lo hizo. El motivo (`reason`) es obligatorio. |
 
 ## Movimientos de inventario — `/api/inventory-movements`
 
 | Método | Ruta                               | Rol   | Descripción                                         |
 | ------ | ---------------------------------- | ----- | --------------------------------------------------- |
-| GET    | `/api/inventory-movements`         | Todos | Historial, del más reciente al más antiguo. Filtro opcional `?productId=`. |
+| GET    | `/api/inventory-movements`         | Todos | Historial, del más reciente al más antiguo. Filtros opcionales y combinables: `productId`, `type` (`IN`/`OUT`), `source` (`SALE`, `PURCHASE`, `PRODUCTION`, `ORDER`, `ADJUSTMENT`), `username`, `from` y `to` (`AAAA-MM-DD`, incluidas). **Siempre un periodo:** sin fechas, los últimos 30 días; máximo 93 días por consulta. Valores inválidos o periodo mayor → 400. |
 | GET    | `/api/inventory-movements/{id}`    | Todos | Consultar un movimiento.                            |
 | POST   | `/api/inventory-movements`         | ADMIN | Movimiento manual.                                  |
 
@@ -152,8 +153,8 @@ Unidades iniciales: **Metro (`m`)** y **Unidad (`#`)**.
 
 | Método | Ruta               | Rol   | Descripción                                                              |
 | ------ | ------------------ | ----- | ------------------------------------------------------------------------ |
-| POST   | `/api/sales`       | Todos | Registrar venta. El backend recalcula precios y total, y descuenta el inventario. Campos opcionales: `clientRequestId` (UUID; si ya existe una venta con ese identificador se devuelve la existente, sin duplicar) y `offlineCreatedAt` (hora real de una venta hecha sin conexión, con zona horaria). |
-| GET    | `/api/sales`       | ADMIN | Historial de ventas con montos.                                          |
+| POST   | `/api/sales`       | Todos | Registrar venta. El backend recalcula precios y total, y descuenta el inventario. Cabecera opcional `X-Offline-Sync: 1` (la envía la app al sincronizar ventas hechas sin conexión; solo marca la operación en el log). Campos opcionales: `clientRequestId` (UUID; si ya existe una venta con ese identificador se devuelve la existente, sin duplicar) y `offlineCreatedAt` (hora real de una venta hecha sin conexión, con zona horaria). |
+| GET    | `/api/sales`       | ADMIN | Historial de ventas con montos y detalle, del periodo `from`–`to` (`AAAA-MM-DD`, incluidas). Sin fechas, los últimos 30 días; máximo 93 días → si no, 400. |
 | GET    | `/api/sales/{id}`  | ADMIN | Detalle de una venta.                                                    |
 | PUT    | `/api/sales/{id}`  | ADMIN | Rechazado: las ventas no se modifican después de registrarse.           |
 | DELETE | `/api/sales/{id}`  | ADMIN | Rechazado: las ventas no se eliminan.                                    |
@@ -162,7 +163,7 @@ Unidades iniciales: **Metro (`m`)** y **Unidad (`#`)**.
 
 | Método | Ruta                   | Rol   | Descripción                                                          |
 | ------ | ---------------------- | ----- | -------------------------------------------------------------------- |
-| POST   | `/api/purchases`       | ADMIN | Registrar compra. El backend recalcula el total y lo compara con el recibido. |
+| POST   | `/api/purchases`       | ADMIN | Registrar compra. El backend recalcula el total y lo compara con el recibido. Acepta `clientRequestId` (no duplica reintentos). |
 | GET    | `/api/purchases`       | ADMIN | Historial de compras.                                                |
 | GET    | `/api/purchases/{id}`  | ADMIN | Detalle de una compra.                                               |
 | PUT / DELETE | `/api/purchases/{id}` | ADMIN | Rechazados: las compras no se modifican ni eliminan.          |
@@ -171,7 +172,7 @@ Unidades iniciales: **Metro (`m`)** y **Unidad (`#`)**.
 
 | Método | Ruta                     | Rol   | Descripción                                                          |
 | ------ | ------------------------ | ----- | -------------------------------------------------------------------- |
-| POST   | `/api/productions`       | Todos | Registrar producción: descuenta tela y suma mantas en una sola transacción. |
+| POST   | `/api/productions`       | Todos | Registrar producción: descuenta tela y suma mantas en una sola transacción. Acepta `clientRequestId`. |
 | GET    | `/api/productions`       | Todos | Historial de producción.                                             |
 | GET    | `/api/productions/{id}`  | Todos | Detalle.                                                             |
 | PUT / DELETE | `/api/productions/{id}` | Todos | Rechazados: la producción no se modifica ni elimina.         |
@@ -182,8 +183,8 @@ Unidades iniciales: **Metro (`m`)** y **Unidad (`#`)**.
 | ------ | ----------------------------- | ----- | ------------------------------------------------------------------- |
 | GET    | `/api/orders`                 | Todos | Listar. Filtro opcional `?status=PAID` (pagadas) o `?status=PENDING` (con saldo).          |
 | GET    | `/api/orders/{id}`            | Todos | Detalle con pagos.                                                  |
-| POST   | `/api/orders`                 | Todos | Registrar: nombre, cliente, valor, abono inicial y tela usada (se descuenta del inventario). |
-| POST   | `/api/orders/{id}/payments`   | Todos | Registrar un pago. No puede superar el saldo pendiente.             |
+| POST   | `/api/orders`                 | Todos | Registrar: nombre, cliente, valor, abono inicial y tela usada (se descuenta del inventario). Acepta `clientRequestId`. |
+| POST   | `/api/orders/{id}/payments`   | Todos | Registrar un pago. No puede superar el saldo pendiente. Acepta `clientRequestId` (un pago reenviado no se cobra dos veces). |
 | PUT / DELETE | `/api/orders/{id}`      | Todos | Rechazados: las personalizadas no se modifican ni eliminan.         |
 
 La manta personalizada se entrega al cliente: **no** aumenta el inventario de mantas terminadas.
@@ -216,11 +217,15 @@ La API utiliza códigos HTTP para indicar el resultado de las operaciones.
 | 401    | No autenticado                  |
 | 403    | Sin permisos                    |
 | 404    | Recurso no encontrado           |
+| 405    | Método no permitido             |
 | 409    | Conflicto de información (duplicado o choque con un registro existente; se puede reintentar) |
 | 413    | Archivo demasiado grande (foto) |
+| 429    | Demasiados intentos de inicio de sesión |
 | 500    | Error interno del servidor      |
 
-Un JSON mal formado o con un tipo de dato incorrecto responde `400` con un mensaje claro, y una ruta que no existe responde `404` (no `500`).
+Un JSON mal formado, un tipo de dato incorrecto o un identificador o fecha mal escritos en la dirección (`/api/products/abc`, `?from=ayer`) responden `400` con un mensaje claro; una ruta que no existe, `404`; un método no permitido, `405`. Nunca `500`.
+
+**Operaciones sin duplicados.** Ventas, compras, producción, personalizadas y pagos aceptan `clientRequestId` (UUID que genera el dispositivo). Si llega una operación con un identificador ya registrado, el backend devuelve la existente en lugar de repetirla. La interfaz conserva el mismo identificador mientras el formulario está abierto, así que pulsar "Guardar" otra vez tras un corte de conexión es seguro.
 
 ---
 

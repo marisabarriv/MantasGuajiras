@@ -351,6 +351,7 @@ function ProductsPage() {
                 open={isAdmin && showForm}
                 onClose={() => setShowForm(false)}
                 title={selectedProduct ? "Editar producto" : "Crear producto"}
+                guardUnsaved
             >
                 {showForm && (
                     <ProductForm

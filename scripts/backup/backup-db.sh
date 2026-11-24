@@ -10,6 +10,8 @@
 #   0 6-20/2,21 * * * /ruta/scripts/backup/backup-db.sh
 # =========================================================
 set -euo pipefail
+# Las copias contienen todos los datos del negocio: solo el dueño las lee.
+umask 077
 
 DB_NAME="${DB_NAME:-mantas_guajiras_db}"
 BACKUP_DIR="${BACKUP_DIR:-$HOME/mantasguajiras-backups}"
@@ -37,10 +39,17 @@ if [[ -n "$COPY_TO" ]]; then
     log "Segunda copia guardada en $COPY_TO."
 fi
 
-# Conserva siempre las MIN_KEEP más recientes; de las demás borra las viejas.
-ls -1t "$BACKUP_DIR"/mantas_*.dump | tail -n +"$((MIN_KEEP + 1))" | while read -r old; do
-    if [[ -n "$(find "$old" -mtime +"$RETENTION_DAYS")" ]]; then
-        rm -f "$old" "$old.sha256"
-        log "Copia antigua eliminada: $(basename "$old")"
-    fi
-done
+# Conserva siempre las MIN_KEEP más recientes; de las demás borra las
+# viejas. Se aplica a la carpeta principal y a la segunda copia.
+prune() {
+    [[ -d "$1" ]] || return 0
+    ls -1t "$1"/mantas_*.dump 2>/dev/null | tail -n +"$((MIN_KEEP + 1))" | while read -r old; do
+        if [[ -n "$(find "$old" -mtime +"$RETENTION_DAYS")" ]]; then
+            rm -f "$old" "$old.sha256"
+            log "Copia antigua eliminada: $old"
+        fi
+    done
+}
+prune "$BACKUP_DIR"
+[[ -n "$COPY_TO" ]] && prune "$COPY_TO"
+exit 0

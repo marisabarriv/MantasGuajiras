@@ -1,0 +1,282 @@
+# =========================================================
+# Integración continua de MantasGuajiras.
+# En cada push y pull request:
+#   1. Backend: pruebas automáticas contra PostgreSQL.
+#   2. Frontend: lint y compilación.
+#   3. Punta a punta: ventas sin conexión en un navegador real.
+#   4. Dependencias: vulnerabilidades conocidas en backend y frontend (OSV).
+# Todo usa bases de datos temporales de GitHub; nunca datos reales.
+# =========================================================
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  backend:
+    name: Backend (pruebas)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mantas_guajiras_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Pruebas
+        run: ./mvnw -B test
+        env:
+          TEST_DB_URL: jdbc:postgresql://localhost:5432/mantas_guajiras_test
+          TEST_DB_USERNAME: postgres
+          TEST_DB_PASSWORD: postgres
+      # Informe de cobertura (abrir index.html del artefacto descargado).
+      - name: Guardar informe de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-backend
+          path: backend/target/site/jacoco/
+
+  frontend:
+    name: Frontend (lint y build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  dependencies:
+    name: Dependencias (vulnerabilidades conocidas)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: false
+      - name: Instalar OSV-Scanner
+        run: go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.0.0
+      # Revisa backend (pom.xml, incluidas las dependencias indirectas) y
+      # frontend (package-lock.json) contra la base pública OSV. Si hay una
+      # vulnerabilidad conocida, este paso falla y la lista aparece en el log.
+      - name: Escanear backend y frontend
+        run: |
+          "$(go env GOPATH)/bin/osv-scanner" scan source \
+            --lockfile backend/pom.xml \
+            --lockfile frontend/package-lock.json
+
+  e2e:
+    name: Punta a punta (ventas sin conexión)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mantas_guajiras_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      E2E_ADMIN_USER: admine2e
+      E2E_ADMIN_PASSWORD: Prueba123
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Compilar backend
+        working-directory: backend
+        run: ./mvnw -B -DskipTests package
+
+      - name: Arrancar backend (perfil prod)
+        working-directory: backend
+        env:
+          SPRING_PROFILES_ACTIVE: prod
+          DB_URL: jdbc:postgresql://localhost:5432/mantas_guajiras_e2e
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          JWT_SECRET: clave-solo-para-ci-e2e-de-al-menos-32-caracteres
+          JWT_EXPIRATION: "3600000"
+          INITIAL_ADMIN_USERNAME: admine2e
+          INITIAL_ADMIN_PHONE: "3001112233"
+          INITIAL_ADMIN_PASSWORD: Prueba123
+        run: nohup java -jar target/backend-*.jar > "$RUNNER_TEMP/backend.log" 2>&1 &
+
+      - name: Compilar y servir frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://localhost:8080
+        run: |
+          npm ci
+          npm run build
+          nohup npx vite preview --port 4173 --strictPort > "$RUNNER_TEMP/preview.log" 2>&1 &
+
+      - name: Instalar navegador
+        working-directory: frontend
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Esperar a que todo esté arriba
+        run: |
+          # El estado del sistema debe decir UP (base de datos y disco).
+          timeout 120 bash -c 'until curl -sf http://localhost:8080/actuator/health | grep -q "\"status\":\"UP\"}$"; do sleep 2; done'
+          timeout 60 bash -c 'until curl -s -o /dev/null http://localhost:4173/; do sleep 2; done'
+
+      - name: Prueba de punta a punta
+        working-directory: frontend
+        env:
+          E2E_SCREENSHOTS: ${{ runner.temp }}
+        run: node e2e/offline-sync.e2e.cjs
+
+      - name: Ensayo de aceptación (24 escenarios por la interfaz)
+        working-directory: frontend
+        env:
+          ACCEPT_SHOTS: ${{ runner.temp }}/aceptacion
+        run: node e2e/acceptance.e2e.cjs
+
+      - name: Guardar capturas del ensayo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ensayo-aceptacion
+          path: ${{ runner.temp }}/aceptacion
+
+      - name: Guardar registros y capturas si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-registros
+          path: |
+            ${{ runner.temp }}/*.log
+            ${{ runner.temp }}/*.png
+
+  # Kit de producción (deploy/): compila las imágenes Docker reales,
+  # instala con HTTPS (certificado local), verifica, ejecuta la prueba de
+  # punta a punta por HTTPS en el mismo dominio y la prueba de restauración.
+  deploy-kit:
+    name: Kit de producción (Docker + HTTPS)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Configuración de prueba (claves generadas al azar)
+        working-directory: deploy
+        run: |
+          cat > .env <<ENV
+          SITE_ADDRESS=localhost
+          POSTGRES_PASSWORD=$(openssl rand -hex 16)
+          DB_USERNAME=mantas_app
+          DB_PASSWORD=$(openssl rand -hex 16)
+          JWT_SECRET=$(openssl rand -hex 32)
+          JWT_EXPIRATION=3600000
+          INITIAL_ADMIN_USERNAME=admine2e
+          INITIAL_ADMIN_PHONE=3001112233
+          INITIAL_ADMIN_PASSWORD=Prueba123
+          BACKUP_DIR=$RUNNER_TEMP/backups
+          BACKUP_COPY_TO=$RUNNER_TEMP/backups-copia
+          LOGIN_MAX_ATTEMPTS=50
+          ENV
+
+      - name: Instalar (compila, arranca y verifica)
+        working-directory: deploy
+        run: ./deploy.sh
+
+      - name: Solo el servidor web tiene puertos abiertos
+        working-directory: deploy
+        run: |
+          docker compose ps --format '{{.Service}} {{.Ports}}'
+          test -z "$(docker compose ps --format '{{.Service}} {{.Ports}}' | grep -v '^web ' | grep -- '->')"
+          ! nc -z -w2 localhost 5432
+
+      - name: Instalar navegador
+        working-directory: frontend
+        run: |
+          npm ci
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Prueba de punta a punta por HTTPS
+        working-directory: frontend
+        env:
+          E2E_APP: https://localhost
+          E2E_API: https://localhost
+          E2E_INSECURE_TLS: "1"
+          E2E_SCREENSHOTS: ${{ runner.temp }}
+        run: node e2e/offline-sync.e2e.cjs
+
+      - name: Ensayo de aceptación por HTTPS
+        working-directory: frontend
+        env:
+          E2E_APP: https://localhost
+          E2E_API: https://localhost
+          E2E_INSECURE_TLS: "1"
+        run: node e2e/acceptance.e2e.cjs
+
+      - name: Copia y prueba de restauración dentro del kit
+        working-directory: deploy
+        run: |
+          docker compose exec -T backup /scripts/backup-db.sh
+          docker compose exec -T backup /scripts/restore-test.sh
+
+      - name: Guardar registros si falla
+        if: failure()
+        working-directory: deploy
+        run: docker compose logs --no-color > "$RUNNER_TEMP/kit.log" 2>&1 || true
+
+      - name: Subir registros si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kit-registros
+          path: |
+            ${{ runner.temp }}/*.log
+            ${{ runner.temp }}/*.png

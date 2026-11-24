@@ -36,6 +36,10 @@ Las reglas deberán cumplirse independientemente de la interfaz utilizada por el
 
 Los productos pertenecen a una categoría.
 
+## RN-01A. Nombre único
+
+No puede haber dos productos con el mismo nombre (decisión del 24/11/2026). La comparación no distingue mayúsculas ni espacios sobrantes ("Manta Wayuu" = "manta  wayuu"). Si ya existe un producto **desactivado** con ese nombre, se reactiva en lugar de crear otro.
+
 Las categorías utilizadas actualmente contemplan principalmente:
 
 * Manta.
@@ -137,7 +141,7 @@ Toda operación que modifique el stock deberá generar el movimiento de inventar
 
 ## RN-12. Ajustes por conteo físico
 
-**Administradores y vendedores** pueden ajustar el inventario por conteo físico: se escribe la cantidad real que hay en el local y el sistema registra la diferencia como entrada o salida.
+**Administradores y vendedores** pueden ajustar el inventario por conteo físico: se escribe la cantidad real que hay en el local y el sistema registra la diferencia como entrada o salida. **El motivo es obligatorio** (por ejemplo, "conteo del lunes" o "manta dañada").
 
 El objetivo es que el administrador conozca el estado real del local sin tener que estar presente contando. Por eso cada ajuste queda registrado como movimiento de inventario con **quién lo hizo, cuándo, la diferencia y el motivo**, visible en el historial de Inventario.
 
@@ -238,6 +242,16 @@ Puede ajustar el inventario por conteo físico (RN-12). No tiene permisos para a
 
 ---
 
+## RN-23A. Protección del inicio de sesión
+
+* Las contraseñas se guardan cifradas (BCrypt) y nunca aparecen en las respuestas.
+* Ante usuario o contraseña incorrectos el mensaje es siempre el mismo, para no revelar qué usuarios existen.
+* Tras 5 intentos fallidos seguidos, ese usuario o teléfono queda bloqueado 15 minutos.
+* Desactivar a un usuario corta su acceso de inmediato, aunque tenga una sesión abierta.
+* El registro público crea vendedores **pendientes de aprobación**; no pueden entrar hasta que un administrador los active.
+
+---
+
 ## RN-24A. Matriz de permisos (implementada)
 
 Los permisos se aplican en el backend (`SecurityConfig`). El frontend solo oculta las opciones que el rol no puede usar.
@@ -279,6 +293,12 @@ Los movimientos de inventario deberán conservar la información necesaria para 
 
 ---
 
+## RN-25A. Consulta del historial
+
+El historial de movimientos se puede filtrar por producto, tipo (entrada o salida), origen (venta, compra, producción, personalizada o ajuste), usuario y rango de fechas.
+
+---
+
 ## RN-26. Movimientos no eliminables
 
 Los movimientos de inventario representan trazabilidad histórica y no deberán eliminarse como mecanismo para corregir una operación.
@@ -289,9 +309,13 @@ Las correcciones deberán realizarse mediante los mecanismos de ajuste correspon
 
 # 10. Pedidos y pagos
 
-Las reglas específicas de pedidos y pagos deberán mantenerse alineadas con el modelo y las funcionalidades realmente implementadas en el backend.
+## RN-26A. Estados de una manta personalizada
 
-No se deberán considerar como implementadas reglas adicionales que todavía no hayan sido desarrolladas y verificadas.
+Solo hay dos estados, calculados a partir de los pagos: **pendiente** (tiene saldo) y **pagada** (saldo en cero). No existe el estado "cancelada" (decisión del 24/11/2026). Una personalizada registrada no se modifica ni se elimina, y una pagada no acepta más pagos.
+
+## RN-26B. Sin operaciones duplicadas
+
+Ninguna operación (venta, compra, producción, personalizada o pago) se registra dos veces por un reintento, aunque la misma solicitud llegue varias veces a la vez (por ejemplo, desde dos pestañas).
 
 ---
 

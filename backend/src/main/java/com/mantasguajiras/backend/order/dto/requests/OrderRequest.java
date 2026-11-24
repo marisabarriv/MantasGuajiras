@@ -40,4 +40,11 @@ public class OrderRequest {
     @NotNull(message = "Escribe cuántos metros de tela se usaron.")
     @DecimalMin(value = "0.01", message = "Los metros de tela deben ser mayores que cero.")
     private BigDecimal fabricQuantity;
+
+    /**
+     * Opcional. Identificador único que genera el dispositivo. Si ya existe
+     * una operación con este identificador, se devuelve la existente en lugar
+     * de registrarla otra vez.
+     */
+    private UUID clientRequestId;
 }

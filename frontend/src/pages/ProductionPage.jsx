@@ -293,6 +293,7 @@ function ProductionPage() {
                 open={formOpen}
                 onClose={() => setFormOpen(false)}
                 title="Registrar producción"
+                guardUnsaved
             >
                 {formOpen && (
                     <ProductionForm

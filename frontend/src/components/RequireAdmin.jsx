@@ -1,3 +1,5 @@
+import { isAdmin } from "../utils/session";
+
 /**
  * Muestra su contenido solo al rol ADMIN.
  * Es una ayuda visual: la protección real está en el backend
@@ -5,9 +7,7 @@
  */
 function RequireAdmin({ children }) {
 
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-    if (user.role !== "ADMIN") {
+    if (!isAdmin()) {
         return (
             <div className="inv-page">
                 <h1>Sección restringida</h1>

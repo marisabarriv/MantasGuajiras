@@ -50,7 +50,7 @@ PostgreSQL lee las contraseñas del archivo `pgpass.conf`. Así ningún script c
    - `PgBin`: la carpeta `bin` de tu PostgreSQL. Compruébala en el Explorador; por ejemplo `C:\Program Files\PostgreSQL\17\bin` (el número depende de tu versión).
    - `Database`: el nombre de tu base (por defecto `mantas_guajiras_db`).
    - `BackupDir`: dónde se guardan las copias. Por defecto `C:\Users\TU_USUARIO\MantasGuajiras-backups`, **fuera del proyecto**, para que nunca terminen en un ZIP ni en git.
-   - `CopyTo`: **muy recomendado.** Una carpeta de OneDrive o Google Drive (o una USB). Si el disco del computador se daña o te lo roban, las copias de `BackupDir` se pierden con él.
+   - `CopyTo`: **muy recomendado.** Una carpeta de OneDrive o Google Drive (o una USB). Si el disco del computador se daña o te lo roban, las copias de `BackupDir` se pierden con él. La misma política de retención (`RetentionDays` y `MinKeep`) se aplica también a esta carpeta, así que no se llena con el tiempo.
 
 `backup.config.ps1` está en `.gitignore` y no se sube.
 
@@ -128,7 +128,7 @@ Si alguna dice `off`, cámbiala a `on` en `postgresql.conf` y reinicia el servic
 
 ### Qué verifica la prueba de restauración
 
-1. La huella SHA-256 del archivo (detecta archivos dañados o modificados).
+1. La huella SHA-256 del archivo (detecta archivos dañados o modificados). **Es obligatoria:** si falta el archivo `.sha256` o no coincide, la prueba falla. Solo para una copia antigua sin huella que sabes que es buena se puede forzar con `-AllowMissingHash` (en Linux, `ALLOW_MISSING_HASH=1`).
 2. Que `pg_restore` pueda restaurarlo completo en una base temporal.
 3. Integridad de los datos restaurados (`scripts/backup/integrity-check.sql`):
    - el inventario de cada producto es igual a la suma de sus movimientos;
@@ -153,7 +153,7 @@ La base temporal se elimina al terminar. **Tu base de trabajo nunca se modifica.
    powershell -ExecutionPolicy Bypass -File scripts\backup\restore-db.ps1 -BackupFile "C:\Users\TU_USUARIO\MantasGuajiras-backups\mantas_2026-11-23_210000.dump"
    ```
 
-   Por seguridad, el script **nunca sobrescribe** una base existente: restaura en `mantas_guajiras_db_restaurada` y te pide escribir el nombre para confirmar.
+   El script comprueba primero la huella SHA-256: si falta o no coincide, se detiene (usa otra copia o, solo si sabes que es buena, agrega `-AllowMissingHash`). Por seguridad **nunca sobrescribe** una base existente: restaura en `mantas_guajiras_db_restaurada` y te pide escribir el nombre para confirmar.
 5. En `backend/src/main/resources/application-dev.yml` cambia el final de `spring.datasource.url` por `/mantas_guajiras_db_restaurada`.
 6. Arranca el backend y revisa inventario, últimas ventas y usuarios.
 7. Cuando confirmes que todo está bien, puedes conservar la base dañada un tiempo por si hace falta revisarla, y borrarla después desde pgAdmin.
@@ -166,14 +166,43 @@ Las operaciones hechas **después** de la copia usada se pierden y hay que regis
 
 Antes de traer una nueva versión del código (`git pull`) que incluya migraciones nuevas (`V20__...sql`, etc.), haz una copia manual con `backup-db.ps1`. Si la migración sale mal, se puede volver al estado anterior.
 
+### 4.1. Si la actualización sale mal (volver atrás)
+
+1. Detén el backend.
+2. Vuelve al código anterior: `git checkout <commit o rama anterior>`.
+3. Restaura la copia hecha **antes** de actualizar con `restore-db.ps1` (en una base nueva) y apunta el backend a ella.
+4. Arranca el backend anterior.
+
+No se debe "deshacer" una migración a mano: la base restaurada ya está en la versión anterior.
+
+### 4.2. Actualización a la versión 1.0.0-rc.1 (V19 → V21)
+
+Probada el 24/11/2026 con la versión exacta anterior (commit `a6f5ada`, base en V19) y datos de un negocio: productos (incluidos dos con el **mismo nombre**), vendedor, ventas normales y con precio especial, compra, producción, personalizada con abonos y un ajuste **sin motivo**:
+
+* V20 y V21 se aplican solas al arrancar (0,016 s); el arranque completo tarda ~6 s.
+* Conteos, totales, inventario por producto e integridad: **idénticos** antes y después.
+* Usuarios anteriores inician sesión; las ventas antiguas conservan su precio especial; el historial muestra los datos antiguos; las personalizadas antiguas reciben pagos; las ventas nuevas no se duplican al reintentar.
+* **Nombres repetidos de antes:** el sistema los deja como están, pero al **editar** uno de ellos pide cambiarle el nombre. Para encontrarlos en pgAdmin:
+
+  ```sql
+  SELECT lower(name) AS nombre, count(*), string_agg(internal_code, ', ')
+  FROM product GROUP BY lower(name) HAVING count(*) > 1;
+  ```
+
+* Los ajustes antiguos sin motivo se siguen viendo; los nuevos exigen motivo.
+
 ---
 
-## 5. Linux / servidor (futuro)
+## 5. Linux / servidor
+
+Con el kit de producción (`deploy/`), las copias ya vienen programadas en el servicio `backup`: al arrancar, cada 2 horas de 6:00 a 21:00 y prueba de restauración los domingos. Ver `docs/13-produccion.md` §6. Lo siguiente es para un servidor sin Docker.
 
 ```bash
 # Contraseña en ~/.pgpass  (chmod 600 ~/.pgpass)
 DB_NAME=mantas_guajiras_db BACKUP_DIR=/var/backups/mantasguajiras scripts/backup/backup-db.sh
 DB_NAME=mantas_guajiras_db BACKUP_DIR=/var/backups/mantasguajiras scripts/backup/restore-test.sh
+# Emergencia: restaura en una base NUEVA (pide escribir el nombre para confirmar)
+scripts/backup/restore-db.sh /var/backups/mantasguajiras/mantas_AAAA-MM-DD_HHMMSS.dump mantas_guajiras_db_restaurada
 ```
 
 Programación con `crontab -e`:
@@ -184,3 +213,34 @@ Programación con `crontab -e`:
 ```
 
 Además del disco del servidor, las copias deben llevarse a otro lugar (almacenamiento del proveedor, otro servidor o un servicio en la nube).
+
+
+---
+
+## 6. Objetivos de recuperación (RPO y RTO)
+
+| Objetivo | Valor propuesto | Evidencia |
+| -------- | --------------- | --------- |
+| **RPO** — información que se puede perder como máximo | **2 horas** en horario de operación (6:00–21:00). Fuera de horario no hay operación. | Copias cada 2 h + copia al encender el equipo. Las operaciones confirmadas no se pierden por un corte de luz (sección 1.5). |
+| **RTO** — tiempo máximo sin servicio | **1 hora** | Tiempo **técnico** medido: **7,5 s** (simulacro del 24/11). La hora cubre lo humano: darse cuenta, elegir la copia, cambiar la configuración y revisar. |
+
+Estos valores deben aprobarse por la responsable del negocio y repetirse en el equipo real (el PC del negocio o el servidor definitivo), donde los tiempos pueden ser mayores.
+
+## 7. Registro de simulacros
+
+### 24/11/2026 — Pérdida total de la base (entorno de pruebas, Linux)
+
+* **Datos:** volumen realista de ~3 años de operación: 33.003 ventas, 33.633 movimientos de inventario, compras, producción y personalizadas con pagos (30 MB en PostgreSQL).
+* **Procedimiento:** copia con `backup-db.sh` → se **elimina la base** (`dropdb`) y el sistema deja de responder → `restore-db.sh` en una base nueva → backend apuntando a la base restaurada.
+
+| Paso | Tiempo |
+| ---- | ------ |
+| Copia de seguridad (archivo de 4,6 MB) | 0,7 s |
+| Prueba de restauración semanal | 0,9 s |
+| Restaurar la base completa | 0,6 s |
+| Arrancar el sistema sobre la base restaurada | 6,9 s |
+| **Recuperación técnica total** | **7,5 s** |
+
+* **Verificación:** conteos, totales e inventario por producto **idénticos** a los de antes del desastre; `integrity-check.sql` sin problemas; el vendedor inicia sesión y registra una venta nueva.
+* **Resultado:** ✅ superado.
+* **Pendiente:** repetir el simulacro en Windows con los scripts `.ps1` en el PC del negocio y anotar aquí fecha, tiempos y resultado.

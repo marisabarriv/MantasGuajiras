@@ -482,6 +482,7 @@ function InventoryPage() {
                 open={Boolean(adjustItem)}
                 onClose={() => setAdjustItem(null)}
                 title="Ajustar inventario"
+                guardUnsaved
             >
                 {adjustItem && (
                     <InventoryAdjustForm

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import useUnsavedChanges from "../hooks/useUnsavedChanges";
 
 import InventoryService from "../services/InventoryService";
 import OrderService from "../services/OrderService";
@@ -7,6 +8,8 @@ import {
     formatQuantity,
     isWholeUnit,
 } from "../utils/inventoryFormat";
+import { newClientRequestId } from "../utils/offlineStore";
+import { isConnectionError } from "../services/apiClient";
 
 const money = (value) =>
     `$${Number(value || 0).toLocaleString("es-CO", { maximumFractionDigits: 2 })}`;
@@ -33,11 +36,18 @@ function CustomOrderForm({ onSuccess, onCancel }) {
     const [paidInFull, setPaidInFull] = useState(false);
     const [payment, setPayment] = useState("");
 
+    // Datos sin guardar: algún campo tiene algo escrito o elegido.
+    useUnsavedChanges(Boolean(name.trim() || clientName.trim() || fabricId || meters || total || payment || paidInFull));
+
     const [showErrors, setShowErrors] = useState(false);
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState("");
 
     const savingRef = useRef(false);
+
+    // Mismo identificador en todos los reintentos de este formulario: si se
+    // corta la conexión justo al guardar, volver a pulsar no lo duplica.
+    const [clientRequestId] = useState(newClientRequestId);
 
 
     // Solo telas (se miden en metros).
@@ -146,6 +156,7 @@ function CustomOrderForm({ onSuccess, onCancel }) {
 
         try {
             const order = await OrderService.create({
+                clientRequestId,
                 name: name.trim(),
                 clientName: clientName.trim() || null,
                 total: totalNumber,
@@ -158,7 +169,11 @@ function CustomOrderForm({ onSuccess, onCancel }) {
             onSuccess(order);
 
         } catch (error) {
-            setSaveError(error.message);
+            setSaveError(
+                isConnectionError(error)
+                    ? error.message + " Puedes volver a pulsar Guardar: si ya se había registrado, no se repetirá."
+                    : error.message
+            );
         } finally {
             savingRef.current = false;
             setSaving(false);

@@ -360,13 +360,21 @@ Si tu usuario o contraseña de PostgreSQL no son `postgres`/`postgres`, usa las 
 | `INITIAL_ADMIN_USERNAME`  | todos     | Administrador que se crea si no existe ninguno.                     |
 | `INITIAL_ADMIN_PHONE`     | todos     | Teléfono de ese administrador.                                      |
 | `INITIAL_ADMIN_PASSWORD`  | todos     | Contraseña inicial (4 a 12 caracteres). Cambiarla al primer ingreso. |
+| `LOGIN_MAX_ATTEMPTS`      | todos     | Intentos fallidos seguidos antes del bloqueo temporal (por defecto 5). |
+| `LOGIN_LOCK_MINUTES`      | todos     | Minutos de bloqueo tras alcanzar el límite (por defecto 15). |
 | `DB_URL`                  | prod      | `jdbc:postgresql://servidor:5432/mantas_guajiras_db`                |
 | `DB_USERNAME`             | prod      | Usuario de la aplicación en PostgreSQL (no `postgres`).             |
 | `DB_PASSWORD`             | prod      | Contraseña de ese usuario.                                          |
 | `CORS_ALLOWED_ORIGINS`    | prod      | Dominio(s) del frontend separados por comas. Por defecto: `localhost`. |
+| `LOG_FILE`                | todos     | Archivo de log con rotación. Por defecto `logs/mantasguajiras.log` (dentro de `backend`). |
+| `SLOW_REQUEST_MS`         | todos     | Las peticiones más lentas que esto quedan en el log como "Lenta" (por defecto 1000). |
+| `DISK_MIN_FREE`           | todos     | Espacio libre mínimo; por debajo, `/actuator/health` dice `DOWN` (por defecto `2GB`). |
+| `DB_POOL_SIZE`            | todos     | Conexiones simultáneas a PostgreSQL (por defecto 10). |
 | `VITE_API_URL`            | frontend  | Dirección del backend al compilar el frontend.                      |
 
 ## 14.3. Producción
+
+> **Forma recomendada: el kit `deploy/`** (Docker + HTTPS automático + copias), con guía paso a paso, opciones de infraestructura y pruebas en **[13-produccion.md](13-produccion.md)**. Lo que sigue describe las piezas por separado, para instalar sin Docker.
 
 **Backend.**
 
@@ -375,10 +383,14 @@ Si tu usuario o contraseña de PostgreSQL no son `postgres`/`postgres`, usa las 
 ```
 
 ```bash
-SPRING_PROFILES_ACTIVE=prod java -jar target/backend-1.0.0-rc.1.jar
+SPRING_PROFILES_ACTIVE=prod java -Xmx512m -XX:+ExitOnOutOfMemoryError -jar target/backend-1.0.0-rc.1.jar
 ```
 
 El perfil `prod` toma la conexión, las claves y el administrador inicial **solo** de variables de entorno y desactiva Swagger.
+
+`-Xmx512m` fija la memoria máxima y `-XX:+ExitOnOutOfMemoryError` hace que, si alguna vez se agota, el proceso termine en vez de quedar respondiendo con errores. Instalarlo como **servicio que se reinicie solo** (servicio de Windows con WinSW/NSSM, o `systemd` con `Restart=always`). Detalle y mediciones: `docs/12-rendimiento-y-monitoreo.md`.
+
+**Estado y log.** `GET /actuator/health` responde `{"status":"UP"}` si la base de datos y el disco están bien (útil para el monitor del hosting). El log queda en `backend/logs/` con rotación; qué registra y cómo usarlo ante un problema: `docs/12-rendimiento-y-monitoreo.md` §3 y §6.
 
 **Frontend.** Con `VITE_API_URL` apuntando al backend real:
 
@@ -411,8 +423,41 @@ El resultado queda en `frontend/dist` y se publica en cualquier servidor web (Ng
 - [ ] `CORS_ALLOWED_ORIGINS` con el dominio real (o mismo origen mediante proxy).
 - [ ] Copias automáticas programadas **y** una prueba de restauración exitosa (`docs/09-copias-de-seguridad.md`).
 - [ ] Segunda copia fuera del equipo o servidor (`CopyTo`).
-- [ ] `./mvnw test` en verde.
+- [ ] CI en verde en GitHub (pestaña **Actions**): pruebas del backend, lint y build del frontend, escaneo de dependencias y prueba de punta a punta.
+- [ ] Dependabot activado en GitHub (Settings → Code security → Dependabot alerts y security updates).
+- [ ] `main` protegida en GitHub (sección 14.6).
+- [ ] Prueba de restauración **completa** en el entorno de despliegue: restaurar con `restore-db` en una base nueva, apuntar una instancia del backend a ella y revisar inventario, últimas ventas y usuarios.
+- [ ] Backend instalado como servicio que se reinicia solo, con `-Xmx512m -XX:+ExitOnOutOfMemoryError` (14.3).
+- [ ] `/actuator/health` responde `UP` en el servidor real y alguien sabe dónde está el log (`docs/12` §6).
 - [ ] Recorrido manual de los flujos críticos: venta normal, venta con precio especial, compra, producción, ajuste de inventario, personalizada con abono y pago final, inicio de sesión como vendedor para confirmar que no puede editar productos.
+
+## 14.4A. Seguridad del dispositivo y datos locales
+
+El navegador guarda en `localStorage` la sesión (token), el catálogo para vender sin conexión y las ventas pendientes. Medidas aplicadas:
+
+| Riesgo                                     | Medida                                                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Código malicioso inyectado en la página (XSS) | React escapa todo el texto; no hay HTML insertado sin escapar. La versión compilada incluye una **política de seguridad de contenido (CSP)**: solo ejecuta scripts del propio sitio y solo envía datos al propio sitio y al backend. |
+| Adivinar contraseñas (fuerza bruta)        | Tras 5 intentos fallidos seguidos con el mismo usuario o teléfono, ese acceso queda bloqueado 15 minutos, incluso con la contraseña correcta (`LOGIN_MAX_ATTEMPTS`, `LOGIN_LOCK_MINUTES`). El bloqueo queda en el log. Si un empleado queda bloqueado por error, basta esperar o que el administrador le restablezca la contraseña. |
+| Dependencias con vulnerabilidades conocidas | La CI revisa backend y frontend con OSV-Scanner en cada push; Dependabot propone actualizaciones cada semana. |
+| Token robado o dispositivo perdido         | El token vence (`JWT_EXPIRATION`). **Desactivar al usuario en Administrar usuarios corta su acceso de inmediato**, aunque su token no haya vencido (el backend revisa en cada petición que la cuenta siga activa). |
+| Ventas pendientes al cerrar sesión         | Se avisa antes de cerrar sesión; las ventas quedan a nombre de quien las hizo y solo se envían cuando esa persona vuelve a entrar. Otro usuario del mismo dispositivo no las envía. |
+| Datos visibles en el dispositivo           | El catálogo contiene productos, precios y existencias (información que el vendedor ya ve). Las ventas con montos del historial no se guardan en el dispositivo. |
+
+Recomendaciones de operación:
+
+* Un usuario por persona; nunca compartir contraseñas.
+* Bloqueo de pantalla en los celulares y computadores del local.
+* No instalar extensiones de navegador desconocidas en los equipos de venta.
+* Si se pierde un celular, desactivar al usuario desde **Administrar usuarios** y crearle uno nuevo.
+
+Guardar el token en una cookie `HttpOnly` reduciría más el riesgo ante XSS, pero exige cambiar la autenticación y la protección CSRF del backend. Con las medidas anteriores no se considera necesario para esta versión.
+
+## 14.5A. Calidad del código
+
+* **Formato:** `.editorconfig` en la raíz (VS Code lo aplica con la extensión *EditorConfig for VS Code*).
+* **Cobertura:** JaCoCo con umbral mínimo (85 % de líneas, 65 % de ramas); si baja, el build falla.
+* **Orden aleatorio** de las pruebas del backend (`runOrder=random`): una prueba que dependa de otra falla en la CI. La semilla aparece en el log para repetir el mismo orden con `-Dsurefire.runOrder.random.seed=<semilla>`.
 
 ## 14.5. Compartir el proyecto sin claves
 
@@ -477,3 +522,18 @@ Condiciones:
 * Si un producto cambió de precio mientras no había conexión, la venta se registra con el precio vigente al recibirla.
 
 Verificado con una prueba de navegador de punta a punta: venta sin conexión, app reabierta sin conexión, conflicto con otra venta, sincronización automática, reenvío sin duplicar y actualización automática del inventario.
+
+
+## 14.6. Proteger `main` en GitHub
+
+Para que nada llegue a `main` sin pasar la CI y sin revisión:
+
+1. En GitHub: **Settings → Branches → Add branch ruleset** (o *Add classic branch protection rule*).
+2. Rama: `main`.
+3. Activar:
+   * **Require a pull request before merging** (los cambios entran por pull request).
+   * **Require status checks to pass** y marcar: `Backend (pruebas)`, `Frontend (lint y build)`, `Dependencias (vulnerabilidades conocidas)` y `Punta a punta (ventas sin conexión)`.
+   * **Block force pushes**.
+4. Guardar.
+
+Con una sola persona en el proyecto no hace falta exigir aprobaciones de otros revisores; basta con que la CI esté en verde.

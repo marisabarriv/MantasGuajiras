@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import useUnsavedChanges from "../hooks/useUnsavedChanges";
 
 import InventoryService from "../services/InventoryService";
 import ProductionService from "../services/ProductionService";
@@ -7,6 +8,8 @@ import {
     formatQuantity,
     isWholeUnit,
 } from "../utils/inventoryFormat";
+import { newClientRequestId } from "../utils/offlineStore";
+import { isConnectionError } from "../services/apiClient";
 
 // Redondeo a 2 decimales (metros).
 const round2 = (value) => Math.round(Number(value) * 100) / 100;
@@ -34,7 +37,14 @@ function ProductionForm({ makerSuggestions = [], onSuccess, onCancel }) {
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState("");
 
+    // Datos sin guardar: algún campo tiene algo escrito o elegido.
+    useUnsavedChanges(Boolean(fabricId || perUnit || outputId || outputQuantity || makerName.trim() || observations.trim()));
+
     const savingRef = useRef(false);
+
+    // Mismo identificador en todos los reintentos de este formulario: si se
+    // corta la conexión justo al guardar, volver a pulsar no lo duplica.
+    const [clientRequestId] = useState(newClientRequestId);
 
 
     useEffect(() => {
@@ -147,6 +157,7 @@ function ProductionForm({ makerSuggestions = [], onSuccess, onCancel }) {
 
         try {
             const production = await ProductionService.create({
+                clientRequestId,
                 fabricProductId: fabricId,
                 fabricQuantityPerUnit: perUnitNumber,
                 outputProductId: outputId,
@@ -164,7 +175,11 @@ function ProductionForm({ makerSuggestions = [], onSuccess, onCancel }) {
             });
 
         } catch (error) {
-            setSaveError(error.message);
+            setSaveError(
+                isConnectionError(error)
+                    ? error.message + " Puedes volver a pulsar Guardar: si ya se había registrado, no se repetirá."
+                    : error.message
+            );
         } finally {
             savingRef.current = false;
             setSaving(false);

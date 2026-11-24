@@ -41,6 +41,46 @@ function Write-Log($cfg, $message) {
     Add-Content -Path (Join-Path $cfg.BackupDir 'backup.log') -Value $line -Encoding UTF8
 }
 
+<#
+  Verifica la huella SHA-256 de una copia. Sin el archivo .sha256 NO se
+  puede saber si la copia está dañada o fue modificada, así que falla,
+  salvo que se pida expresamente con -AllowMissingHash (copias antiguas).
+#>
+function Assert-BackupHash($cfg, $file, [bool] $allowMissing = $false) {
+    $hashFile = "$file.sha256"
+    if (-not (Test-Path $hashFile)) {
+        if ($allowMissing) {
+            Write-Log $cfg 'ADVERTENCIA: la copia no tiene .sha256; se continúa porque se indicó -AllowMissingHash.'
+            return
+        }
+        throw "Falta $hashFile. Sin huella no se puede comprobar que la copia esté sana. Usa otra copia o, si sabes que es buena, repite con -AllowMissingHash."
+    }
+    $expected = (Get-Content $hashFile -Raw).Trim()
+    $actual = (Get-FileHash -Algorithm SHA256 $file).Hash
+    if ($expected -ne $actual) {
+        throw 'La huella SHA-256 no coincide: el archivo está dañado o fue modificado. Usa otra copia.'
+    }
+    Write-Log $cfg 'Huella SHA-256 correcta.'
+}
+
+<#
+  Borra las copias más antiguas que RetentionDays de una carpeta, pero
+  conserva siempre las MinKeep más recientes. Se aplica a la carpeta
+  principal y a la segunda copia (CopyTo).
+#>
+function Remove-OldBackups($cfg, $dir) {
+    if (-not $dir -or -not (Test-Path $dir)) { return }
+    $limit = (Get-Date).AddDays(-$cfg.RetentionDays)
+    Get-ChildItem $dir -Filter 'mantas_*.dump' |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -Skip $cfg.MinKeep |
+        Where-Object { $_.LastWriteTime -lt $limit } |
+        ForEach-Object {
+            Remove-Item $_.FullName, "$($_.FullName).sha256" -ErrorAction SilentlyContinue
+            Write-Log $cfg "Copia antigua eliminada: $($_.FullName)"
+        }
+}
+
 function Assert-ExitCode($what) {
     if ($LASTEXITCODE -ne 0) {
         throw "$what falló (código $LASTEXITCODE)."

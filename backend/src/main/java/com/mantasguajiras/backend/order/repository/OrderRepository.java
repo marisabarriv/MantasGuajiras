@@ -25,4 +25,11 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select o from Order o where o.id = :id")
     Optional<Order> findByIdForUpdate(@Param("id") UUID id);
+
+    /** Operación ya registrada con ese identificador del dispositivo. */
+    Optional<Order> findByClientRequestId(UUID clientRequestId);
+
+    /** La manta personalizada a la que pertenece un pago ya registrado. */
+    @Query("select p.order from OrderPayment p where p.clientRequestId = :clientRequestId")
+    Optional<Order> findByPaymentClientRequestId(@Param("clientRequestId") UUID clientRequestId);
 }

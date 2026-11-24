@@ -62,6 +62,15 @@ public class PurchaseServiceImpl implements PurchaseService {
     @Override
     public PurchaseResponse create(PurchaseRequest request) {
 
+        // Reintento de una compra que ya llegó (se cortó la conexión al
+        // guardarla): se devuelve la existente y NO se suma otra vez al inventario.
+        if (request.getClientRequestId() != null) {
+            var existing = purchaseRepository.findByClientRequestId(request.getClientRequestId());
+            if (existing.isPresent()) {
+                return purchaseMapper.toResponse(existing.get());
+            }
+        }
+
         BigDecimal calculatedTotal = BigDecimal.ZERO;
 
         Purchase purchase =

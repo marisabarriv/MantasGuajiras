@@ -1,5 +1,7 @@
 package com.mantasguajiras.backend.purchase.entity;
 
+import java.util.UUID;
+
 import com.mantasguajiras.backend.common.entity.AuditableEntity;
 import com.mantasguajiras.backend.user.entity.User;
 import jakarta.persistence.*;
@@ -31,4 +33,11 @@ public class Purchase extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
+
+    /**
+     * Identificador que genera el dispositivo para esta operación. Si llega
+     * dos veces (reintento tras un corte de conexión), no se repite.
+     */
+    @Column(name = "client_request_id", unique = true)
+    private UUID clientRequestId;
 }

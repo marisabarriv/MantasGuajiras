@@ -1,0 +1,21 @@
+# Dependabot revisa cada semana si hay versiones nuevas (sobre todo de
+# seguridad) de las dependencias y abre un pull request para actualizarlas.
+# La CI se ejecuta en esos pull requests antes de aceptarlos.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

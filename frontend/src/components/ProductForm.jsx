@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import useUnsavedChanges from "../hooks/useUnsavedChanges";
 
 import ProductService from "../services/ProductService";
 import BarcodeScanModal from "./BarcodeScanModal";
@@ -42,6 +43,9 @@ function ProductForm({ product = null, onSuccess, onCancel }) {
           active: true,
         },
   );
+  // Datos sin guardar: el formulario cambió respecto de cómo se abrió.
+  const [initialForm] = useState(() => JSON.stringify(form));
+  useUnsavedChanges(JSON.stringify(form) !== initialForm);
 
   // =========================================
   // CARGAR CATEGORÍAS Y UNIDADES

@@ -1,5 +1,6 @@
 package com.mantasguajiras.backend.sale.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,7 +15,11 @@ public interface SaleService {
 
     SaleResponse findById(UUID id);
 
-    List<SaleResponse> findAll();
+    /**
+     * Historial de un periodo (ver {@link com.mantasguajiras.backend.common.query.DateRange}):
+     * sin fechas, los últimos 30 días; máximo 93 días.
+     */
+    List<SaleResponse> findAll(LocalDate from, LocalDate to);
 
     void delete(UUID id);
 

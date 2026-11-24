@@ -56,4 +56,11 @@ public class OrderPayment {
             createdAt = LocalDateTime.now();
         }
     }
+
+    /**
+     * Identificador que genera el dispositivo para esta operación. Si llega
+     * dos veces (reintento tras un corte de conexión), no se repite.
+     */
+    @Column(name = "client_request_id", unique = true)
+    private UUID clientRequestId;
 }

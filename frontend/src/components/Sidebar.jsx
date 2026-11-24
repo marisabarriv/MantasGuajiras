@@ -1,8 +1,10 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import { confirmLeave } from "../utils/unsavedChanges";
 
 import InstallAppButton from "./InstallAppButton";
 import UserAvatar from "./UserAvatar";
 import { clearSession, getUser, ROLE_LABELS } from "../utils/session";
+import { getPendingSales } from "../utils/offlineStore";
 
 import "../styles/users.css";
 
@@ -15,6 +17,28 @@ function Sidebar({ open = false, onNavigate }) {
     const isAdmin = user.role === "ADMIN";
 
     const handleLogout = () => {
+
+        if (!confirmLeave()) {
+            return;
+        }
+        // Las ventas hechas sin conexión quedan guardadas a nombre de quien
+        // las hizo y solo se envían cuando esa persona vuelve a entrar.
+        const pending = getPendingSales().filter(
+            (sale) => sale.username === user.username
+        ).length;
+
+        if (
+            pending > 0 &&
+            !window.confirm(
+                `Tienes ${pending} venta(s) hecha(s) sin conexión que todavía no se envían.\n\n` +
+                "No se pierden: quedan guardadas en este dispositivo y se enviarán cuando " +
+                "vuelvas a iniciar sesión aquí con conexión. Mientras tanto NO aparecen en el sistema.\n\n" +
+                "¿Cerrar sesión de todas formas?"
+            )
+        ) {
+            return;
+        }
+
         clearSession();
         navigate("/", { replace: true });
     };
@@ -35,7 +59,16 @@ function Sidebar({ open = false, onNavigate }) {
                 <h2>Mantas Guajiras</h2>
             </div>
 
-            <nav className="sidebar-nav">
+            <nav
+                className="sidebar-nav"
+                // Datos sin guardar: preguntar antes de cambiar de pantalla.
+                onClickCapture={(event) => {
+                    if (event.target.closest("a") && !confirmLeave()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                }}
+            >
 
                 <NavLink
                     to="/sale"

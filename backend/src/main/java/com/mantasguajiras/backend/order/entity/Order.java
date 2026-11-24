@@ -1,5 +1,7 @@
 package com.mantasguajiras.backend.order.entity;
 
+import java.util.UUID;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,4 +88,11 @@ public class Order extends AuditableEntity {
     public boolean isPaid() {
         return paidAmount.compareTo(total) >= 0;
     }
+
+    /**
+     * Identificador que genera el dispositivo para esta operación. Si llega
+     * dos veces (reintento tras un corte de conexión), no se repite.
+     */
+    @Column(name = "client_request_id", unique = true)
+    private UUID clientRequestId;
 }

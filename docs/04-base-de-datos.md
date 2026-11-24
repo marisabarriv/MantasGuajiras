@@ -339,7 +339,7 @@ Los cambios futuros deberán reflejarse en las migraciones correspondientes y, c
 
 # Anexo A. Notas de mantenimiento de migraciones
 
-Las migraciones están en `backend/src/main/resources/db/migration` (V1 a V20). La carpeta `database/exports` solo guarda una exportación del esquema como referencia.
+Las migraciones están en `backend/src/main/resources/db/migration` (V1 a V21). La carpeta `database/exports` solo guarda una exportación del esquema como referencia.
 
 ## Migraciones vacías históricas
 
@@ -352,11 +352,16 @@ Agrega a `sale`:
 - `client_request_id` (UUID, único): identificador que genera el dispositivo para cada venta. Si la misma venta llega dos veces, el backend devuelve la existente y no descuenta el inventario otra vez.
 - `offline_created_at`: hora real de la venta hecha sin conexión. `created_at` sigue siendo la hora en que llegó al servidor. La pantalla de Ventas y el resumen del día usan la hora real.
 
+## V21: compras, producción, personalizadas y pagos sin duplicados
+
+Agrega `client_request_id` (UUID, único) a `purchase`, `production`, `orders` y `order_payment`, con el mismo mecanismo que las ventas: si la conexión se corta justo al guardar y se vuelve a enviar, el backend devuelve la operación ya registrada y no suma inventario, no descuenta tela ni cobra un pago dos veces.
+
 ## Tipo de movimiento `ADJUSTMENT`
 
 `DataInitializer` crea el tipo de movimiento `ADJUSTMENT`, pero la lógica de inventario solo registra movimientos `IN` u `OUT`. Un ajuste se registra como `IN` u `OUT` por la diferencia entre el conteo físico y el inventario, y se identifica por su **tipo de origen** `ADJUSTMENT`. El registro `ADJUSTMENT` de `movement_type` se conserva para no alterar bases que ya están en uso; no se debe usar para nuevos movimientos.
 
 ## Verificación
 
-- La prueba `BackendApplicationTests` aplica las 20 migraciones sobre una base vacía y comprueba que el esquema coincide con las entidades (`ddl-auto: validate`).
+- **Actualización con datos:** probada desde V19 (versión anterior) con datos reales de prueba hasta V21; datos idénticos e integridad correcta. Detalle en `docs/09-copias-de-seguridad.md` §4.2.
+- La prueba `BackendApplicationTests` aplica las 21 migraciones sobre una base vacía y comprueba que el esquema coincide con las entidades (`ddl-auto: validate`).
 - `scripts/backup/integrity-check.sql` comprueba que el inventario de cada producto sea igual a la suma de sus movimientos. Se ejecuta en cada prueba de restauración (ver `docs/09-copias-de-seguridad.md`).

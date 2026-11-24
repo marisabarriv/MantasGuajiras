@@ -41,6 +41,7 @@ public interface PurchaseMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "clientRequestId", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
     void updateEntity(
             PurchaseRequest request,

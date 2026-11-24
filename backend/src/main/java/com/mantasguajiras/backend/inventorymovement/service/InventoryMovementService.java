@@ -1,6 +1,7 @@
 package com.mantasguajiras.backend.inventorymovement.service;
 
 import com.mantasguajiras.backend.inventorymovement.dto.requests.InventoryMovementRequest;
+import com.mantasguajiras.backend.inventorymovement.dto.requests.MovementFilter;
 import com.mantasguajiras.backend.inventorymovement.dto.response.InventoryMovementResponse;
 
 import java.math.BigDecimal;
@@ -9,11 +10,8 @@ import java.util.UUID;
 
 public interface InventoryMovementService {
 
-    /** Historial completo, del más reciente al más antiguo. */
-    List<InventoryMovementResponse> findAll();
-
-    /** Historial de un producto, del más reciente al más antiguo. */
-    List<InventoryMovementResponse> findByProduct(UUID productId);
+    /** Historial filtrado (producto, tipo, origen, usuario y fechas), más reciente primero. */
+    List<InventoryMovementResponse> search(MovementFilter filter);
 
     InventoryMovementResponse findById(UUID id);
 

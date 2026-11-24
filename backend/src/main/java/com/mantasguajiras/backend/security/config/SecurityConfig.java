@@ -82,6 +82,10 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth/login",
                                 "/auth/register",
+                                // Estado del sistema (sin detalles internos).
+                                "/actuator/health",
+                                // Versión instalada (sin datos sensibles).
+                                "/actuator/info",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
@@ -165,7 +169,8 @@ public class SecurityConfig {
     }
 
     /** Respuesta JSON con el mismo formato que ErrorResponse. */
-    private static void writeError(
+    /** Respuesta de error en el mismo formato JSON que el resto de la API. */
+    public static void writeError(
             HttpServletResponse response,
             String path,
             int status,
