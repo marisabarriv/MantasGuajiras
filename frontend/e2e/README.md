@@ -8,7 +8,10 @@
 4. Dispositivo compartido: aviso al cerrar sesión con ventas pendientes, otro vendedor no envía ventas ajenas y la venta queda a nombre de quien la hizo.
 5. Compra: se corta la conexión justo al guardar y se pulsa otra vez → una sola compra y el inventario sube una sola vez.
 6. Ajuste con motivo obligatorio y filtros del historial (origen y usuario).
-7. Actualización automática del inventario y ausencia de violaciones de la política de seguridad (CSP).
+7. Dos pestañas abiertas sincronizan a la vez la misma venta: se registra una sola vez.
+8. La sesión vence mientras no hay conexión: se sigue vendiendo, y al volver la conexión pide iniciar sesión y envía la venta a nombre de quien la hizo.
+9. Sin espacio en el dispositivo: la venta no se da por guardada, se avisa y el carrito se conserva para reintentar.
+10. Actualización automática del inventario y ausencia de violaciones de la política de seguridad (CSP).
 
 Se ejecuta sola en GitHub Actions (`.github/workflows/ci.yml`) en cada push.
 

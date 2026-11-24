@@ -72,8 +72,10 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse create(ProductRequest request) {
 
         normalizeBarcode(request);
+        normalizeName(request);
 
         validateUniqueFields(request, null);
+        validateUniqueName(request.getName(), null);
 
 
         // =========================================
@@ -170,7 +172,10 @@ public class ProductServiceImpl implements ProductService {
                                 ));
 
 
+        normalizeName(request);
+
         validateUniqueFields(request, id);
+        validateUniqueName(request.getName(), id);
 
 
         // =========================================
@@ -481,6 +486,49 @@ public class ProductServiceImpl implements ProductService {
                     "Ya existe otro producto con ese código de barras."
             );
         }
+    }
+
+
+    // =========================================
+    // NOMBRE ÚNICO
+    // =========================================
+
+    /** Quita espacios sobrantes: "  Manta   Wayuu " → "Manta Wayuu". */
+    private void normalizeName(ProductRequest request) {
+
+        if (request.getName() != null) {
+            request.setName(request.getName().trim().replaceAll("\\s+", " "));
+        }
+    }
+
+    /**
+     * Decisión del negocio: no puede haber dos productos con el mismo nombre
+     * (sin distinguir mayúsculas), ni siquiera si uno está desactivado:
+     * en ese caso se reactiva el existente en lugar de crear otro.
+     */
+    private void validateUniqueName(String name, UUID currentProductId) {
+
+        if (name == null || name.isBlank()) {
+            return;
+        }
+
+        var existing = currentProductId == null
+                ? productRepository.findFirstByNameIgnoreCase(name)
+                : productRepository.findFirstByNameIgnoreCaseAndIdNot(name, currentProductId);
+
+        if (existing.isEmpty()) {
+            return;
+        }
+
+        Product other = existing.get();
+
+        throw new DuplicateResourceException(
+                Boolean.TRUE.equals(other.getActive())
+                        ? "Ya existe un producto llamado \"" + other.getName() + "\" ("
+                                + other.getInternalCode() + "). Usa un nombre diferente."
+                        : "Ya existe un producto desactivado llamado \"" + other.getName() + "\" ("
+                                + other.getInternalCode() + "). Reactívalo en lugar de crear otro."
+        );
     }
 
 

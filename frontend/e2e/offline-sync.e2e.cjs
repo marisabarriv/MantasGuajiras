@@ -333,18 +333,110 @@ const pendingIds = (page) => page.evaluate(() =>
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/e2e-6-filtros.png`, fullPage: true });
 
     // -----------------------------------------------------------
-    step('7. Actualización automática y seguridad de contenido');
+    step('7. Dos pestañas abiertas sincronizan a la vez la misma venta');
+    await page.goto(APP + '/sale');
+    await page.locator('.product-card', { hasText: grande.name }).waitFor();
+    const secondTab = await context.newPage();
+    await secondTab.goto(APP + '/sale');
+    await secondTab.locator('.product-card', { hasText: grande.name }).waitFor();
+    const stockBeforeTabs = await stockOf(adminToken, grande.id);
+
+    await context.setOffline(true);
+    await sell(page, grande.name);
+    await page.getByText('quedó guardada en este dispositivo').waitFor();
+    await closeSaleModal(page);
+    const [tabsId] = await pendingIds(page);
+    await secondTab.waitForFunction((id) =>
+        JSON.parse(localStorage.getItem('mg-offline-sales') || '[]').some((sale) => sale.clientRequestId === id),
+    tabsId, { timeout: 10000 });
+    check(true, 'la otra pestaña ve la venta pendiente');
+
+    await context.setOffline(false); // las dos pestañas intentan enviarla
+    for (const tab of [page, secondTab]) {
+        await tab.waitForFunction(() => JSON.parse(localStorage.getItem('mg-offline-sales') || '[]').length === 0, null, { timeout: 40000 });
+    }
+    check((await salesWith(adminToken, tabsId)).length === 1, 'se registró UNA sola vez');
+    check(await stockOf(adminToken, grande.id) === stockBeforeTabs - 1, 'el inventario bajó una sola vez');
+    await secondTab.close();
+
+    // -----------------------------------------------------------
+    step('8. La sesión vence sin conexión: se sigue vendiendo y se envía al volver a entrar');
+    await uiLogout(page);
+    await uiLogin(page, sellerA.username, sellerA.password);
+    await page.locator('.product-card', { hasText: grande.name }).waitFor();
+
+    await context.setOffline(true);
+    await page.evaluate(() => {
+        // Simula que el token venció mientras no había conexión.
+        const [header, payload, signature] = localStorage.getItem('token').split('.');
+        const data = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+        data.exp = Math.floor(Date.now() / 1000) - 60;
+        const encoded = btoa(JSON.stringify(data)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        localStorage.setItem('token', [header, encoded, signature].join('.'));
+    });
+    await page.reload().catch(() => {});
+    await page.getByText('Vendiendo sin conexión.').waitFor({ timeout: 15000 });
+    check(page.url().endsWith('/sale'), 'con la sesión vencida y sin conexión sigue en Nueva venta');
+
+    await sell(page, grande.name);
+    await page.getByText('quedó guardada en este dispositivo').waitFor();
+    await closeSaleModal(page);
+    const [expiredId] = await pendingIds(page);
+
+    await context.setOffline(false);
+    await page.waitForURL((url) => url.pathname === '/', { timeout: 70000 });
+    check((await pendingIds(page)).includes(expiredId), 'al volver la conexión pide iniciar sesión y la venta sigue guardada');
+    check((await salesWith(adminToken, expiredId)).length === 0, 'no se envía sin una sesión válida');
+
+    await uiLogin(page, sellerA.username, sellerA.password);
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('mg-offline-sales') || '[]').length === 0, null, { timeout: 40000 });
+    const expiredSale = await salesWith(adminToken, expiredId);
+    check(expiredSale.length === 1 && expiredSale[0].sellerUsername === sellerA.username,
+        'tras iniciar sesión se envía una vez, a nombre del vendedor');
+
+    // -----------------------------------------------------------
+    step('9. Sin espacio en el dispositivo: la venta NO se da por guardada');
+    await page.locator('.product-card', { hasText: grande.name }).waitFor();
+    await context.setOffline(true);
+    await page.evaluate(() => {
+        const original = Storage.prototype.setItem;
+        window.__restoreSetItem = () => { Storage.prototype.setItem = original; };
+        Storage.prototype.setItem = function (key, value) {
+            if (key === 'mg-offline-sales') {
+                throw new DOMException('Sin espacio', 'QuotaExceededError');
+            }
+            return original.call(this, key, value);
+        };
+    });
+    await sell(page, grande.name);
+    await page.getByText('anótala en papel').waitFor({ timeout: 15000 });
+    check(true, 'avisa que la venta NO se registró');
+    check((await pendingIds(page)).length === 0, 'no queda una venta fantasma en la cola');
+    check(await page.locator('.pos-cart-row', { hasText: grande.name }).count() === 1, 'el carrito se conserva para reintentar');
+
+    await page.evaluate(() => window.__restoreSetItem());
+    await page.getByRole('button', { name: 'Confirmar venta' }).click();
+    await page.getByText('quedó guardada en este dispositivo').waitFor();
+    await closeSaleModal(page);
+    await context.setOffline(false);
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('mg-offline-sales') || '[]').length === 0, null, { timeout: 40000 });
+    check(true, 'con espacio disponible se guarda y luego se envía');
+
+    // -----------------------------------------------------------
+    step('10. Actualización automática y seguridad de contenido');
     await page.goto(APP + '/inventory');
     await page.locator('.inv-row', { hasText: grande.name }).waitFor();
+    // Otro usuario cuenta y deja 2 unidades menos (el valor depende de los pasos anteriores).
+    const counted = (await stockOf(adminToken, grande.id)) - 2;
     await api('/api/inventory/adjustments', {
         method: 'POST', token: adminToken,
-        body: { productId: grande.id, countedQuantity: 4, reason: 'E2E: conteo' },
+        body: { productId: grande.id, countedQuantity: counted, reason: 'E2E: conteo' },
     });
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    await page.waitForFunction((name) => {
+    await page.waitForFunction(({ name, expected }) => {
         const row = [...document.querySelectorAll('.inv-row')].find((r) => r.innerText.includes(name));
-        return row && /\b4 unidades\b/.test(row.innerText);
-    }, grande.name, { timeout: 10000 }).then(() => true, () => false)
+        return row && new RegExp(`\\b${expected} unidad(es)?\\b`).test(row.innerText);
+    }, { name: grande.name, expected: counted }, { timeout: 10000 }).then(() => true, () => false)
         .then((ok) => check(ok, 'el inventario se actualiza solo al volver a la app'));
     check(cspViolations.length === 0, `sin violaciones de la política de seguridad (CSP)${cspViolations.length ? `: ${cspViolations[0]}` : ''}`);
 

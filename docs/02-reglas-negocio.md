@@ -36,6 +36,10 @@ Las reglas deberán cumplirse independientemente de la interfaz utilizada por el
 
 Los productos pertenecen a una categoría.
 
+## RN-01A. Nombre único
+
+No puede haber dos productos con el mismo nombre (decisión del 24/11/2026). La comparación no distingue mayúsculas ni espacios sobrantes ("Manta Wayuu" = "manta  wayuu"). Si ya existe un producto **desactivado** con ese nombre, se reactiva en lugar de crear otro.
+
 Las categorías utilizadas actualmente contemplan principalmente:
 
 * Manta.
@@ -295,9 +299,13 @@ Las correcciones deberán realizarse mediante los mecanismos de ajuste correspon
 
 # 10. Pedidos y pagos
 
-Las reglas específicas de pedidos y pagos deberán mantenerse alineadas con el modelo y las funcionalidades realmente implementadas en el backend.
+## RN-26A. Estados de una manta personalizada
 
-No se deberán considerar como implementadas reglas adicionales que todavía no hayan sido desarrolladas y verificadas.
+Solo hay dos estados, calculados a partir de los pagos: **pendiente** (tiene saldo) y **pagada** (saldo en cero). No existe el estado "cancelada" (decisión del 24/11/2026). Una personalizada registrada no se modifica ni se elimina, y una pagada no acepta más pagos.
+
+## RN-26B. Sin operaciones duplicadas
+
+Ninguna operación (venta, compra, producción, personalizada o pago) se registra dos veces por un reintento, aunque la misma solicitud llegue varias veces a la vez (por ejemplo, desde dos pestañas).
 
 ---
 
