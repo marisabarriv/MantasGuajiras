@@ -9,6 +9,7 @@
 #   4. Verifica (verify.sh).
 #   5. Si la verificación falla, vuelve a la versión anterior.
 # DEPLOY_SKIP_BUILD=1: instalar imágenes ya compiladas con esa etiqueta.
+# APP_COMMIT=abc1234: instalar esa versión (imágenes ya compiladas).
 # =========================================================
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -16,7 +17,8 @@ cd "$(dirname "$0")"
 [[ -f .env ]] || { echo "Falta deploy/.env: copia .env.example a .env y complétalo."; exit 1; }
 set -a; . ./.env; set +a
 
-APP_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo desconocido)"
+# Versión = commit actual del repositorio (o la indicada en APP_COMMIT).
+APP_COMMIT="${APP_COMMIT:-$(git rev-parse --short HEAD 2>/dev/null || echo desconocido)}"
 export APP_COMMIT APP_TAG="$APP_COMMIT"
 SITE="${SITE_ADDRESS:-localhost}"
 URL="https://${SITE}"
