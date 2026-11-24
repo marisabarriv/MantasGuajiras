@@ -399,6 +399,7 @@ function CustomOrdersPage() {
                 open={formOpen}
                 onClose={() => setFormOpen(false)}
                 title="Nueva manta personalizada"
+                guardUnsaved
             >
                 {formOpen && (
                     <CustomOrderForm

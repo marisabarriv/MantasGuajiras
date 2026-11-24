@@ -170,6 +170,19 @@ jobs:
           E2E_SCREENSHOTS: ${{ runner.temp }}
         run: node e2e/offline-sync.e2e.cjs
 
+      - name: Ensayo de aceptación (24 escenarios por la interfaz)
+        working-directory: frontend
+        env:
+          ACCEPT_SHOTS: ${{ runner.temp }}/aceptacion
+        run: node e2e/acceptance.e2e.cjs
+
+      - name: Guardar capturas del ensayo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ensayo-aceptacion
+          path: ${{ runner.temp }}/aceptacion
+
       - name: Guardar registros y capturas si falla
         if: failure()
         uses: actions/upload-artifact@v4
@@ -239,6 +252,14 @@ jobs:
           E2E_INSECURE_TLS: "1"
           E2E_SCREENSHOTS: ${{ runner.temp }}
         run: node e2e/offline-sync.e2e.cjs
+
+      - name: Ensayo de aceptación por HTTPS
+        working-directory: frontend
+        env:
+          E2E_APP: https://localhost
+          E2E_API: https://localhost
+          E2E_INSECURE_TLS: "1"
+        run: node e2e/acceptance.e2e.cjs
 
       - name: Copia y prueba de restauración dentro del kit
         working-directory: deploy

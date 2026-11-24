@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import useUnsavedChanges from "../hooks/useUnsavedChanges";
 
 import Modal from "../components/Modal";
 import BarcodeScanModal from "../components/BarcodeScanModal";
@@ -81,6 +82,8 @@ function NewSalePage() {
   // =========================================
 
   const [cart, setCart] = useState([]);
+  // El carrito no se guarda: salir con productos en él los pierde.
+  useUnsavedChanges(cart.length > 0);
   const [cartMessage, setCartMessage] = useState("");
 
   // =========================================

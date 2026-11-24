@@ -1,4 +1,5 @@
 import { useState } from "react";
+import useUnsavedChanges from "../hooks/useUnsavedChanges";
 
 import InventoryService from "../services/InventoryService";
 import {
@@ -14,6 +15,9 @@ function InventoryAdjustForm({ item, onSuccess, onCancel }) {
 
     const [counted, setCounted] = useState("");
     const [reason, setReason] = useState("");
+
+    // Datos sin guardar: se escribió la cantidad contada o el motivo.
+    useUnsavedChanges(Boolean(counted !== "" || reason.trim()));
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 

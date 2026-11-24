@@ -180,13 +180,20 @@ El servicio `backup` guarda las copias en `deploy/backups/` (`BACKUP_DIR`) y una
 
 **La segunda copia debe estar fuera del servidor.** Si el servidor se pierde, se pierden las dos. Opciones:
 
-- **Carpeta en la nube (recomendado):** instalar `rclone`, conectarlo a Google Drive u OneDrive (`rclone config`) y programar con `crontab -e`:
+- **Carpeta en la nube, cifrada (recomendado):**
+  1. Instalar `rclone` y conectarlo a Google Drive u OneDrive (`rclone config`, por ejemplo con el nombre `gdrive`).
+  2. Crear encima un remoto **cifrado** (`rclone config` → *crypt*, por ejemplo `copias-cifradas`, apuntando a `gdrive:MantasGuajiras-copias`), con una contraseña larga. **Guárdala fuera del servidor:** sin ella las copias de la nube no se pueden abrir. Si alguien entra a la cuenta de Google o Microsoft, solo ve archivos ilegibles.
+  3. Programar con `crontab -e`:
 
-  ```text
-  15 6-22/2 * * * rclone copy /opt/mantasguajiras/deploy/backups gdrive:MantasGuajiras-copias --include "mantas_*"
-  ```
+     ```text
+     15 6-22/2 * * * rclone copy /opt/mantasguajiras/deploy/backups copias-cifradas: --include "mantas_*"
+     ```
+
+  Para recuperar: `rclone copy copias-cifradas:ARCHIVO.dump .` (y su `.sha256`).
 
 - **Tu PC:** una tarea programada de Windows que traiga las copias con `scp`.
+
+**Quién puede leer las copias.** En el servidor, solo el administrador del sistema (root), porque las copias se crean con permisos `600`. En el PC con Windows, solo tu usuario, porque están en tu carpeta personal. En la nube, nadie sin la contraseña del remoto cifrado.
 
 **Restaurar en una emergencia:** `./import-data.sh backups/ARCHIVO.dump`. Toma la copia más reciente con su `.sha256`.
 

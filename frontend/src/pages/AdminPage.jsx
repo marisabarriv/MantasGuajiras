@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import useUnsavedChanges from "../hooks/useUnsavedChanges";
 import useAutoRefresh from "../hooks/useAutoRefresh";
 
 import Modal from "../components/Modal";
@@ -42,6 +43,8 @@ function AdminPage() {
     // Modales
     const [editing, setEditing] = useState(null);   // usuario en edición o "new"
     const [form, setForm] = useState(EMPTY_FORM);
+    // Cómo estaba el formulario al abrirlo, para saber si hay cambios sin guardar.
+    const [formStart, setFormStart] = useState(EMPTY_FORM);
     const [formError, setFormError] = useState("");
     const [saving, setSaving] = useState(false);
 
@@ -140,25 +143,29 @@ function AdminPage() {
 
     const openCreate = () => {
         setForm(EMPTY_FORM);
+        setFormStart(EMPTY_FORM);
         setFormError("");
         setMessage("");
         setEditing("new");
     };
 
     const openEdit = (user) => {
-        setForm({
+        const start = {
             username: user.username,
             phone: user.phone,
             password: "",
             role: user.role,
             active: Boolean(user.active),
-        });
+        };
+        setForm(start);
+        setFormStart(start);
         setFormError("");
         setMessage("");
         setEditing(user);
     };
 
     const isNew = editing === "new";
+    useUnsavedChanges(Boolean(editing) && JSON.stringify(form) !== JSON.stringify(formStart));
     const editingSelf = !isNew && editing && editing.username === me.username;
 
     const handleSave = async (event) => {
@@ -429,6 +436,7 @@ function AdminPage() {
                 open={Boolean(editing)}
                 onClose={() => setEditing(null)}
                 title={isNew ? "Crear usuario" : "Editar usuario"}
+                guardUnsaved
             >
                 {editing && (
                     <div className="product-form">

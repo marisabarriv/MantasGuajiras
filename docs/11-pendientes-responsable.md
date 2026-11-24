@@ -45,8 +45,10 @@ Guía completa: `docs/09-copias-de-seguridad.md`.
 
 ## E. Aceptación del negocio (al final)
 
-- [ ] **15. Recorrer los 24 escenarios de aceptación** de la auditoría con usuarios reales (productos, inventario, ventas, compras y producción, usuarios y seguridad, sin conexión). En particular, comprobar **en la pantalla** el precio especial ($80.000 → $70.000 en el carrito, la confirmación y el historial).
-- [ ] **16. Firmar el acta de aceptación** cuando todo esté conforme (sección 20 de `docs/10-certificacion.md`).
+Todo está preparado en **`docs/15-aceptacion.md`**. Los 24 escenarios ya pasaron el ensayo automático (24/24); falta tu confirmación con los datos y procedimientos reales. El manual con imágenes está en `docs/14-manual-de-usuario.md`.
+
+- [ ] **15. Recorrer los 24 escenarios** de `docs/15` §3 con una vendedora real. Comprueba **en la pantalla** el precio especial ($80.000 → $70.000) y la venta sin conexión con el **modo avión** del celular.
+- [ ] **16. Responder los 14 criterios del negocio** (`docs/15` §4) y **firmar el acta** (§6). Con el acta firmada, la versión pasa a `1.0.0`.
 
 ## F. Puesta en producción (Fase 7)
 

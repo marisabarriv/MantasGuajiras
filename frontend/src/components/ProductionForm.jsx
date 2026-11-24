@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import useUnsavedChanges from "../hooks/useUnsavedChanges";
 
 import InventoryService from "../services/InventoryService";
 import ProductionService from "../services/ProductionService";
@@ -35,6 +36,9 @@ function ProductionForm({ makerSuggestions = [], onSuccess, onCancel }) {
     const [showErrors, setShowErrors] = useState(false);
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState("");
+
+    // Datos sin guardar: algún campo tiene algo escrito o elegido.
+    useUnsavedChanges(Boolean(fabricId || perUnit || outputId || outputQuantity || makerName.trim() || observations.trim()));
 
     const savingRef = useRef(false);
 

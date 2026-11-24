@@ -296,6 +296,7 @@ function PurchasesPage() {
                 open={formOpen}
                 onClose={() => setFormOpen(false)}
                 title="Registrar compra"
+                guardUnsaved
             >
                 {formOpen && (
                     <PurchaseForm

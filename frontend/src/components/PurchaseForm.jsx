@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import useUnsavedChanges from "../hooks/useUnsavedChanges";
 
 import InventoryService from "../services/InventoryService";
 import PurchaseService from "../services/PurchaseService";
@@ -50,6 +51,12 @@ function PurchaseForm({ onSuccess, onCancel }) {
     // Mismo identificador en todos los reintentos de este formulario: si se
     // corta la conexión justo al guardar, volver a pulsar no lo duplica.
     const [clientRequestId] = useState(newClientRequestId);
+
+    // Datos sin guardar: alguna línea o las observaciones tienen algo escrito.
+    useUnsavedChanges(
+        observations.trim() !== "" ||
+        lines.some((line) => line.productId || line.quantity || line.unitCost)
+    );
 
 
     // Productos activos con su unidad y existencia actual.

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import useUnsavedChanges from "../hooks/useUnsavedChanges";
 
 import InventoryService from "../services/InventoryService";
 import OrderService from "../services/OrderService";
@@ -34,6 +35,9 @@ function CustomOrderForm({ onSuccess, onCancel }) {
     const [total, setTotal] = useState("");
     const [paidInFull, setPaidInFull] = useState(false);
     const [payment, setPayment] = useState("");
+
+    // Datos sin guardar: algún campo tiene algo escrito o elegido.
+    useUnsavedChanges(Boolean(name.trim() || clientName.trim() || fabricId || meters || total || payment || paidInFull));
 
     const [showErrors, setShowErrors] = useState(false);
     const [saving, setSaving] = useState(false);
