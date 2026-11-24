@@ -7,7 +7,7 @@
 | **Código**               | DOC-10                         |
 | **Versión**              | v1.0.0-rc.1                    |
 | **Estado**               | En curso                       |
-| **Última actualización** | 24/11/2026 (Fase 4)            |
+| **Última actualización** | 24/11/2026 (Fase 5)            |
 
 ---
 
@@ -51,8 +51,12 @@ Cada criterio tiene **prioridad**, **estado** y **evidencia**. Un criterio solo 
 | `UPG` | Actualización V19 → V21 con datos reales de prueba (versión anterior `a6f5ada` → actual): datos idénticos, integridad y 12 comprobaciones funcionales | 24/11/2026; `docs/09` §4.2 |
 | `SIM` | Simulacro de pérdida total con 3 años de datos: recuperación técnica en 7,5 s, datos idénticos | 24/11/2026; `docs/09` §7 |
 | `OSV` | Escaneo de dependencias en CI (OSV-Scanner): la ejecución #6 encontró 32 avisos en el backend (Spring Boot 4.1.0); tras actualizar a 4.1.3, la #7 da **0** | GitHub Actions |
+| `T-flow` | `BusinessFlowHttpTest`: recorrido completo del negocio por HTTP (todos los controladores) | `backend/src/test` |
+| `T-user` | `UserManagementTest` (6) y `LastAdminRuleTest` | `backend/src/test` |
+| `T-cat` | `CatalogAdminTest` (2) e `InventoryQueryTest` (3) | `backend/src/test` |
+| `COV` | JaCoCo: 92,1 % líneas / 72,7 % ramas global; 91,2 % reglas críticas; 92,0 % servicios. Umbral en el build: 85 % / 65 % | 24/11/2026; artefacto `cobertura-backend` en la CI |
 | `T-log` | `UnexpectedErrorLoggingTest`: error interno registrado con código, sin detalles al usuario | `backend/src/test` |
-| `E2E` | `frontend/e2e/offline-sync.e2e.cjs` (10 escenarios, 41 comprobaciones, navegador real) | se ejecuta en CI |
+| `E2E` | `frontend/e2e/offline-sync.e2e.cjs` (11 escenarios, 49 comprobaciones, navegador real) | se ejecuta en CI |
 | `CI` | GitHub Actions: backend + frontend + E2E. Ejecución #1 en verde (24/11/2026) | pestaña **Actions** |
 | `BKP` | Pruebas de los scripts de respaldo contra PostgreSQL: copia sana, archivo dañado, inventario alterado, falta de `.sha256`, retención en `CopyTo` | sesión del 23-24/11/2026; `scripts/backup` |
 | `AUD` | `npm audit`: 0 vulnerabilidades (producción y desarrollo) tras `npm audit fix` | 24/11/2026 |
@@ -94,15 +98,15 @@ Ninguno puede quedar abierto para dar 10/10.
 | ARQ-06 | Entidades no se exponen directamente | M | ✅ | `REV`: los controladores devuelven DTO |
 | ARQ-07 | DTO de entrada y salida claros | M | ✅ | `REV` |
 | ARQ-08 | Sin dependencias circulares problemáticas | Bj | ⏳ | Sin análisis automático |
-| ARQ-09 | Sin código sin utilidad | Bj | ⏳ | Se borraron 5 archivos vacíos; falta un análisis completo |
+| ARQ-09 | Sin código sin utilidad | Bj | ✅ | Eliminados `UuidUtils`, `DateUtils`, `StringUtils`, `Constants`, `PageResponse` y `ValidationException` (sin uso) y 5 componentes vacíos del frontend |
 | ARQ-10 | Sin lógica de negocio duplicada | M | ⏳ | Categoría → unidad se calcula en frontend y backend (el backend manda) |
 | ARQ-11 | Excepciones centralizadas | M | ✅ | `GlobalExceptionHandler`, `T-log` |
 | ARQ-12 | Nombres comprensibles | Bj | ⏳ | `/api/unit` en singular frente al resto en plural |
-| ARQ-13 | Sin imports ni código muerto | Bj | ⏳ | ESLint lo cubre en frontend; backend sin herramienta |
+| ARQ-13 | Sin imports ni código muerto | Bj | ✅ | 0 imports sin uso en el código de producción (revisión con script, 24/11); ESLint en el frontend |
 | ARQ-14 | Configuración dev/test/prod separada | A | ✅ | Perfiles; la `CI` usa `prod` y `test` |
 | ARQ-15 | Los cambios no rompen lo existente | A | ✅ | `CI` en cada push |
 | ARQ-16 | Sin advertencias de compilación | M | ✅ | Compilación con `showDeprecation`: 0 advertencias |
-| ARQ-17 | Formato y estilo consistentes | Bj | ❌ | Indentación irregular (p. ej. `ProductCategoryController`, `DataInitializer`); sin formateador |
+| ARQ-17 | Formato y estilo consistentes | Bj | ✅ | `.editorconfig`; corregida la sangría de `ProductCategoryController` y `DataInitializer` |
 | ARQ-18 | Operaciones complejas documentadas | M | ✅ | Comentarios en inventario, ventas y offline; `docs/08` §30A |
 | ARQ-19 | Dependencias justificadas y al día | M | ✅ | `OSV` en cada push + Dependabot semanal; Spring Boot 4.1.3 |
 | ARQ-20 | Decisiones arquitectónicas documentadas | M | ✅ | `docs/03`, `docs/02` RN-24A y RN-27 |
@@ -113,9 +117,9 @@ Ninguno puede quedar abierto para dar 10/10.
 
 | ID | Criterio | Pr. | Estado | Evidencia / nota |
 | -- | -------- | --- | ------ | ---------------- |
-| API-01 | Códigos HTTP apropiados | M | ⏳ | 400/401/403/404 probados (`T-perm`); faltan los demás por endpoint |
-| API-02 | Estructura de respuesta consistente | M | ⏳ | Implementado (`ErrorResponse`); falta prueba |
-| API-03 | Mensajes de error claros | M | ⏳ | Implementado; falta revisión por endpoint |
+| API-01 | Códigos HTTP apropiados | M | ✅ | 200/201/204/400/401/403/404/405/409/429 verificados (`T-api`, `T-auth`, `T-flow`, `T-perm`) |
+| API-02 | Estructura de respuesta consistente | M | ✅ | `ErrorResponse` común; mensajes comprobados en `T-api`, `T-auth`, `T-flow` |
+| API-03 | Mensajes de error claros | M | ✅ | Mensajes concretos comprobados en `T-api`, `T-sale`, `T-com`, `T-ord`, `T-auth` |
 | API-04 | Validación en el servidor | A | ✅ | `T-perm` (400 con cuerpo vacío), `T-prod` |
 | API-05 | Rechaza valores inválidos sin depender del frontend | A | ✅ | `T-prod`, `T-conc` (manta en metros) |
 | API-06 | Identificadores inexistentes controlados | M | ✅ | `T-api` (404 inexistente, 400 mal escrito; antes 500) |
@@ -327,7 +331,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | SEG-07 | Roles en el backend | B | ✅ | `T-perm` |
 | SEG-08 | Vendedor sin funciones de administrador | B | ✅ | `T-perm` |
 | SEG-09 | No cambiar el rol propio | B | ✅ | `/users/**` solo ADMIN (`T-perm`); `/api/me` no acepta rol (`REV`) |
-| SEG-10 | Sin acceso a recursos ajenos por id | A | ✅ | `/api/me` usa la sesión, no un id (`REV`); `/users/{id}` solo ADMIN (`T-auth`) |
+| SEG-10 | Sin acceso a recursos ajenos por id | A | ✅ | `/api/me` usa la sesión (`T-flow`); `/users/{id}` solo ADMIN (`T-auth`) |
 | SEG-11 | Inactivos no entran | A | ✅ | `T-auth` (no inicia sesión y su token deja de servir al momento) |
 | SEG-12 | Identificadores únicos | A | ✅ | UNIQUE |
 | SEG-13 | Teléfonos únicos | A | ✅ | `T-auth` (registro con teléfono repetido → 409) |
@@ -381,7 +385,7 @@ Ninguno puede quedar abierto para dar 10/10.
 
 | ID | Criterio | Pr. | Estado | Evidencia / nota |
 | -- | -------- | --- | ------ | ---------------- |
-| UX-01 | Todas las páginas cargan | A | ⏳ | `MAN` sin registro; falta recorrido automático por página |
+| UX-01 | Todas las páginas cargan | A | ✅ | `E2E` esc. 10: las 9 páginas cargan como administrador y como vendedor, sin errores de JavaScript |
 | UX-02 | Navegación coherente | M | ⏳ | `MAN` |
 | UX-03 | Formularios validan obligatorios | A | ⏳ | Implementado; falta revisión sistemática |
 | UX-04 | Errores con causa | A | ✅ | Mensaje real del backend (`apiClient`); `E2E` (motivo del rechazo) |
@@ -394,7 +398,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | UX-11 | Pendiente frente a confirmada | A | ✅ | `E2E` |
 | UX-12 | Fotos | M | ✅ | `MAN` |
 | UX-13 | Éxito solo si se completó | A | ✅ | `E2E` (registrada frente a guardada sin conexión) |
-| UX-14 | Permisos reflejados | A | ⏳ | `REV` (menú y botones por rol); falta prueba con vendedor |
+| UX-14 | Permisos reflejados | A | ✅ | `E2E` esc. 10: menú, crear productos y ajustar según el rol |
 | UX-15 | Errores de red | A | ✅ | `E2E` |
 | UX-16 | Estados vacíos | Bj | ⏳ | Implementados en varias pantallas; falta revisión |
 | UX-17 | Tamaños de pantalla | M | ⏳ | Diseño responsive; falta prueba en celular |
@@ -414,17 +418,17 @@ Ninguno puede quedar abierto para dar 10/10.
 | ID | Criterio | Pr. | Estado | Evidencia |
 | -- | -------- | --- | ------ | --------- |
 | IMG-01 | Subir | M | ✅ | `MAN` |
-| IMG-02 | 20 MB en frontend y backend | M | ⏳ | Implementado en ambos; falta prueba del 413 |
+| IMG-02 | 20 MB en frontend y backend | M | ✅ | Backend `T-user` (21 MB rechazado); frontend valida antes de subir (`ProfilePage`) |
 | IMG-03 | Formato real | A | ✅ | `T-img` |
 | IMG-04 | Rechaza no imágenes | A | ✅ | `T-img` |
-| IMG-05 | Archivos excesivos | M | ⏳ | Límites de Spring (`max-file-size`); falta prueba |
+| IMG-05 | Archivos excesivos | M | ✅ | `T-user` |
 | IMG-06 | Recuperar | M | ✅ | `MAN` |
 | IMG-07 | Actualizar | M | ⏳ | — |
 | IMG-08 | Sin rutas internas | A | ✅ | Se guardan en la base (`REV`) |
 | IMG-09 | Corruptos | M | ✅ | `T-img` (archivo truncado) |
 | IMG-10 | No bloquea la app | Bj | ⏳ | — |
 | IMG-11 | Fallos de transmisión | Bj | ⏳ | Tiempo límite de 120 s en el frontend |
-| IMG-12 | Eliminación | Bj | ⏳ | — |
+| IMG-12 | Eliminación | Bj | ✅ | `T-user`, `T-flow` (quitar foto → 404 al pedirla) |
 
 ## 13. Rendimiento
 
@@ -514,13 +518,13 @@ Ninguno puede quedar abierto para dar 10/10.
 | QA-15 | Operaciones repetidas | A | ✅ | Ventas |
 | QA-16 | Transiciones de estado | M | ✅ | `T-ord` (pendiente → pagada; pagada no acepta más pagos) |
 | QA-17 | Reproducibles | A | ✅ | `E2E` 3 ejecuciones seguidas + `CI` |
-| QA-18 | Independientes del orden | M | ⏳ | Usan datos únicos; sin verificación en orden aleatorio |
+| QA-18 | Independientes del orden | M | ✅ | Orden aleatorio permanente (`runOrder=random`); 104/104 con dos semillas distintas (24/11) |
 | QA-19 | Pipeline: lint y build | A | ✅ | `CI` |
 | QA-20 | Pipeline: backend | A | ✅ | `CI` |
 | QA-21 | Un fallo bloquea el pipeline | A | ✅ | `CI` |
-| QA-22 | Revisión antes de integrar | M | ⏳ | Se usó pull request; falta proteger `main` en GitHub |
+| QA-22 | Revisión antes de integrar | M | ⏳ | La CI está lista; falta activar la protección de `main` en GitHub (pasos en `docs/06` §14.6, decisión de la dueña del repositorio) |
 | QA-23 | Sin pruebas desactivadas | A | ✅ | Ninguna |
-| QA-24 | Cobertura medida | M | ❌ | Sin JaCoCo |
+| QA-24 | Cobertura medida | M | ✅ | `COV` con umbral en el build |
 | QA-25 | Regresión antes de publicar | A | ✅ | `CI` en cada push y pull request |
 
 ## 17. Infraestructura y despliegue
@@ -602,12 +606,12 @@ NEG-01 a NEG-14: ⏳ **pendientes de validación por la responsable del negocio*
 
 ## Resumen
 
-Conteo automático de la matriz (24/11/2026, después de las Fases 3 y 4). Evolución: inicio 189 ✅ → Fase 1 256 → Fase 2 258 → Fases 3-4 275 ✅.
+Conteo automático de la matriz (24/11/2026, después de la Fase 5). Evolución: inicio 189 ✅ → Fase 1 256 → Fase 2 258 → Fases 3-4 275 → Fase 5 288 ✅.
 
 | Área | Criterios | ✅ | ⏳ | ❌ |
 | ---- | --------- | -- | -- | -- |
-| 1. Arquitectura y calidad del código | 20 | 14 | 5 | 1 |
-| 2. Backend y API REST | 20 | 13 | 6 | 1 |
+| 1. Arquitectura y calidad del código | 20 | 17 | 3 | 0 |
+| 2. Backend y API REST | 20 | 16 | 3 | 1 |
 | 3. Base de datos y persistencia | 20 | 16 | 3 | 1 |
 | 4. Productos, categorías y unidades | 18 | 17 | 1 | 0 |
 | 5. Inventario y movimientos | 20 | 20 | 0 | 0 |
@@ -616,17 +620,17 @@ Conteo automático de la matriz (24/11/2026, después de las Fases 3 y 4). Evolu
 | 8. Producción y pedidos personalizados | 18 | 17 | 1 | 0 |
 | 9. Usuarios, roles y seguridad | 25 | 24 | 1 | 0 |
 | 10. Funcionamiento offline y sincronización | 20 | 20 | 0 | 0 |
-| 11. Frontend y experiencia de usuario | 25 | 7 | 17 | 1 |
-| 12. Fotografías y archivos | 12 | 6 | 6 | 0 |
+| 11. Frontend y experiencia de usuario | 25 | 9 | 15 | 1 |
+| 12. Fotografías y archivos | 12 | 9 | 3 | 0 |
 | 13. Rendimiento | 15 | 1 | 12 | 2 |
 | 14. Copias de seguridad y recuperación | 20 | 16 | 3 | 1 |
 | 15. Logs, monitoreo y observabilidad | 15 | 4 | 4 | 7 |
-| 16. Pruebas automatizadas y calidad continua | 25 | 22 | 2 | 1 |
+| 16. Pruebas automatizadas y calidad continua | 25 | 24 | 1 | 0 |
 | 17. Infraestructura y despliegue | 20 | 8 | 12 | 0 |
 | 18. Errores y resiliencia | 12 | 9 | 3 | 0 |
 | 19. Documentación y operación | 20 | 14 | 3 | 3 |
 | 20. Aceptación del negocio | 14 | 0 | 14 | 0 |
-| **Total** | **387** | **275** (71 %) | **94** | **18** |
+| **Total** | **387** | **288** (74 %) | **83** | **16** |
 
 Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por comprobar en el equipo del negocio** (10: ejecutar las copias `.ps1` en Windows).
 
@@ -638,7 +642,7 @@ Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por c
 | **2. Offline** ✅ | Hecha el 24/11/2026: escenarios A–D más dos pestañas, envíos simultáneos, sesión vencida sin conexión y dispositivo sin espacio. Decisiones aplicadas: nombres únicos y sin estado "cancelada" | OFF-*, RES-08, PRO-10/18 |
 | **3. Seguridad** ✅ | Hecha el 24/11/2026: bloqueo tras 5 intentos; 12 pruebas de seguridad con inicio de sesión real; escaneo de dependencias en CI (encontró y se corrigieron vulnerabilidades críticas); Dependabot | SEG-*, B-11 |
 | **4. Recuperación** ✅ | Hecha el 24/11/2026: actualización V19 → V21 con datos sin pérdidas; simulacro de pérdida total con 3 años de datos (7,5 s); `restore-db.sh`; procedimiento de vuelta atrás; RPO/RTO propuestos. **Queda en manos del negocio:** ejecutar los `.ps1` en el PC de Windows | BKP-17/18, DB-09, DEP-14/15/19, B-8/9/11 |
-| **5. Calidad** | JaCoCo, protección de `main`, formateo | QA-22/24, ARQ-17 |
+| **5. Calidad** ✅ | Hecha el 24/11/2026: cobertura 92 % con umbral en el build; 13 pruebas nuevas (104 en total) incluido el recorrido completo por HTTP; orden aleatorio; código muerto eliminado; `.editorconfig`; E2E por todas las páginas y roles. **Queda en manos de la dueña:** proteger `main` (`docs/06` §14.6) | QA-18/24, ARQ-09/13/17, UX-01/14 |
 | **6. Rendimiento** | Paginación, N+1 del historial, endpoint de salud, logs a archivo con rotación, prueba de carga | REN-*, DB-18, OBS-* |
 | **7. Producción** | Infraestructura, HTTPS, dominio, CORS, rollback | DEP-* |
 | **8. Aceptación** | Recorrido de los 24 escenarios con la responsable del negocio; manual de usuario | NEG-*, DOC-17 |

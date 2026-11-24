@@ -258,34 +258,34 @@ public class DataInitializer implements CommandLineRunner {
 
     private void createUnits() {
 
-    createUnit(
-            "Metro",
-            "m"
-    );
+        createUnit(
+                "Metro",
+                "m"
+        );
 
-    createUnit(
-            "Unidad",
-            "#"
-    );
-}
-
-private void createUnit(
-        String name,
-        String abbreviation) {
-
-    if (
-            unitRepository
-                    .existsByAbbreviationIgnoreCase(abbreviation)
-    ) {
-        return;
+        createUnit(
+                "Unidad",
+                "#"
+        );
     }
 
-    unitRepository.save(
-            Unit.builder()
-                    .name(name)
-                    .abbreviation(abbreviation)
-                    .active(true)
-                    .build()
-    );
-}
+    private void createUnit(
+            String name,
+            String abbreviation) {
+
+        if (
+                unitRepository
+                        .existsByAbbreviationIgnoreCase(abbreviation)
+        ) {
+            return;
+        }
+
+        unitRepository.save(
+                Unit.builder()
+                        .name(name)
+                        .abbreviation(abbreviation)
+                        .active(true)
+                        .build()
+        );
+    }
 }

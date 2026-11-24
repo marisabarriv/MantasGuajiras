@@ -79,24 +79,6 @@ public class GlobalExceptionHandler {
                                 .body(response);
         }
 
-        @ExceptionHandler(ValidationException.class)
-        public ResponseEntity<ErrorResponse> handleValidationException(
-                        ValidationException ex,
-                        HttpServletRequest request) {
-
-                ErrorResponse response = ErrorResponse.builder()
-                                .timestamp(LocalDateTime.now())
-                                .status(HttpStatus.BAD_REQUEST.value())
-                                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                                .message(ex.getMessage())
-                                .path(request.getRequestURI())
-                                .build();
-
-                return ResponseEntity
-                                .status(HttpStatus.BAD_REQUEST)
-                                .body(response);
-        }
-
         @ExceptionHandler(BusinessException.class)
         public ResponseEntity<ErrorResponse> handleBusiness(
                         BusinessException ex,
