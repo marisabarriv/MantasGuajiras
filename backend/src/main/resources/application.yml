@@ -71,13 +71,23 @@ app:
 # =========================================================
 # Estado del sistema: GET /actuator/health
 # Responde {"status":"UP"} con el estado de la base de datos y del disco,
-# sin detalles internos. Es lo único que se publica de Actuator.
+# sin detalles internos.
+# Versión instalada: GET /actuator/info (versión, fecha de compilación y
+# commit). Es lo único que se publica de Actuator.
 # =========================================================
+info:
+  app:
+    # Lo define el kit de despliegue al compilar (deploy/deploy.sh).
+    commit: ${APP_COMMIT:desconocido}
+
 management:
+  info:
+    env:
+      enabled: true
   endpoints:
     web:
       exposure:
-        include: health
+        include: health, info
   endpoint:
     health:
       show-components: always

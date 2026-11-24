@@ -13,6 +13,7 @@
 9. Sin espacio en el dispositivo: la venta no se da por guardada, se avisa y el carrito se conserva para reintentar.
 10. Recorrido por las 9 páginas como administrador y como vendedor: todas cargan, sin errores de JavaScript, menú y botones según el rol.
 11. Actualización automática del inventario y ausencia de violaciones de la política de seguridad (CSP).
+12. El servidor falla al guardar una venta (por ejemplo, la base de datos se cae): la venta queda en el dispositivo y se envía sola, una vez, cuando el servidor se recupera.
 
 Se ejecuta sola en GitHub Actions (`.github/workflows/ci.yml`) en cada push.
 
@@ -58,3 +59,9 @@ Se ejecuta sola en GitHub Actions (`.github/workflows/ci.yml`) en cada push.
 Termina con `RESULTADO: TODO CORRECTO`, o indica qué comprobación falló.
 
 Variables opcionales: `E2E_APP` (por defecto `http://localhost:4173`), `E2E_API` (`http://localhost:8080`), `E2E_ADMIN_USER`, `E2E_ADMIN_PASSWORD` y `E2E_SCREENSHOTS` (carpeta donde guardar capturas).
+
+Contra el kit de producción (`deploy/`, ver `docs/13-produccion.md`) con certificado local:
+
+```bash
+E2E_APP=https://localhost E2E_API=https://localhost E2E_INSECURE_TLS=1 node e2e/offline-sync.e2e.cjs
+```

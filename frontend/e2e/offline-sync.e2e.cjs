@@ -10,6 +10,8 @@
  *   - Frontend COMPILADO y servido en E2E_APP (por defecto http://localhost:4173):
  *       VITE_API_URL=http://localhost:8080 npm run build && npm run preview
  *   - E2E_ADMIN_USER / E2E_ADMIN_PASSWORD: administrador inicial de esa base.
+ *   - Contra el kit de producción (deploy/) con certificado local:
+ *       E2E_APP=https://localhost E2E_API=https://localhost E2E_INSECURE_TLS=1
  *
  * Ejecutar:  node e2e/offline-sync.e2e.cjs
  */
@@ -20,6 +22,11 @@ const API = process.env.E2E_API || 'http://localhost:8080';
 const ADMIN_USER = process.env.E2E_ADMIN_USER || 'admine2e';
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'Prueba123';
 const SHOTS = process.env.E2E_SCREENSHOTS || '';
+// Certificado local de Caddy (SITE_ADDRESS=localhost): aceptarlo en la prueba.
+const INSECURE_TLS = process.env.E2E_INSECURE_TLS === '1';
+if (INSECURE_TLS) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 
 const RUN = Date.now().toString(36).slice(-5);
 let failures = 0;
@@ -138,8 +145,10 @@ const pendingIds = (page) => page.evaluate(() =>
     const [sellerA, sellerB] = sellers;
     check(true, `productos ${grande.internalCode}, ${ultima.internalCode}; vendedores ${sellerA.username}, ${sellerB.username}`);
 
-    const browser = await chromium.launch();
-    const context = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+    // Con certificado local, Chromium solo registra el service worker (modo
+    // sin conexión) si se le indica aceptar ese certificado al arrancar.
+    const browser = await chromium.launch({ args: INSECURE_TLS ? ['--ignore-certificate-errors'] : [] });
+    const context = await browser.newContext({ viewport: { width: 1280, height: 860 }, ignoreHTTPSErrors: INSECURE_TLS });
     const page = await context.newPage();
 
     const cspViolations = [];
@@ -483,6 +492,34 @@ const pendingIds = (page) => page.evaluate(() =>
     }, { name: grande.name, expected: counted }, { timeout: 10000 }).then(() => true, () => false)
         .then((ok) => check(ok, 'el inventario se actualiza solo al volver a la app'));
     check(cspViolations.length === 0, `sin violaciones de la política de seguridad (CSP)${cspViolations.length ? `: ${cspViolations[0]}` : ''}`);
+
+    // -----------------------------------------------------------
+    step('12. El servidor falla al guardar (p. ej. la base de datos se cae)');
+    await api('/api/inventory/adjustments', {
+        method: 'POST', token: adminToken,
+        body: { productId: grande.id, countedQuantity: 5, reason: 'E2E: base caída' },
+    });
+    await page.goto(APP + '/sale');
+    await page.locator('.product-card', { hasText: grande.name }).waitFor();
+    let failedOnce = false;
+    await page.route('**/api/sales', async (route) => {
+        if (route.request().method() !== 'POST' || failedOnce) return route.continue();
+        failedOnce = true;
+        await route.fulfill({ status: 500, contentType: 'application/json',
+            body: JSON.stringify({ status: 500, message: 'Ha ocurrido un error interno. Código de referencia: e2e00000.' }) });
+    });
+    await sell(page, grande.name);
+    const keptOnDevice = await page.getByText('quedó guardada en este dispositivo').waitFor({ timeout: 15000 })
+        .then(() => true, () => false);
+    check(keptOnDevice, 'la venta NO se pierde: queda guardada en el dispositivo');
+    await closeSaleModal(page).catch(() => {});
+    const [serverDownId] = await pendingIds(page);
+    await page.unroute('**/api/sales');
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('mg-offline-sales') || '[]').length === 0, null, { timeout: 40000 })
+        .catch(() => {});
+    check(serverDownId && (await salesWith(adminToken, serverDownId)).length === 1, 'cuando el servidor se recupera, se envía sola y una sola vez');
+    check(await stockOf(adminToken, grande.id) === 4, 'existencias 5 → 4');
 
     await browser.close();
 

@@ -333,6 +333,11 @@ function ProfilePage() {
 
             </section>
 
+            {/* Versión instalada: para confirmar una actualización o reportar un problema. */}
+            <p className="history-note app-version">
+                Versión de la app: {__APP_VERSION__}
+            </p>
+
         </div>
     );
 }

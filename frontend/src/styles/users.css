@@ -269,3 +269,9 @@
 
     font-size: 14px;
 }
+
+/* Versión instalada, al final de "Mi perfil" */
+.app-version {
+    margin-top: 24px;
+    text-align: center;
+}

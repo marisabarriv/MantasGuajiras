@@ -1,7 +1,8 @@
 import { clearSession, getToken } from "../utils/session";
 import { setServerReachable } from "../utils/connectivity";
 
-const API_URL = import.meta.env.VITE_API_URL;
+// Sin VITE_API_URL (kit de despliegue, mismo dominio): rutas relativas.
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 const CONNECTION_ERROR =
     "No hay conexión con el servidor. Revisa que esté encendido e inténtalo de nuevo.";
