@@ -1,5 +1,9 @@
 package com.mantasguajiras.backend.security.controller;
 
+import com.mantasguajiras.backend.common.exception.TooManyLoginAttemptsException;
+import com.mantasguajiras.backend.security.service.LoginAttemptService;
+import org.springframework.security.authentication.BadCredentialsException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,15 +32,35 @@ public class AuthController {
         private final JwtTokenProvider jwtTokenProvider;
         private final UserRepository userRepository;
         private final UserService userService;
+        private final LoginAttemptService loginAttemptService;
 
         @PostMapping("/login")
         public ResponseEntity<LoginResponse> login(
                         @Valid @RequestBody LoginRequest request) {
 
-                Authentication authentication = authenticationManager.authenticate(
-                                new UsernamePasswordAuthenticationToken(
-                                                request.getIdentifier(),
-                                                request.getPassword()));
+                String identifier = request.getIdentifier();
+
+                // Bloqueo temporal tras varios intentos fallidos (fuerza bruta).
+                loginAttemptService.remainingLock(identifier).ifPresent(remaining -> {
+                        throw new TooManyLoginAttemptsException(remaining);
+                });
+
+                Authentication authentication;
+
+                try {
+                        authentication = authenticationManager.authenticate(
+                                        new UsernamePasswordAuthenticationToken(
+                                                        identifier,
+                                                        request.getPassword()));
+                } catch (BadCredentialsException wrongPassword) {
+                        var lock = loginAttemptService.recordFailure(identifier);
+                        if (lock.isPresent()) {
+                                throw new TooManyLoginAttemptsException(lock.get());
+                        }
+                        throw wrongPassword;
+                }
+
+                loginAttemptService.recordSuccess(identifier);
 
                 String username = authentication.getName();
 

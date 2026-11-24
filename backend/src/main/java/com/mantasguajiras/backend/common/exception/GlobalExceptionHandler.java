@@ -151,6 +151,15 @@ public class GlobalExceptionHandler {
                                 .body(response);
         }
 
+        /** Demasiados intentos fallidos de inicio de sesión (protección contra fuerza bruta). */
+        @ExceptionHandler(TooManyLoginAttemptsException.class)
+        public ResponseEntity<ErrorResponse> handleTooManyAttempts(
+                        TooManyLoginAttemptsException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), request);
+        }
+
         /** Cuenta inactiva o pendiente de aprobación (registro con aprobación). */
         @ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
         public ResponseEntity<ErrorResponse> handleDisabled(
