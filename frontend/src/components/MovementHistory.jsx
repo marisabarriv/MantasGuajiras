@@ -15,7 +15,26 @@ import {
  * - Sin productId: todos (pestaña "Historial de movimientos").
  * reloadKey: cambia su valor para volver a cargar.
  */
+const EMPTY_FILTERS = { type: "", source: "", username: "", from: "", to: "" };
+
 function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }) {
+
+    // Filtros solo en el historial general (el de un producto ya está acotado).
+    const showFilters = showProduct;
+    const [filters, setFilters] = useState(EMPTY_FILTERS);
+    // El usuario se escribe: se aplica medio segundo después de dejar de escribir.
+    const [usernameDraft, setUsernameDraft] = useState("");
+
+    useEffect(() => {
+        const timer = setTimeout(
+            () => setFilters((current) =>
+                current.username === usernameDraft ? current : { ...current, username: usernameDraft }),
+            500
+        );
+        return () => clearTimeout(timer);
+    }, [usernameDraft]);
+
+    const hasFilters = Object.values(filters).some((value) => value !== "");
 
     const [movements, setMovements] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -28,7 +47,7 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
         // Recarga automática: si falla, se conservan los datos actuales.
         const silent = takeSilent();
 
-        InventoryService.findMovements(productId)
+        InventoryService.findMovements(productId, filters)
             .then((data) => {
                 if (!cancelled) {
                     setMovements(Array.isArray(data) ? data : []);
@@ -50,7 +69,69 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
             cancelled = true;
         };
 
-    }, [productId, reloadKey, refreshKey, takeSilent]);
+    }, [productId, filters, reloadKey, refreshKey, takeSilent]);
+
+    const setFilter = (name) => (event) =>
+        setFilters((current) => ({ ...current, [name]: event.target.value }));
+
+    const filterBar = showFilters && (
+        <div className="history-filters" role="group" aria-label="Filtrar movimientos">
+
+            <label>
+                <span>Tipo</span>
+                <select value={filters.type} onChange={setFilter("type")}>
+                    <option value="">Todos</option>
+                    <option value="IN">Entradas</option>
+                    <option value="OUT">Salidas</option>
+                </select>
+            </label>
+
+            <label>
+                <span>Origen</span>
+                <select value={filters.source} onChange={setFilter("source")}>
+                    <option value="">Todos</option>
+                    {Object.entries(SOURCE_TYPE_LABELS).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                    ))}
+                </select>
+            </label>
+
+            <label>
+                <span>Usuario</span>
+                <input
+                    type="search"
+                    value={usernameDraft}
+                    onChange={(event) => setUsernameDraft(event.target.value)}
+                    placeholder="Nombre de usuario"
+                    autoComplete="off"
+                />
+            </label>
+
+            <label>
+                <span>Desde</span>
+                <input type="date" value={filters.from} max={filters.to || undefined} onChange={setFilter("from")} />
+            </label>
+
+            <label>
+                <span>Hasta</span>
+                <input type="date" value={filters.to} min={filters.from || undefined} onChange={setFilter("to")} />
+            </label>
+
+            {hasFilters && (
+                <button
+                    type="button"
+                    className="inv-button-secondary"
+                    onClick={() => {
+                        setFilters(EMPTY_FILTERS);
+                        setUsernameDraft("");
+                    }}
+                >
+                    Quitar filtros
+                </button>
+            )}
+
+        </div>
+    );
 
 
     if (loading) {
@@ -58,18 +139,30 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
     }
 
     if (error) {
-        return <div className="result error inv-result">{error}</div>;
+        return (
+            <>
+                {filterBar}
+                <div className="result error inv-result">{error}</div>
+            </>
+        );
     }
 
     if (movements.length === 0) {
         return (
-            <p className="inv-message">
-                Todavía no hay movimientos registrados.
-            </p>
+            <>
+                {filterBar}
+                <p className="inv-message">
+                    {hasFilters
+                        ? "Ningún movimiento coincide con los filtros."
+                        : "Todavía no hay movimientos registrados."}
+                </p>
+            </>
         );
     }
 
     return (
+        <>
+        {filterBar}
         <ul className="inv-movements">
 
             {movements.map((movement) => {
@@ -129,6 +222,7 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
             })}
 
         </ul>
+        </>
     );
 }
 

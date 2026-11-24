@@ -1,5 +1,7 @@
 package com.mantasguajiras.backend.purchase.dto.requests;
 
+import java.util.UUID;
+
 import jakarta.validation.constraints.Size;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -29,4 +31,11 @@ public class PurchaseRequest {
 
     @NotEmpty(message = "La compra debe tener al menos un producto.")
     private List<@Valid PurchaseItemRequest> items;
+
+    /**
+     * Opcional. Identificador único que genera el dispositivo. Si ya existe
+     * una operación con este identificador, se devuelve la existente en lugar
+     * de registrarla otra vez.
+     */
+    private UUID clientRequestId;
 }

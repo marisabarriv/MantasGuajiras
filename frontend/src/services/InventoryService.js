@@ -18,12 +18,26 @@ const InventoryService = {
     },
 
 
-    /** Historial (más reciente primero). Sin productId devuelve todos. */
-    findMovements(productId = null) {
+    /**
+     * Historial (más reciente primero). Sin productId devuelve todos.
+     * filters (opcionales): { type: "IN"|"OUT", source, username, from, to }
+     * con fechas AAAA-MM-DD.
+     */
+    findMovements(productId = null, filters = {}) {
 
-        const query = productId
-            ? `?productId=${encodeURIComponent(productId)}`
-            : "";
+        const params = new URLSearchParams();
+
+        if (productId) {
+            params.set("productId", productId);
+        }
+
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && String(value).trim() !== "") {
+                params.set(key, String(value).trim());
+            }
+        });
+
+        const query = params.toString() ? `?${params}` : "";
 
         return request(`/api/inventory-movements${query}`, {
             fallbackMessage: "No fue posible cargar el historial de movimientos.",

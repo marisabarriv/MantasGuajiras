@@ -56,6 +56,15 @@ public class ProductionServiceImpl implements ProductionService {
     @Override
     public ProductionResponse create(ProductionRequest productionRequest) {
 
+        // Reintento de una producción que ya llegó: se devuelve la existente
+        // y NO se descuenta la tela ni se suman las mantas otra vez.
+        if (productionRequest.getClientRequestId() != null) {
+            var existing = productionRepository.findByClientRequestId(productionRequest.getClientRequestId());
+            if (existing.isPresent()) {
+                return productionMapper.toResponse(existing.get());
+            }
+        }
+
         Product fabric = findActiveProduct(
                 productionRequest.getFabricProductId()
         );

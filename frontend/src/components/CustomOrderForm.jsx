@@ -7,6 +7,8 @@ import {
     formatQuantity,
     isWholeUnit,
 } from "../utils/inventoryFormat";
+import { newClientRequestId } from "../utils/offlineStore";
+import { isConnectionError } from "../services/apiClient";
 
 const money = (value) =>
     `$${Number(value || 0).toLocaleString("es-CO", { maximumFractionDigits: 2 })}`;
@@ -38,6 +40,10 @@ function CustomOrderForm({ onSuccess, onCancel }) {
     const [saveError, setSaveError] = useState("");
 
     const savingRef = useRef(false);
+
+    // Mismo identificador en todos los reintentos de este formulario: si se
+    // corta la conexión justo al guardar, volver a pulsar no lo duplica.
+    const [clientRequestId] = useState(newClientRequestId);
 
 
     // Solo telas (se miden en metros).
@@ -146,6 +152,7 @@ function CustomOrderForm({ onSuccess, onCancel }) {
 
         try {
             const order = await OrderService.create({
+                clientRequestId,
                 name: name.trim(),
                 clientName: clientName.trim() || null,
                 total: totalNumber,
@@ -158,7 +165,11 @@ function CustomOrderForm({ onSuccess, onCancel }) {
             onSuccess(order);
 
         } catch (error) {
-            setSaveError(error.message);
+            setSaveError(
+                isConnectionError(error)
+                    ? error.message + " Puedes volver a pulsar Guardar: si ya se había registrado, no se repetirá."
+                    : error.message
+            );
         } finally {
             savingRef.current = false;
             setSaving(false);

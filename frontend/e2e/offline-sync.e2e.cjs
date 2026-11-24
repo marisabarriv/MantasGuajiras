@@ -270,7 +270,70 @@ const pendingIds = (page) => page.evaluate(() =>
     check(await stockOf(adminToken, grande.id) === 7, 'existencias 8 → 7');
 
     // -----------------------------------------------------------
-    step('5. Actualización automática y seguridad de contenido');
+    step('5. Compra: se corta la conexión al guardar y se pulsa otra vez');
+    await uiLogout(page);
+    await uiLogin(page, ADMIN_USER, ADMIN_PASSWORD);
+    const tela = await api('/api/products', {
+        method: 'POST', token: adminToken,
+        body: {
+            categoryId: categories.find((c) => c.name === 'Tela').id,
+            unitId: units.find((u) => u.abbreviation === 'm').id,
+            name: `E2E Tela ${RUN}`, unitPrice: 20000, minimumWholesaleQuantity: 0,
+            purchasable: true, manufacturable: false, active: true, initialStock: 5,
+        },
+    });
+    const purchasesBefore = (await api('/api/purchases', { token: adminToken })).length;
+
+    await page.goto(APP + '/purchases');
+    await page.getByRole('button', { name: '+ Registrar compra' }).click();
+    await page.locator('select[id^="product-"]').first().selectOption(tela.id);
+    await page.locator('input[id^="qty-"]').first().fill('3');
+    await page.locator('input[id^="cost-"]').first().fill('20000');
+
+    let purchaseLost = 0;
+    await page.route('**/api/purchases', async (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        await route.fetch();          // el servidor la guarda...
+        purchaseLost++;
+        await route.abort('connectionreset'); // ...pero la respuesta no llega
+    });
+    await page.getByRole('button', { name: 'Registrar compra', exact: true }).click();
+    await page.getByText('Puedes volver a pulsar Guardar').waitFor({ timeout: 30000 });
+    check(purchaseLost === 1, 'el servidor recibió la compra y la pantalla muestra el error de conexión');
+
+    await page.unroute('**/api/purchases');
+    await page.getByRole('button', { name: 'Registrar compra', exact: true }).click();
+    await page.locator('.result.success, [role="status"]').first().waitFor({ timeout: 15000 });
+    const purchasesAfter = (await api('/api/purchases', { token: adminToken })).length;
+    check(purchasesAfter === purchasesBefore + 1, 'al pulsar otra vez se registra UNA sola compra');
+    check(await stockOf(adminToken, tela.id) === 8, 'la tela sube una sola vez (5 + 3)');
+
+    // -----------------------------------------------------------
+    step('6. Ajuste con motivo obligatorio y filtros del historial');
+    await page.goto(APP + '/inventory');
+    const telaRow = page.locator('.inv-row', { hasText: tela.name });
+    await telaRow.getByRole('button', { name: 'Ajustar' }).click();
+    await page.fill('#countedQuantity', '7');
+    const saveAdjust = page.locator('form button[type="submit"]').last();
+    check(await saveAdjust.isDisabled(), 'sin motivo no se puede guardar el ajuste');
+    await page.fill('#adjustReason', 'E2E: conteo con motivo');
+    check(await saveAdjust.isEnabled(), 'con motivo se habilita');
+    await saveAdjust.click();
+    await page.waitForFunction(() => !document.querySelector('#adjustReason'), null, { timeout: 10000 });
+    check(await stockOf(adminToken, tela.id) === 7, 'existencias 8 → 7');
+
+    await page.getByRole('tab', { name: /Historial/ }).click();
+    await page.locator('.history-filters select').nth(1).selectOption('ADJUSTMENT');
+    await page.locator('.history-filters input[type="search"]').fill(ADMIN_USER);
+    await page.waitForTimeout(1500);
+    const kinds = await page.locator('.inv-movement-kind').allInnerTexts();
+    check(kinds.length > 0 && kinds.every((kind) => /ajuste/i.test(kind)), `el filtro "Ajuste" solo muestra ajustes (${kinds.length})`);
+    const owners = await page.locator('.inv-movement-meta').allInnerTexts();
+    check(owners.every((meta) => meta.includes(ADMIN_USER)), 'el filtro de usuario solo muestra los del administrador');
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/e2e-6-filtros.png`, fullPage: true });
+
+    // -----------------------------------------------------------
+    step('7. Actualización automática y seguridad de contenido');
     await page.goto(APP + '/inventory');
     await page.locator('.inv-row', { hasText: grande.name }).waitFor();
     await api('/api/inventory/adjustments', {

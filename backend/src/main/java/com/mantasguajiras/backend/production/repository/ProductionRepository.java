@@ -1,5 +1,7 @@
 package com.mantasguajiras.backend.production.repository;
 
+import java.util.Optional;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -15,4 +17,7 @@ public interface ProductionRepository extends JpaRepository<Production, UUID> {
     /** Historial de producciones, de la más reciente a la más antigua. */
     @EntityGraph(attributePaths = {"createdBy"})
     List<Production> findAllByOrderByCreatedAtDesc();
+
+    /** Operación ya registrada con ese identificador del dispositivo. */
+    Optional<Production> findByClientRequestId(UUID clientRequestId);
 }

@@ -6,6 +6,8 @@ import {
     formatQuantity,
     isWholeUnit,
 } from "../utils/inventoryFormat";
+import { newClientRequestId } from "../utils/offlineStore";
+import { isConnectionError } from "../services/apiClient";
 
 const money = (value) =>
     `$${Number(value || 0).toLocaleString("es-CO", {
@@ -44,6 +46,10 @@ function PurchaseForm({ onSuccess, onCancel }) {
     const [saveError, setSaveError] = useState("");
 
     const savingRef = useRef(false);
+
+    // Mismo identificador en todos los reintentos de este formulario: si se
+    // corta la conexión justo al guardar, volver a pulsar no lo duplica.
+    const [clientRequestId] = useState(newClientRequestId);
 
 
     // Productos activos con su unidad y existencia actual.
@@ -161,6 +167,7 @@ function PurchaseForm({ onSuccess, onCancel }) {
 
         try {
             const purchase = await PurchaseService.create({
+                clientRequestId,
                 total: totalCents / 100,
                 observations: observations.trim() || null,
                 items: lines.map((line) => ({
@@ -173,7 +180,11 @@ function PurchaseForm({ onSuccess, onCancel }) {
             onSuccess(purchase);
 
         } catch (error) {
-            setSaveError(error.message);
+            setSaveError(
+                isConnectionError(error)
+                    ? error.message + " Puedes volver a pulsar Guardar: si ya se había registrado, no se repetirá."
+                    : error.message
+            );
         } finally {
             savingRef.current = false;
             setSaving(false);

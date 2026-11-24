@@ -1,5 +1,9 @@
 package com.mantasguajiras.backend.inventorymovement.controller;
 
+import com.mantasguajiras.backend.inventorymovement.dto.requests.MovementFilter;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
+
 import com.mantasguajiras.backend.inventorymovement.dto.requests.InventoryMovementRequest;
 import com.mantasguajiras.backend.inventorymovement.dto.response.InventoryMovementResponse;
 import com.mantasguajiras.backend.inventorymovement.service.InventoryMovementService;
@@ -20,15 +24,23 @@ public class InventoryMovementController {
 
     /**
      * Historial de movimientos, del más reciente al más antiguo.
-     * Con ?productId=... devuelve solo los de ese producto.
+     * Filtros opcionales y combinables:
+     *   productId, type (IN/OUT), source (SALE, PURCHASE, PRODUCTION, ORDER,
+     *   ADJUSTMENT), username, from y to (fechas AAAA-MM-DD, incluidas).
      */
     @GetMapping
     public List<InventoryMovementResponse> findAll(
-            @RequestParam(required = false) UUID productId) {
+            @RequestParam(required = false) UUID productId,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String source,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
 
-        return productId == null
-                ? inventoryMovementService.findAll()
-                : inventoryMovementService.findByProduct(productId);
+        return inventoryMovementService.search(
+                new MovementFilter(productId, type, source, username, from, to));
     }
 
     @GetMapping("/{id}")
