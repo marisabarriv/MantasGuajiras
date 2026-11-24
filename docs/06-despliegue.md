@@ -415,6 +415,7 @@ El resultado queda en `frontend/dist` y se publica en cualquier servidor web (Ng
 - [ ] Segunda copia fuera del equipo o servidor (`CopyTo`).
 - [ ] CI en verde en GitHub (pestaña **Actions**): pruebas del backend, lint y build del frontend, escaneo de dependencias y prueba de punta a punta.
 - [ ] Dependabot activado en GitHub (Settings → Code security → Dependabot alerts y security updates).
+- [ ] `main` protegida en GitHub (sección 14.6).
 - [ ] Prueba de restauración **completa** en el entorno de despliegue: restaurar con `restore-db` en una base nueva, apuntar una instancia del backend a ella y revisar inventario, últimas ventas y usuarios.
 - [ ] Recorrido manual de los flujos críticos: venta normal, venta con precio especial, compra, producción, ajuste de inventario, personalizada con abono y pago final, inicio de sesión como vendedor para confirmar que no puede editar productos.
 
@@ -439,6 +440,12 @@ Recomendaciones de operación:
 * Si se pierde un celular, desactivar al usuario desde **Administrar usuarios** y crearle uno nuevo.
 
 Guardar el token en una cookie `HttpOnly` reduciría más el riesgo ante XSS, pero exige cambiar la autenticación y la protección CSRF del backend. Con las medidas anteriores no se considera necesario para esta versión.
+
+## 14.5A. Calidad del código
+
+* **Formato:** `.editorconfig` en la raíz (VS Code lo aplica con la extensión *EditorConfig for VS Code*).
+* **Cobertura:** JaCoCo con umbral mínimo (85 % de líneas, 65 % de ramas); si baja, el build falla.
+* **Orden aleatorio** de las pruebas del backend (`runOrder=random`): una prueba que dependa de otra falla en la CI. La semilla aparece en el log para repetir el mismo orden con `-Dsurefire.runOrder.random.seed=<semilla>`.
 
 ## 14.5. Compartir el proyecto sin claves
 
@@ -503,3 +510,18 @@ Condiciones:
 * Si un producto cambió de precio mientras no había conexión, la venta se registra con el precio vigente al recibirla.
 
 Verificado con una prueba de navegador de punta a punta: venta sin conexión, app reabierta sin conexión, conflicto con otra venta, sincronización automática, reenvío sin duplicar y actualización automática del inventario.
+
+
+## 14.6. Proteger `main` en GitHub
+
+Para que nada llegue a `main` sin pasar la CI y sin revisión:
+
+1. En GitHub: **Settings → Branches → Add branch ruleset** (o *Add classic branch protection rule*).
+2. Rama: `main`.
+3. Activar:
+   * **Require a pull request before merging** (los cambios entran por pull request).
+   * **Require status checks to pass** y marcar: `Backend (pruebas)`, `Frontend (lint y build)`, `Dependencias (vulnerabilidades conocidas)` y `Punta a punta (ventas sin conexión)`.
+   * **Block force pushes**.
+4. Guardar.
+
+Con una sola persona en el proyecto no hace falta exigir aprobaciones de otros revisores; basta con que la CI esté en verde.

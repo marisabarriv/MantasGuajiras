@@ -49,6 +49,13 @@ jobs:
           TEST_DB_URL: jdbc:postgresql://localhost:5432/mantas_guajiras_test
           TEST_DB_USERNAME: postgres
           TEST_DB_PASSWORD: postgres
+      # Informe de cobertura (abrir index.html del artefacto descargado).
+      - name: Guardar informe de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-backend
+          path: backend/target/site/jacoco/
 
   frontend:
     name: Frontend (lint y build)

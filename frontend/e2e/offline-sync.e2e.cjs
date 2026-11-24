@@ -423,7 +423,51 @@ const pendingIds = (page) => page.evaluate(() =>
     check(true, 'con espacio disponible se guarda y luego se envía');
 
     // -----------------------------------------------------------
-    step('10. Actualización automática y seguridad de contenido');
+    step('10. Recorrido por todas las páginas con cada rol');
+    const pages = [
+        ['/sale', 'Nueva venta'], ['/custom-orders', 'Mantas personalizadas'], ['/products', 'Productos'],
+        ['/inventory', 'Inventario'], ['/production', 'Producción'], ['/profile', 'Mi perfil'],
+        ['/sales', 'Ventas'], ['/purchases', 'Compras'], ['/admin', 'Administrar usuarios'],
+    ];
+    const adminOnly = ['/sales', '/purchases', '/admin'];
+    const pageErrors = [];
+    const onPageError = (error) => pageErrors.push(`${page.url()}: ${error.message}`);
+    page.on('pageerror', onPageError);
+
+    for (const [who, user, password] of [['administrador', ADMIN_USER, ADMIN_PASSWORD], ['vendedor', sellerA.username, sellerA.password]]) {
+        await uiLogout(page).catch(() => {});
+        await uiLogin(page, user, password);
+        const isAdmin = who === 'administrador';
+        let loaded = 0;
+        for (const [path, title] of pages) {
+            await page.goto(APP + path);
+            const restricted = !isAdmin && adminOnly.includes(path);
+            const heading = restricted ? 'Sección restringida' : title;
+            const ok = await page.getByRole('heading', { level: 1, name: heading }).waitFor({ timeout: 10000 })
+                .then(() => true, () => false);
+            if (ok) loaded++;
+            else console.log(`    no cargó ${path} como ${who}`);
+        }
+        check(loaded === pages.length, `${who}: las ${pages.length} páginas cargan (las de administrador muestran "Sección restringida" al vendedor)`);
+
+        const menu = await page.locator('.sidebar-nav').innerText();
+        check(isAdmin === /Ventas/.test(menu) && isAdmin === /Compras/.test(menu) && isAdmin === /Administrar usuarios/.test(menu),
+            `${who}: el menú muestra solo lo que le corresponde`);
+
+        await page.goto(APP + '/products');
+        await page.getByRole('heading', { level: 1, name: 'Productos' }).waitFor();
+        const canCreate = await page.getByRole('button', { name: '+ Crear producto' }).count();
+        check(isAdmin ? canCreate === 1 : canCreate === 0, `${who}: ${isAdmin ? 'puede' : 'no puede'} crear productos`);
+
+        await page.goto(APP + '/inventory');
+        await page.locator('.inv-row').first().waitFor();
+        check(await page.getByRole('button', { name: 'Ajustar' }).count() > 0, `${who}: puede ajustar inventario por conteo`);
+    }
+    page.off('pageerror', onPageError);
+    check(pageErrors.length === 0, `sin errores de JavaScript en ninguna página${pageErrors.length ? `: ${pageErrors[0]}` : ''}`);
+
+    // -----------------------------------------------------------
+    step('11. Actualización automática y seguridad de contenido');
     await page.goto(APP + '/inventory');
     await page.locator('.inv-row', { hasText: grande.name }).waitFor();
     // Otro usuario cuenta y deja 2 unidades menos (el valor depende de los pasos anteriores).

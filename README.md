@@ -317,6 +317,11 @@ El backend es responsable de:
 | `SimultaneousRetryTest`    | La misma venta o compra enviada 4 veces a la vez se registra una sola vez. |
 | `AuthenticationSecurityTest` | Inicio de sesión real: contraseñas cifradas y nunca en respuestas, mensajes genéricos, token vencido o alterado, usuario desactivado, vendedor sin poder crear administradores, registro pendiente, bloqueo tras 5 intentos. |
 | `LoginAttemptServiceTest`  | El bloqueo dura lo configurado y se levanta solo. |
+| `BusinessFlowHttpTest`     | Recorrido completo por HTTP: datos maestros → compra → producción → venta → personalizada y pagos → inventario → historial → usuarios → perfil y foto. |
+| `UserManagementTest`       | Usuarios: duplicados, roles, no cambiarse el propio rol, contraseñas, foto de perfil (tipo real, 20 MB). |
+| `LastAdminRuleTest`        | Nunca se queda el sistema sin un administrador activo. |
+| `CatalogAdminTest`         | Categorías y unidades: alta, edición, duplicados, desactivación. |
+| `InventoryQueryTest`       | Estados agotado/bajo/normal, ajustes inválidos, movimientos manuales solo como ajuste. |
 | `ApiValidationTest`        | Datos inválidos enviados por HTTP responden 400/404/405 con mensaje claro, nunca 500. |
 | `RolePermissionsTest`      | Qué puede y qué no puede hacer cada rol.                                      |
 | `ConcurrentSaleTest`       | Dos ventas simultáneas de la última unidad: solo una se registra. Una venta sin conexión reenviada no se duplica; si al sincronizar ya no hay existencias, se rechaza. |
@@ -324,9 +329,11 @@ El backend es responsable de:
 | `ImageSignatureTest`       | La foto de perfil se valida por su contenido real.                            |
 | `UnexpectedErrorLoggingTest` | Un error no previsto queda en el log con un código de referencia y el usuario no ve detalles internos. |
 
+**Cobertura (JaCoCo):** 92 % de líneas del backend (91 % en las reglas de negocio críticas). El build falla si baja del 85 % de líneas o del 65 % de ramas. Informe: `backend/target/site/jacoco/index.html` tras `./mvnw test`, y como artefacto `cobertura-backend` en cada ejecución de la CI. Las pruebas se ejecutan en orden aleatorio para detectar dependencias ocultas entre ellas.
+
 **Frontend:** `npm run lint` y `npm run build`.
 
-**Punta a punta** (`frontend/e2e/offline-sync.e2e.cjs`): navegador real contra backend y base de prueba. Cubre ventas sin conexión, app reabierta sin conexión, corte de conexión justo al enviar (no duplica), conflicto con otro vendedor y "Reintentar", dispositivo compartido entre vendedores, compra con corte de conexión al guardar (no duplica), motivo obligatorio y filtros del historial, dos pestañas sincronizando a la vez, sesión vencida sin conexión, dispositivo sin espacio, actualización automática y ausencia de violaciones de la CSP (10 escenarios). Instrucciones en `frontend/e2e/README.md`.
+**Punta a punta** (`frontend/e2e/offline-sync.e2e.cjs`): navegador real contra backend y base de prueba. Cubre ventas sin conexión, app reabierta sin conexión, corte de conexión justo al enviar (no duplica), conflicto con otro vendedor y "Reintentar", dispositivo compartido entre vendedores, compra con corte de conexión al guardar (no duplica), motivo obligatorio y filtros del historial, dos pestañas sincronizando a la vez, sesión vencida sin conexión, dispositivo sin espacio, recorrido por las 9 páginas con cada rol, actualización automática y ausencia de violaciones de la CSP (11 escenarios). Instrucciones en `frontend/e2e/README.md`.
 
 **Estado de certificación:** `docs/10-certificacion.md` lista cada criterio de calidad con su estado (verificado, pendiente o fallido) y la evidencia que lo respalda.
 
