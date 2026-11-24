@@ -1,4 +1,5 @@
 import { useState } from "react";
+import useUnsavedChanges from "../hooks/useUnsavedChanges";
 
 import InventoryService from "../services/InventoryService";
 import {
@@ -14,6 +15,9 @@ function InventoryAdjustForm({ item, onSuccess, onCancel }) {
 
     const [counted, setCounted] = useState("");
     const [reason, setReason] = useState("");
+
+    // Datos sin guardar: se escribió la cantidad contada o el motivo.
+    useUnsavedChanges(Boolean(counted !== "" || reason.trim()));
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
@@ -47,7 +51,10 @@ function InventoryAdjustForm({ item, onSuccess, onCancel }) {
             ? null
             : Math.round((countedNumber - current) * 100) / 100;
 
-    const canSave = difference !== null && difference !== 0 && !saving;
+    // El motivo es obligatorio: el administrador revisa los ajustes sin estar en el local.
+    const hasReason = reason.trim().length > 0;
+
+    const canSave = difference !== null && difference !== 0 && hasReason && !saving;
 
     // =========================================
     // GUARDAR
@@ -68,7 +75,7 @@ function InventoryAdjustForm({ item, onSuccess, onCancel }) {
             const updated = await InventoryService.adjust({
                 productId: item.productId,
                 countedQuantity: countedNumber,
-                reason: reason.trim() || null,
+                reason: reason.trim(),
             });
 
             onSuccess(updated);
@@ -126,17 +133,22 @@ function InventoryAdjustForm({ item, onSuccess, onCancel }) {
             <div className="form-group">
                 <label htmlFor="adjustReason">
                     Motivo
-                    <span className="optional"> (opcional)</span>
                 </label>
 
                 <input
                     id="adjustReason"
                     type="text"
                     maxLength={150}
+                    required
+                    aria-describedby="adjustReasonHelp"
                     value={reason}
                     onChange={(event) => setReason(event.target.value)}
                     placeholder="Ej.: conteo mensual, producto dañado"
                 />
+
+                <small id="adjustReasonHelp">
+                    Obligatorio: queda en el historial junto con tu usuario.
+                </small>
             </div>
 
             {/* VISTA PREVIA */}

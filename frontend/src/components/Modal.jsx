@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { confirmLeave } from "../utils/unsavedChanges";
 
 /**
  * Ventanas abiertas, en orden. Con ventanas una encima de otra
@@ -13,6 +14,9 @@ function Modal({
     onClose,
     title,
     children,
+    // Ventanas con formulario: preguntar antes de cerrar con la X o Escape
+    // si hay datos sin guardar (utils/unsavedChanges).
+    guardUnsaved = false,
 }) {
 
     // Se guarda en una referencia para no reabrir la ventana (ni
@@ -20,8 +24,10 @@ function Modal({
     const onCloseRef = useRef(onClose);
 
     useEffect(() => {
-        onCloseRef.current = onClose;
-    }, [onClose]);
+        onCloseRef.current = guardUnsaved
+            ? () => { if (confirmLeave()) onClose?.(); }
+            : onClose;
+    }, [onClose, guardUnsaved]);
 
 
     useEffect(() => {
@@ -84,7 +90,7 @@ function Modal({
                 <button
                     type="button"
                     className="modal-close"
-                    onClick={onClose}
+                    onClick={() => onCloseRef.current?.()}
                     aria-label="Cerrar"
                 >
                     ×

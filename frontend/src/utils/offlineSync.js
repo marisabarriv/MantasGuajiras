@@ -73,9 +73,11 @@ export function syncPendingSales() {
 
             } catch (error) {
 
-                // Sigue sin conexión, la sesión venció (401) o hubo un
-                // choque momentáneo (409): se reintenta más tarde.
-                if (isConnectionError(error) || error.status === 401 || error.status === 409) {
+                // Sigue sin conexión, la sesión venció (401), hubo un choque
+                // momentáneo (409) o el servidor no pudo atender (5xx, p. ej.
+                // la base de datos se está reiniciando): se reintenta más tarde.
+                if (isConnectionError(error) || error.status === 401 || error.status === 409
+                    || error.status >= 500) {
                     result.waiting = mine.length - result.sent - result.rejected;
                     break;
                 }

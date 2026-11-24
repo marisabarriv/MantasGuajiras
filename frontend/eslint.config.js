@@ -14,8 +14,22 @@ export default defineConfig([
       reactRefresh.configs.vite,
     ],
     languageOptions: {
-      globals: globals.browser,
+      globals: { ...globals.browser, __APP_VERSION__: 'readonly' },
       parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+  {
+    // Service worker
+    files: ['public/sw.js'],
+    languageOptions: { globals: globals.serviceworker },
+  },
+  {
+    // Pruebas de punta a punta: se ejecutan con Node.
+    files: ['e2e/**/*.cjs'],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: { ...globals.node, ...globals.browser },
     },
   },
 ])

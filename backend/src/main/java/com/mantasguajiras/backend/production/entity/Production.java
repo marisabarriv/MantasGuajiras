@@ -1,5 +1,7 @@
 package com.mantasguajiras.backend.production.entity;
 
+import java.util.UUID;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,4 +52,11 @@ public class Production extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
+
+    /**
+     * Identificador que genera el dispositivo para esta operación. Si llega
+     * dos veces (reintento tras un corte de conexión), no se repite.
+     */
+    @Column(name = "client_request_id", unique = true)
+    private UUID clientRequestId;
 }

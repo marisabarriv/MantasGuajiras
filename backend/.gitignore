@@ -37,3 +37,5 @@ application-dev.yml
 
 # Environment variables file
 .env
+# Logs del backend (logging.file.name)
+logs/

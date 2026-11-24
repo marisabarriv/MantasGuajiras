@@ -68,6 +68,7 @@ El sistema deberá permitir:
 * Consultar un producto específico.
 * Editar productos.
 * Desactivar productos.
+* Impedir nombres repetidos (RN-01A).
 * Registrar código interno.
 * Registrar código de barras cuando corresponda.
 * Asociar una categoría.
@@ -209,7 +210,7 @@ El sistema deberá permitir registrar mantas hechas por encargo para un cliente,
 
 La manta personalizada se entrega directamente al cliente: **no** aumenta el inventario de mantas terminadas.
 
-Disponible para todos los roles (decisión del negocio). Una vez registrada no se modifica ni se elimina.
+Disponible para todos los roles (decisión del negocio). Una vez registrada no se modifica ni se elimina, y no existe el estado "cancelada" (RN-26A).
 
 ---
 

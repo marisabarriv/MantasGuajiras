@@ -1,0 +1,9 @@
+# Nada de claves ni configuración local dentro de la imagen.
+.env
+.env.*
+**/application-dev.yml
+**/application-local.yml
+target
+logs
+*.iml
+.idea

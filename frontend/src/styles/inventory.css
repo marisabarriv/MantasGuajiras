@@ -605,3 +605,53 @@
         font-size: 16px;
     }
 }
+
+
+/* Filtros del historial de movimientos */
+.history-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    align-items: end;
+    gap: 10px 12px;
+
+    margin-bottom: 14px;
+}
+
+.history-filters label {
+    display: grid;
+    gap: 4px;
+
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.history-filters select,
+.history-filters input {
+    min-width: 0;
+    padding: 8px 10px;
+
+    border: 1.5px solid var(--mg-line, #dccbb8);
+    border-radius: 8px;
+
+    background: var(--mg-surface, #ffffff);
+    color: inherit;
+    font: inherit;
+    font-weight: 400;
+}
+
+/* Aviso del periodo consultado (historiales) */
+.history-note {
+    margin: -6px 0 14px;
+
+    color: inherit;
+    opacity: 0.75;
+    font-size: 0.85rem;
+}
+
+/* "Ver más" al final de las listas largas */
+.show-more {
+    display: flex;
+    justify-content: center;
+
+    margin: 16px 0 8px;
+}

@@ -11,9 +11,39 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+        private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+        /** Mensaje cuando PostgreSQL no responde (caído, reiniciando, sin red). */
+        public static final String DATABASE_DOWN_MESSAGE =
+                        "La base de datos no responde en este momento. Intenta de nuevo en unos minutos;"
+                                        + " las ventas guardadas en el dispositivo se enviarán solas.";
+
+        /**
+         * PostgreSQL no disponible: 503 (temporal), no 500. La app guarda la
+         * venta en el dispositivo y la reenvía; con su identificador único
+         * no se duplica aunque el servidor alcanzara a guardarla.
+         */
+        @ExceptionHandler({
+                        org.springframework.dao.DataAccessResourceFailureException.class,
+                        org.springframework.dao.TransientDataAccessException.class,
+                        org.springframework.transaction.CannotCreateTransactionException.class })
+        public ResponseEntity<ErrorResponse> handleDatabaseDown(
+                        Exception ex,
+                        HttpServletRequest request) {
+
+                log.warn("Base de datos no disponible en {} {}: {}",
+                                request.getMethod(), request.getRequestURI(), ex.getClass().getSimpleName());
+
+                return build(HttpStatus.SERVICE_UNAVAILABLE, DATABASE_DOWN_MESSAGE, request);
+        }
 
         @ExceptionHandler(ResourceNotFoundException.class)
         public ResponseEntity<ErrorResponse> handleNotFound(
@@ -73,24 +103,6 @@ public class GlobalExceptionHandler {
                                 .body(response);
         }
 
-        @ExceptionHandler(ValidationException.class)
-        public ResponseEntity<ErrorResponse> handleValidationException(
-                        ValidationException ex,
-                        HttpServletRequest request) {
-
-                ErrorResponse response = ErrorResponse.builder()
-                                .timestamp(LocalDateTime.now())
-                                .status(HttpStatus.BAD_REQUEST.value())
-                                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                                .message(ex.getMessage())
-                                .path(request.getRequestURI())
-                                .build();
-
-                return ResponseEntity
-                                .status(HttpStatus.BAD_REQUEST)
-                                .body(response);
-        }
-
         @ExceptionHandler(BusinessException.class)
         public ResponseEntity<ErrorResponse> handleBusiness(
                         BusinessException ex,
@@ -145,6 +157,15 @@ public class GlobalExceptionHandler {
                                 .body(response);
         }
 
+        /** Demasiados intentos fallidos de inicio de sesión (protección contra fuerza bruta). */
+        @ExceptionHandler(TooManyLoginAttemptsException.class)
+        public ResponseEntity<ErrorResponse> handleTooManyAttempts(
+                        TooManyLoginAttemptsException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), request);
+        }
+
         /** Cuenta inactiva o pendiente de aprobación (registro con aprobación). */
         @ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
         public ResponseEntity<ErrorResponse> handleDisabled(
@@ -188,6 +209,43 @@ public class GlobalExceptionHandler {
                                 request);
         }
 
+        /**
+         * Un valor de la dirección con formato incorrecto: un identificador
+         * mal escrito (/api/products/abc) o una fecha inválida en un filtro.
+         * Antes respondía 500.
+         */
+        @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+        public ResponseEntity<ErrorResponse> handleTypeMismatch(
+                        org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.BAD_REQUEST,
+                                "El valor de \"" + ex.getName() + "\" no es válido.",
+                                request);
+        }
+
+        /** Falta un parámetro obligatorio en la dirección. */
+        @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+        public ResponseEntity<ErrorResponse> handleMissingParameter(
+                        org.springframework.web.bind.MissingServletRequestParameterException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.BAD_REQUEST,
+                                "Falta el dato \"" + ex.getParameterName() + "\".",
+                                request);
+        }
+
+        /** Método HTTP no permitido en esa dirección (por ejemplo, PATCH donde solo hay GET). */
+        @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+        public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+                        org.springframework.web.HttpRequestMethodNotSupportedException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.METHOD_NOT_ALLOWED,
+                                "Esta operación no está permitida en esta dirección.",
+                                request);
+        }
+
         /** Ruta que no existe (antes caía en el manejador general y respondía 500). */
         @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
         public ResponseEntity<ErrorResponse> handleNoResource(
@@ -205,9 +263,26 @@ public class GlobalExceptionHandler {
                         org.springframework.web.multipart.MaxUploadSizeExceededException ex,
                         HttpServletRequest request) {
 
-                return build(HttpStatus.PAYLOAD_TOO_LARGE,
+                return build(HttpStatus.CONTENT_TOO_LARGE,
                                 "La foto no puede pesar más de 20 MB.",
                                 request);
+        }
+
+        /**
+         * ¿La causa es la conexión con la base? Códigos SQLSTATE 08xxx
+         * (conexión) y 57P0x (el servidor se apagó o reinició).
+         */
+        static boolean isDatabaseConnectionLost(Throwable ex) {
+                for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
+                        if (cause instanceof java.sql.SQLException sql && sql.getSQLState() != null
+                                        && (sql.getSQLState().startsWith("08") || sql.getSQLState().startsWith("57P"))) {
+                                return true;
+                        }
+                        if (cause.getCause() == cause) {
+                                break;
+                        }
+                }
+                return false;
         }
 
         private ResponseEntity<ErrorResponse> build(
@@ -230,11 +305,25 @@ public class GlobalExceptionHandler {
                         Exception ex,
                         HttpServletRequest request) {
 
+                // Conexión con PostgreSQL perdida a mitad de una operación (la
+                // base se cayó o se está reiniciando): es temporal → 503.
+                if (isDatabaseConnectionLost(ex)) {
+                        return handleDatabaseDown(ex, request);
+                }
+
+                // Error no previsto: se registra con un código corto que también
+                // ve el usuario, para encontrarlo en el log. Al usuario no se le
+                // muestran detalles internos.
+                String errorCode = UUID.randomUUID().toString().substring(0, 8);
+
+                log.error("Error interno [{}] en {} {}",
+                                errorCode, request.getMethod(), request.getRequestURI(), ex);
+
                 ErrorResponse response = ErrorResponse.builder()
                                 .timestamp(LocalDateTime.now())
                                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                                 .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                                .message("Ha ocurrido un error interno.")
+                                .message("Ha ocurrido un error interno. Código de referencia: " + errorCode + ".")
                                 .path(request.getRequestURI())
                                 .build();
 

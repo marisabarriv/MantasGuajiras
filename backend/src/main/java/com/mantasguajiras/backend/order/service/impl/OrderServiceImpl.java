@@ -68,6 +68,15 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse create(OrderRequest request) {
 
+        // Reintento de una personalizada que ya llegó: se devuelve la
+        // existente y NO se descuenta la tela otra vez.
+        if (request.getClientRequestId() != null) {
+            var existing = orderRepository.findByClientRequestId(request.getClientRequestId());
+            if (existing.isPresent()) {
+                return toResponse(existing.get());
+            }
+        }
+
         BigDecimal total = money(request.getTotal());
 
         BigDecimal initialPayment = Boolean.TRUE.equals(request.getPaidInFull())
@@ -101,10 +110,11 @@ public class OrderServiceImpl implements OrderService {
                 .fabricProduct(fabric)
                 .fabricQuantity(request.getFabricQuantity().setScale(2, RoundingMode.HALF_UP))
                 .createdBy(currentUser)
+                .clientRequestId(request.getClientRequestId())
                 .build();
 
         if (initialPayment.signum() > 0) {
-            addPaymentToOrder(order, initialPayment, currentUser);
+            addPaymentToOrder(order, initialPayment, currentUser, null);
         }
 
         Order saved = orderRepository.save(order);
@@ -128,6 +138,17 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse addPayment(UUID id, OrderPaymentRequest request) {
 
+        // Reintento de un pago que ya llegó: NO se cobra dos veces.
+        if (request.getClientRequestId() != null) {
+            var alreadyPaid = orderRepository.findByPaymentClientRequestId(request.getClientRequestId());
+            if (alreadyPaid.isPresent()) {
+                if (!alreadyPaid.get().getId().equals(id)) {
+                    throw new BusinessException("Ese identificador de pago pertenece a otra manta personalizada.");
+                }
+                return toResponse(alreadyPaid.get());
+            }
+        }
+
         Order order = orderRepository.findByIdForUpdate(id)
                 .filter(found -> Boolean.TRUE.equals(found.getActive()))
                 .orElseThrow(() -> new ResourceNotFoundException("La manta personalizada no existe."));
@@ -144,7 +165,7 @@ public class OrderServiceImpl implements OrderService {
                             + format(order.getBalance()) + ").");
         }
 
-        addPaymentToOrder(order, amount, currentUser());
+        addPaymentToOrder(order, amount, currentUser(), request.getClientRequestId());
 
         return toResponse(orderRepository.save(order));
     }
@@ -166,12 +187,13 @@ public class OrderServiceImpl implements OrderService {
     // AYUDANTES
     // =========================================================
 
-    private void addPaymentToOrder(Order order, BigDecimal amount, User user) {
+    private void addPaymentToOrder(Order order, BigDecimal amount, User user, UUID clientRequestId) {
 
         order.getPayments().add(OrderPayment.builder()
                 .order(order)
                 .amount(amount)
                 .createdBy(user)
+                .clientRequestId(clientRequestId)
                 .build());
 
         order.setPaidAmount(order.getPaidAmount().add(amount));

@@ -5,6 +5,8 @@ import Modal from "../components/Modal";
 import LoadError from "../components/LoadError";
 import CustomOrderForm from "../components/CustomOrderForm";
 import OrderService from "../services/OrderService";
+import { isConnectionError } from "../services/apiClient";
+import { newClientRequestId } from "../utils/offlineStore";
 import { formatDateTime, formatNumber } from "../utils/inventoryFormat";
 
 import "../styles/inventory.css";
@@ -47,6 +49,9 @@ function CustomOrdersPage() {
     const [payError, setPayError] = useState("");
     const [paySaving, setPaySaving] = useState(false);
     const payingRef = useRef(false);
+
+    // Identificador del pago: el mismo en los reintentos (no se cobra dos veces).
+    const paymentIdRef = useRef(null);
 
 
     useEffect(() => {
@@ -129,6 +134,7 @@ function CustomOrdersPage() {
     // =========================================
 
     const openPayment = (order) => {
+        paymentIdRef.current = newClientRequestId();
         setPaying(order);
         setAmount(String(Number(order.balance)));
         setPayError("");
@@ -162,7 +168,7 @@ function CustomOrdersPage() {
         setPayError("");
 
         try {
-            const updated = await OrderService.addPayment(paying.id, value);
+            const updated = await OrderService.addPayment(paying.id, value, paymentIdRef.current);
 
             setPaying(null);
 
@@ -173,7 +179,11 @@ function CustomOrdersPage() {
             );
 
         } catch (saveError) {
-            setPayError(saveError.message);
+            setPayError(
+                isConnectionError(saveError)
+                    ? saveError.message + " Puedes volver a pulsar el botón: si el pago ya se había registrado, no se cobrará dos veces."
+                    : saveError.message
+            );
         } finally {
             payingRef.current = false;
             setPaySaving(false);
@@ -389,6 +399,7 @@ function CustomOrdersPage() {
                 open={formOpen}
                 onClose={() => setFormOpen(false)}
                 title="Nueva manta personalizada"
+                guardUnsaved
             >
                 {formOpen && (
                     <CustomOrderForm

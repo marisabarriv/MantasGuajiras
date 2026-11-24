@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import useAutoRefresh from "../hooks/useAutoRefresh";
+import useShowMore from "../hooks/useShowMore";
+import ShowMoreButton from "../components/ShowMoreButton";
 
 import Modal from "../components/Modal";
 import LoadError from "../components/LoadError";
@@ -10,6 +12,7 @@ import {
     formatNumber,
     formatQuantity,
 } from "../utils/inventoryFormat";
+import { DEFAULT_DAYS, MAX_DAYS, inPeriod, lastDays, periodProblem, toInputDate } from "../utils/period";
 
 import "../styles/inventory.css";
 import "../styles/sales.css";
@@ -34,13 +37,26 @@ const isToday = (value) => {
 /**
  * Historial de ventas (solo ADMIN): ventas del punto de venta y
  * mantas personalizadas, juntas y de la más reciente a la más antigua.
+ * Se consulta por periodo (por defecto los últimos 30 días, máximo
+ * 3 meses): con años de ventas, cargar todo era lento y pesado.
  * Las ventas no se pueden editar ni eliminar (regla del backend).
  */
+
+/** Atajos de periodo: [días, etiqueta]. */
+const QUICK_PERIODS = [
+    [1, "Hoy"],
+    [7, "7 días"],
+    [DEFAULT_DAYS, "30 días"],
+    [90, "3 meses"],
+];
 /**
  * Hora real de la venta: si se hizo sin conexión, la del dispositivo;
  * si no, la del servidor.
  */
 const saleDate = (sale) => sale.offlineCreatedAt || sale.createdAt;
+
+/** AAAA-MM-DD → "24/11/2026". */
+const formatDay = (value) => (value ? value.split("-").reverse().join("/") : "");
 
 
 function SalesPage() {
@@ -55,15 +71,23 @@ function SalesPage() {
     const [selectedSale, setSelectedSale] = useState(null);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [onlyToday, setOnlyToday] = useState(false);
+    const [period, setPeriod] = useState(() => lastDays(DEFAULT_DAYS));
+    const problem = periodProblem(period);
+    const todayText = toInputDate(new Date());
+    const includesToday = inPeriod(new Date().toISOString(), period);
 
 
     useEffect(() => {
+
+        if (problem) {
+            return undefined;
+        }
 
         let cancelled = false;
         // Recarga automática: si falla, se conservan los datos actuales.
         const silent = takeSilent();
 
-        Promise.all([SaleService.findAll(), OrderService.findAll()])
+        Promise.all([SaleService.findAll(period), OrderService.findAll()])
             .then(([salesData, ordersData]) => {
                 if (!cancelled) {
                     setSales(Array.isArray(salesData) ? salesData : []);
@@ -85,17 +109,35 @@ function SalesPage() {
             cancelled = true;
         };
 
-    }, [reloadKey, refreshKey, takeSilent]);
+    }, [reloadKey, refreshKey, takeSilent, period, problem]);
 
+
+    // Personalizadas del periodo: creadas o con algún pago en él.
+    const periodOrders = useMemo(
+        () => orders.filter((order) =>
+            inPeriod(order.createdAt, period) ||
+            (order.payments || []).some((payment) => inPeriod(payment.createdAt, period))),
+        [orders, period]
+    );
 
     // Ventas y personalizadas en una sola lista.
     const entries = useMemo(
         () =>
             [
                 ...sales.map((sale) => ({ kind: "sale", date: saleDate(sale), data: sale })),
-                ...orders.map((order) => ({ kind: "order", date: order.createdAt, data: order })),
+                ...periodOrders.map((order) => ({ kind: "order", date: order.createdAt, data: order })),
             ].sort((a, b) => new Date(b.date) - new Date(a.date)),
-        [sales, orders]
+        [sales, periodOrders]
+    );
+
+    // Dinero recibido en el periodo: ventas y pagos de personalizadas.
+    const periodTotal = useMemo(
+        () =>
+            sales.reduce((sum, sale) => sum + Number(sale.total || 0), 0) +
+            orders.flatMap((order) => order.payments || [])
+                .filter((payment) => inPeriod(payment.createdAt, period))
+                .reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+        [sales, orders, period]
     );
 
 
@@ -131,7 +173,65 @@ function SalesPage() {
               (entry.data.payments || []).some((payment) => isToday(payment.createdAt))
     );
 
-    const visible = onlyToday ? todayEntries : entries;
+    const visible = onlyToday && includesToday ? todayEntries : entries;
+    const page = useShowMore(visible, `${period.from}|${period.to}|${onlyToday}`);
+
+    const choosePeriod = (next) => {
+        setPeriod(next);
+        setLoading(true);
+        setError("");
+        if (!inPeriod(new Date().toISOString(), next)) {
+            setOnlyToday(false);
+        }
+    };
+
+    const setPeriodDate = (name) => (event) => {
+        const next = { ...period, [name]: event.target.value };
+        if (periodProblem(next)) {
+            // Se muestra el aviso sin consultar al servidor.
+            setPeriod(next);
+            return;
+        }
+        choosePeriod(next);
+    };
+
+    const periodBar = (
+        <div className="history-filters sales-period" role="group" aria-label="Periodo">
+            <div className="inv-filters">
+                {QUICK_PERIODS.map(([days, label]) => {
+                    const quick = lastDays(days);
+                    const active = quick.from === period.from && quick.to === period.to;
+                    return (
+                        <button
+                            key={label}
+                            type="button"
+                            className={active ? "active" : ""}
+                            aria-pressed={active}
+                            onClick={() => choosePeriod(quick)}
+                        >
+                            {label}
+                        </button>
+                    );
+                })}
+            </div>
+            <label>
+                <span>Desde</span>
+                <input type="date" value={period.from} max={period.to || todayText} onChange={setPeriodDate("from")} />
+            </label>
+            <label>
+                <span>Hasta</span>
+                <input type="date" value={period.to} min={period.from || undefined} max={todayText} onChange={setPeriodDate("to")} />
+            </label>
+        </div>
+    );
+
+    const periodNote = problem ? (
+        <div className="result error inv-result">{problem}</div>
+    ) : (
+        <p className="history-note">
+            {`Ventas del ${formatDay(period.from)} al ${formatDay(period.to)}. Máximo ${MAX_DAYS} días (unos 3 meses) por consulta.`}
+        </p>
+    );
 
 
     // Sin datos cargados no se muestran ceros: solo el aviso.
@@ -149,10 +249,11 @@ function SalesPage() {
         );
     }
 
-    if (loading) {
+    if (loading && !problem) {
         return (
             <div className="inv-page">
                 <h1>Ventas</h1>
+                {periodBar}
                 <p className="inv-message">Cargando ventas...</p>
             </div>
         );
@@ -172,10 +273,18 @@ function SalesPage() {
 
             {error && <div className="result error inv-result">{error}</div>}
 
+            {/* PERIODO */}
+
+            {periodBar}
+            {periodNote}
+
+            {!problem && (<>
+
             {/* RESUMEN DEL DÍA */}
 
             <div className="inv-summary sales-summary">
 
+                {includesToday && (
                 <button
                     type="button"
                     className={`inv-card inv-card-ok ${onlyToday ? "active" : ""}`}
@@ -190,16 +299,17 @@ function SalesPage() {
                         hoy
                     </span>
                 </button>
+                )}
 
                 <button
                     type="button"
                     className={`inv-card ${!onlyToday ? "active" : ""}`}
                     onClick={() => setOnlyToday(false)}
                 >
-                    <span className="inv-card-number">{entries.length}</span>
-                    <span className="inv-card-label">Todas las ventas</span>
+                    <span className="inv-card-number">{money(periodTotal)}</span>
+                    <span className="inv-card-label">En el periodo</span>
                     <span className="inv-card-help">
-                        {sales.length} en punto de venta y {orders.length} personalizadas
+                        {sales.length} en punto de venta y {periodOrders.length} personalizadas
                     </span>
                 </button>
 
@@ -211,7 +321,7 @@ function SalesPage() {
                 <div className="inv-filters" role="group" aria-label="Mostrar">
                     {[
                         [false, `Todas (${entries.length})`],
-                        [true, `Hoy (${todayEntries.length})`],
+                        ...(includesToday ? [[true, `Hoy (${todayEntries.length})`]] : []),
                     ].map(([value, label]) => (
                         <button
                             key={label}
@@ -231,16 +341,16 @@ function SalesPage() {
             {visible.length === 0 ? (
 
                 <p className="inv-message">
-                    {onlyToday
-                        ? "Hoy todavía no hay ventas."
-                        : "No hay ventas registradas."}
+                    {onlyToday && includesToday
+                            ? "Hoy todavía no hay ventas."
+                            : "No hay ventas en este periodo."}
                 </p>
 
             ) : (
 
                 <ul className="inv-list">
 
-                    {visible.map((entry) => {
+                    {page.items.map((entry) => {
 
                         if (entry.kind === "order") {
 
@@ -357,6 +467,10 @@ function SalesPage() {
                 </ul>
 
             )}
+
+            <ShowMoreButton remaining={page.remaining} onClick={page.showMore} />
+
+            </>)}
 
             {/* DETALLE DE VENTA */}
 

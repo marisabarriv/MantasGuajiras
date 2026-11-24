@@ -390,7 +390,7 @@ Cada cambio estructural importante debe registrarse mediante una nueva migració
 
 Las migraciones permiten conservar el historial de cambios realizados sobre el modelo de datos.
 
-No se deben modificar migraciones que ya forman parte del historial del proyecto: Flyway compara su huella al arrancar. Las migraciones están en `backend/src/main/resources/db/migration` (V1 a V20); ver el Anexo A de `04-base-de-datos.md`.
+No se deben modificar migraciones que ya forman parte del historial del proyecto: Flyway compara su huella al arrancar. Las migraciones están en `backend/src/main/resources/db/migration` (V1 a V21); ver el Anexo A de `04-base-de-datos.md`.
 
 ---
 

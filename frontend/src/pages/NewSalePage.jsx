@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import useUnsavedChanges from "../hooks/useUnsavedChanges";
 
 import Modal from "../components/Modal";
 import BarcodeScanModal from "../components/BarcodeScanModal";
@@ -17,6 +18,7 @@ import {
   usePendingSales,
 } from "../utils/offlineStore";
 import { onSalesSynced, retryRejectedSale } from "../utils/offlineSync";
+import { getUser } from "../utils/session";
 import {
   formatNumber,
   formatQuantity,
@@ -41,7 +43,7 @@ const money = (value) =>
 const round2 = (value) => Math.round(Number(value) * 100) / 100;
 
 function NewSalePage() {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = getUser();
   const username = user.username || "usuario";
 
   const searchInputRef = useRef(null);
@@ -80,6 +82,8 @@ function NewSalePage() {
   // =========================================
 
   const [cart, setCart] = useState([]);
+  // El carrito no se guarda: salir con productos en él los pierde.
+  useUnsavedChanges(cart.length > 0);
   const [cartMessage, setCartMessage] = useState("");
 
   // =========================================
@@ -620,8 +624,11 @@ function NewSalePage() {
       finishCart();
       reloadStock();
     } catch (error) {
-      if (isConnectionError(error)) {
-        // Sin conexión: la venta se guarda en el dispositivo y se envía sola después.
+      // Sin conexión, o el servidor no pudo atenderla (5xx: base de datos
+      // caída, reinicio...): la venta se guarda en el dispositivo y se envía
+      // sola después. Su clientRequestId evita duplicarla si el servidor
+      // alcanzó a guardarla.
+      if (isConnectionError(error) || error.status >= 500) {
         const saved = addPendingSale({
           clientRequestId,
           username: user.username,
@@ -1230,7 +1237,7 @@ function NewSalePage() {
                 {completedSale.offline ? (
                   <>
                     <p>
-                      No hay conexión: la venta quedó guardada en este
+                      No hay conexión con el servidor: la venta quedó guardada en este
                       dispositivo y se enviará sola cuando vuelva la conexión.
                     </p>
                     <p>
