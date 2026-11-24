@@ -54,8 +54,11 @@ Cada criterio tiene **prioridad**, **estado** y **evidencia**. Un criterio solo 
 | `T-flow` | `BusinessFlowHttpTest`: recorrido completo del negocio por HTTP (todos los controladores) | `backend/src/test` |
 | `T-user` | `UserManagementTest` (6) y `LastAdminRuleTest` | `backend/src/test` |
 | `T-cat` | `CatalogAdminTest` (2) e `InventoryQueryTest` (3) | `backend/src/test` |
-| `COV` | JaCoCo: 92,1 % líneas / 72,7 % ramas global; 91,2 % reglas críticas; 92,0 % servicios. Umbral en el build: 85 % / 65 % | 24/11/2026; artefacto `cobertura-backend` en la CI |
+| `COV` | JaCoCo: 92,5 % líneas / 73,9 % ramas global (119 pruebas; Fase 5: 92,1 % / 72,7 %); 91,2 % reglas críticas; 92,0 % servicios. Umbral en el build: 85 % / 65 % | 24/11/2026; artefacto `cobertura-backend` en la CI |
 | `T-log` | `UnexpectedErrorLoggingTest`: error interno registrado con código, sin detalles al usuario | `backend/src/test` |
+| `T-per` | `DateRangeTest` (8), `HistoryAndMonitoringHttpTest` (4) y `MonitoringUnitTest` (3): historiales por periodo, estado del sistema, registro de operaciones y rechazos, peticiones lentas, alertas | `backend/src/test` |
+| `LOAD` | Prueba de carga con 3 años de datos (33.000 ventas): 15 y 40 usuarios simultáneos, antes y después de las correcciones; integridad comprobada | 24/11/2026; `docs/12` §2; `scripts/perf` |
+| `SQL` | Conteo de consultas por historial con `log_statement`: 3 por historial de ventas o movimientos (antes, varias por cada venta) | 24/11/2026; `docs/12` §1 |
 | `E2E` | `frontend/e2e/offline-sync.e2e.cjs` (11 escenarios, 49 comprobaciones, navegador real) | se ejecuta en CI |
 | `CI` | GitHub Actions: backend + frontend + E2E. Ejecución #1 en verde (24/11/2026) | pestaña **Actions** |
 | `BKP` | Pruebas de los scripts de respaldo contra PostgreSQL: copia sana, archivo dañado, inventario alterado, falta de `.sha256`, retención en `CopyTo` | sesión del 23-24/11/2026; `scripts/backup` |
@@ -128,7 +131,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | API-09 | Rollback ante error | A | ✅ | `T-conc` |
 | API-10 | No expone trazas ni datos sensibles | A | ✅ | `T-log` |
 | API-11 | Filtros validan parámetros | Bj | ✅ | Filtros del historial validados (`T-mov`, `T-api`). `status` de personalizadas ignora valores desconocidos |
-| API-12 | Consultas sin cargar registros innecesarios | M | ❌ | Historiales sin paginación; ver REN-03 |
+| API-12 | Consultas sin cargar registros innecesarios | M | ✅ | Historiales por periodo (30 días por defecto, máximo 93) y detalle en la misma consulta (`T-per`, `LOAD`) |
 | API-13 | Integridad de relaciones | A | ✅ | Claves foráneas (`T-ctx`) |
 | API-14 | Operaciones críticas idempotentes ante repetición | B | ✅ | Ventas, compras, producción, personalizadas y pagos (`T-conc`, `T-com`, `T-pro`, `T-ord`, `E2E` esc. 5) |
 | API-15 | No se modifican campos no controlables | A | ⏳ | Implementado (mappers ignoran id, total, createdBy); falta prueba |
@@ -160,8 +163,8 @@ Ninguno puede quedar abierto para dar 10/10.
 | DB-14 | Sin registros huérfanos | A | ✅ | Claves foráneas + `integrity-check.sql` |
 | DB-15 | Consistencia transaccional | A | ✅ | `T-conc` |
 | DB-16 | Concurrencia en registros críticos | A | ✅ | Bloqueo pesimista de inventario, `T-conc` |
-| DB-17 | Rendimiento aceptable | M | ⏳ | Sin medir |
-| DB-18 | Sin N+1 importantes | M | ❌ | El historial de ventas carga los productos de cada venta por separado |
+| DB-17 | Rendimiento aceptable | M | ✅ | 3 años de datos (47 MB): consultas de venta e inventario en milisegundos; historiales acotados (`LOAD`, `SQL`) |
+| DB-18 | Sin N+1 importantes | M | ✅ | Corregido: el historial de ventas carga productos y unidades en la misma consulta; listas en bloques de 100. 3 consultas por historial (`SQL`) |
 | DB-19 | Historial conservado | A | ✅ | `T-sale`, `T-com`, `T-pro`, `T-ord` (no se editan ni borran) |
 | DB-20 | Eliminaciones respetan historial | A | ✅ | `T-sale` (producto desactivado conserva su historial) |
 
@@ -434,21 +437,21 @@ Ninguno puede quedar abierto para dar 10/10.
 
 | ID | Criterio | Pr. | Estado | Nota |
 | -- | -------- | --- | ------ | ---- |
-| REN-01 | Tiempos razonables | M | ⏳ | Sin medir |
-| REN-02 | Sin datos innecesarios | M | ⏳ | — |
-| REN-03 | Paginación | M | ❌ | Historiales de ventas, compras, movimientos y producción completos |
-| REN-04 | Sin consultas costosas | M | ⏳ | — |
-| REN-05 | Sin N+1 | M | ❌ | Ver DB-18 |
+| REN-01 | Tiempos razonables | M | ✅ | p95 ≤ 25 ms en operaciones de venta e inventario, ≤ 270 ms en historiales (`LOAD`) |
+| REN-02 | Sin datos innecesarios | M | ✅ | Historiales por periodo: 26 MB → 1,1 MB (ventas), 37 MB → 1,4 MB (movimientos) (`LOAD`) |
+| REN-03 | Paginación | M | ✅ | Ventas y movimientos por periodo (máx. 93 días) y en pantalla de a 100 ("Ver más"). Compras, producción y personalizadas completas: crecen ≈1/día; 1.000 personalizadas = 20 ms (`docs/12` §2.4) |
+| REN-04 | Sin consultas costosas | M | ✅ | Sin consultas lentas en la carga; las de más de 1 s quedan en el log como "Lenta" (`LOAD`, `T-per`) |
+| REN-05 | Sin N+1 | M | ✅ | Ver DB-18 (`SQL`) |
 | REN-06 | Concurrencia consistente | A | ✅ | `T-conc` |
-| REN-07 | Sin solicitudes innecesarias | Bj | ⏳ | Recarga automática cada 60 s por pantalla (intencional) |
+| REN-07 | Sin solicitudes innecesarias | Bj | ✅ | La recarga automática (60 s) solo corre con la pantalla visible y es liviana: inventario 14 KB en 3 ms; historiales acotados al periodo (`LOAD`) |
 | REN-08 | Imágenes | Bj | ⏳ | Sin redimensionar al subir |
-| REN-09 | Pool de conexiones | M | ⏳ | Valores por defecto |
-| REN-10 | Memoria | M | ⏳ | — |
-| REN-11 | Usuarios simultáneos esperados | M | ⏳ | Falta definir la cifra |
-| REN-12 | Tiempos bajo carga | M | ⏳ | Falta prueba de carga |
-| REN-13 | Picos | Bj | ⏳ | — |
-| REN-14 | Operaciones críticas | M | ⏳ | — |
-| REN-15 | Límites conocidos | M | ⏳ | — |
+| REN-09 | Pool de conexiones | M | ✅ | Hikari: 10 conexiones, espera máx. 10 s, aviso de fuga a 60 s; atendió 40 usuarios (`LOAD`) |
+| REN-10 | Memoria | M | ✅ | 273 MB de 512 MB de heap con 40 usuarios; `-XX:+ExitOnOutOfMemoryError` documentado (`LOAD`, `docs/12` §2.5 y §4) |
+| REN-11 | Usuarios simultáneos esperados | M | ⏳ | Supuesto: hasta 10 personas conectadas; probado con 40 (`LOAD`). Falta que la responsable confirme la cifra (`docs/11`) |
+| REN-12 | Tiempos bajo carga | M | ✅ | 15 y 40 usuarios simultáneos, 3 años de datos: 0 errores de servidor (antes: 123 errores 500 y falta de memoria) (`LOAD`) |
+| REN-13 | Picos | Bj | ✅ | 40 usuarios a la vez (4 veces lo esperado) sin errores de servidor (`LOAD`) |
+| REN-14 | Operaciones críticas | M | ✅ | Registrar venta p95 25 ms y ajuste p95 37 ms con 40 usuarios; inventario íntegro después (`LOAD`) |
+| REN-15 | Límites conocidos | M | ✅ | `docs/12` §2.6 |
 
 ## 14. Copias de seguridad y recuperación
 
@@ -482,20 +485,20 @@ Ninguno puede quedar abierto para dar 10/10.
 | ID | Criterio | Pr. | Estado | Nota |
 | -- | -------- | --- | ------ | ---- |
 | OBS-01 | Errores registrados | A | ✅ | `T-log` (corregido 24/11) |
-| OBS-02 | Operaciones críticas registradas | M | ⏳ | Quedan en la base con usuario y fecha, no en el log |
+| OBS-02 | Operaciones críticas registradas | M | ✅ | Una línea por operación que cambia datos, con usuario, resultado y duración, sin contraseñas (`T-per`) |
 | OBS-03 | Errores por fecha y contexto | A | ✅ | Método, ruta y código (`T-log`) |
-| OBS-04 | Fallos de sincronización | M | ❌ | Solo visibles en el dispositivo |
-| OBS-05 | Fallos de base de datos | A | ⏳ | Los no previstos se registran; los conflictos (409) no |
-| OBS-06 | Estado del backend | M | ❌ | Sin endpoint de salud |
-| OBS-07 | Estado de PostgreSQL | M | ❌ | — |
-| OBS-08 | Espacio en disco | M | ❌ | — |
-| OBS-09 | Crecimiento de logs | M | ❌ | Log solo por consola |
-| OBS-10 | Alertas críticas | M | ⏳ | Solo las copias avisan (archivo en el Escritorio) |
-| OBS-11 | Rotación de logs | M | ❌ | — |
+| OBS-04 | Fallos de sincronización | M | ✅ | Las ventas sincronizadas llegan marcadas `[sin conexión]` y los rechazos quedan en el log del servidor con el motivo (`T-per`, `E2E`) |
+| OBS-05 | Fallos de base de datos | A | ✅ | Conflictos (409) y rechazos registrados con su motivo; errores internos con código (`T-per`, `T-log`) |
+| OBS-06 | Estado del backend | M | ✅ | `GET /actuator/health`, sin detalles internos; la CI espera a que diga UP (`T-per`, `CI`) |
+| OBS-07 | Estado de PostgreSQL | M | ✅ | Componente `db` del estado; revisión cada 5 min con alerta en el log (`T-per`) |
+| OBS-08 | Espacio en disco | M | ✅ | Componente `diskSpace` (DOWN con menos de 2 GB libres, configurable) (`T-per`) |
+| OBS-09 | Crecimiento de logs | M | ✅ | ≈160 bytes por operación: menos de 2 MB al mes con el uso esperado (`LOAD`); tope de 300 MB |
+| OBS-10 | Alertas críticas | M | ⏳ | El backend deja ERROR en el log si la base o el disco fallan (`T-per`) y las copias avisan en el Escritorio. Falta un aviso que llegue a alguien sin abrir el log (monitor del hosting, Fase 7) |
+| OBS-11 | Rotación de logs | M | ✅ | Archivo con rotación: 10 MB por archivo, 30 días, 300 MB en total (`docs/12` §3.2) |
 | OBS-12 | Usuario por operación | A | ✅ | `created_by` |
 | OBS-13 | Solicitud ↔ error | M | ✅ | Código de referencia (`T-log`) |
-| OBS-14 | Problemas de rendimiento | Bj | ❌ | — |
-| OBS-15 | Respuesta a incidentes | M | ⏳ | Solo la recuperación de datos (`docs/09`) |
+| OBS-14 | Problemas de rendimiento | Bj | ✅ | Peticiones de más de 1 s registradas como "Lenta" (`T-per`) |
+| OBS-15 | Respuesta a incidentes | M | ✅ | Guía de síntomas, qué revisar y qué hacer (`docs/12` §6) |
 
 ## 16. Pruebas automatizadas y calidad continua
 
@@ -569,7 +572,7 @@ Referencias para la revisión final: OWASP ASVS nivel 2 y OWASP Top 10.
 | RES-07 | Consistencia transaccional | A | ✅ | `T-conc` |
 | RES-08 | Sesiones vencidas | A | ✅ | `E2E` esc. 8: vencida sin conexión → sigue vendiendo → pide iniciar sesión → envía |
 | RES-09 | Recuperación tras reinicios | M | ⏳ | — |
-| RES-10 | Saturación | Bj | ⏳ | — |
+| RES-10 | Saturación | Bj | ✅ | 40 usuarios sin errores de servidor; si se agotara la memoria, el proceso se reinicia en vez de quedar dañado (`LOAD`, `docs/12` §2.4) |
 | RES-11 | Sin reenvío de formularios | A | ✅ | Ver UX-06 |
 | RES-12 | Operaciones en estado incierto identificadas | A | ✅ | Ventas pendientes y rechazadas visibles (`E2E`) |
 
@@ -594,7 +597,7 @@ Referencias para la revisión final: OWASP ASVS nivel 2 y OWASP Top 10.
 | DOC-15 | Despliegue | A | ⏳ | Genérico hasta definir la infraestructura |
 | DOC-16 | Rollback | A | ✅ | `docs/09` §4.1 |
 | DOC-17 | Manual de usuario | A | ❌ | — |
-| DOC-18 | Solución de problemas | M | ❌ | Solo para copias y offline |
+| DOC-18 | Solución de problemas | M | ✅ | Servidor: `docs/12` §6; copias: `docs/09`; sin conexión: `docs/06` §15.4 |
 | DOC-19 | Coincide con el sistema | A | ✅ | Revisado el 23-24/11 |
 | DOC-20 | Historial de versiones | M | ❌ | Sin `CHANGELOG` |
 
@@ -606,13 +609,13 @@ NEG-01 a NEG-14: ⏳ **pendientes de validación por la responsable del negocio*
 
 ## Resumen
 
-Conteo automático de la matriz (24/11/2026, después de la Fase 5). Evolución: inicio 189 ✅ → Fase 1 256 → Fase 2 258 → Fases 3-4 275 → Fase 5 288 ✅.
+Conteo automático de la matriz (24/11/2026, después de la Fase 6). Evolución: inicio 189 ✅ → Fase 1 256 → Fase 2 258 → Fases 3-4 275 → Fase 5 288 → Fase 6 315 ✅.
 
 | Área | Criterios | ✅ | ⏳ | ❌ |
 | ---- | --------- | -- | -- | -- |
 | 1. Arquitectura y calidad del código | 20 | 17 | 3 | 0 |
-| 2. Backend y API REST | 20 | 16 | 3 | 1 |
-| 3. Base de datos y persistencia | 20 | 16 | 3 | 1 |
+| 2. Backend y API REST | 20 | 17 | 3 | 0 |
+| 3. Base de datos y persistencia | 20 | 18 | 2 | 0 |
 | 4. Productos, categorías y unidades | 18 | 17 | 1 | 0 |
 | 5. Inventario y movimientos | 20 | 20 | 0 | 0 |
 | 6. Ventas | 33 | 33 | 0 | 0 |
@@ -622,15 +625,15 @@ Conteo automático de la matriz (24/11/2026, después de la Fase 5). Evolución:
 | 10. Funcionamiento offline y sincronización | 20 | 20 | 0 | 0 |
 | 11. Frontend y experiencia de usuario | 25 | 9 | 15 | 1 |
 | 12. Fotografías y archivos | 12 | 9 | 3 | 0 |
-| 13. Rendimiento | 15 | 1 | 12 | 2 |
+| 13. Rendimiento | 15 | 13 | 2 | 0 |
 | 14. Copias de seguridad y recuperación | 20 | 16 | 3 | 1 |
-| 15. Logs, monitoreo y observabilidad | 15 | 4 | 4 | 7 |
+| 15. Logs, monitoreo y observabilidad | 15 | 14 | 1 | 0 |
 | 16. Pruebas automatizadas y calidad continua | 25 | 24 | 1 | 0 |
 | 17. Infraestructura y despliegue | 20 | 8 | 12 | 0 |
-| 18. Errores y resiliencia | 12 | 9 | 3 | 0 |
-| 19. Documentación y operación | 20 | 14 | 3 | 3 |
+| 18. Errores y resiliencia | 12 | 10 | 2 | 0 |
+| 19. Documentación y operación | 20 | 15 | 3 | 2 |
 | 20. Aceptación del negocio | 14 | 0 | 14 | 0 |
-| **Total** | **387** | **288** (74 %) | **83** | **16** |
+| **Total** | **387** | **315** (81 %) | **68** | **4** |
 
 Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por comprobar en el equipo del negocio** (10: ejecutar las copias `.ps1` en Windows).
 
@@ -643,6 +646,6 @@ Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por c
 | **3. Seguridad** ✅ | Hecha el 24/11/2026: bloqueo tras 5 intentos; 12 pruebas de seguridad con inicio de sesión real; escaneo de dependencias en CI (encontró y se corrigieron vulnerabilidades críticas); Dependabot | SEG-*, B-11 |
 | **4. Recuperación** ✅ | Hecha el 24/11/2026: actualización V19 → V21 con datos sin pérdidas; simulacro de pérdida total con 3 años de datos (7,5 s); `restore-db.sh`; procedimiento de vuelta atrás; RPO/RTO propuestos. **Queda en manos del negocio:** ejecutar los `.ps1` en el PC de Windows | BKP-17/18, DB-09, DEP-14/15/19, B-8/9/11 |
 | **5. Calidad** ✅ | Hecha el 24/11/2026: cobertura 92 % con umbral en el build; 13 pruebas nuevas (104 en total) incluido el recorrido completo por HTTP; orden aleatorio; código muerto eliminado; `.editorconfig`; E2E por todas las páginas y roles. **Queda en manos de la dueña:** proteger `main` (`docs/06` §14.6) | QA-18/24, ARQ-09/13/17, UX-01/14 |
-| **6. Rendimiento** | Paginación, N+1 del historial, endpoint de salud, logs a archivo con rotación, prueba de carga | REN-*, DB-18, OBS-* |
+| **6. Rendimiento** ✅ | Hecha el 24/11/2026: prueba de carga con 3 años de datos y 40 usuarios (encontró que el servidor se quedaba sin memoria y daba 123 errores 500; corregido); historiales por periodo; N+1 eliminado; listas de a 100; estado del sistema (`/actuator/health`); log a archivo con rotación y una línea por operación; guía de incidentes (`docs/12`); 15 pruebas nuevas (119 en total). **Queda en manos de la dueña:** confirmar cuántas personas usan la app a la vez | REN-*, DB-17/18, API-12, OBS-*, RES-10, DOC-18 |
 | **7. Producción** | Infraestructura, HTTPS, dominio, CORS, rollback | DEP-* |
 | **8. Aceptación** | Recorrido de los 24 escenarios con la responsable del negocio; manual de usuario | NEG-*, DOC-17 |

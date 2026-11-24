@@ -14,6 +14,24 @@ spring:
     # Plantilla: backend/.env.example
     import: optional:file:.env[.properties]
 
+  datasource:
+    hikari:
+      # Conexiones simultáneas a PostgreSQL. 10 atendió 40 usuarios a la vez
+      # en la prueba de carga (docs/12-rendimiento-y-monitoreo.md).
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      # Si la base no responde en 10 s, se avisa en lugar de esperar 30 s.
+      connection-timeout: 10000
+      # Aviso en el log si una conexión queda tomada más de 60 s.
+      leak-detection-threshold: 60000
+
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        # Carga en bloque las relaciones de las listas (producto, usuario,
+        # tipo de movimiento, pagos...) en lugar de una consulta por fila.
+        default_batch_fetch_size: 100
+
   mvc:
     # No registrar en el log las excepciones ya manejadas: incluían
     # los valores rechazados de los formularios (¡contraseñas!).
@@ -43,3 +61,44 @@ app:
       # fallidos seguidos, el usuario o teléfono queda bloqueado unos minutos.
       max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
       lock-minutes: ${LOGIN_LOCK_MINUTES:15}
+
+  monitoring:
+    # Las consultas que tarden más que esto quedan en el log como "Lenta".
+    slow-request-ms: ${SLOW_REQUEST_MS:1000}
+    # Cada cuánto se revisa el estado (base de datos y disco), en ms.
+    health-check-ms: 300000
+
+# =========================================================
+# Estado del sistema: GET /actuator/health
+# Responde {"status":"UP"} con el estado de la base de datos y del disco,
+# sin detalles internos. Es lo único que se publica de Actuator.
+# =========================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-components: always
+      show-details: never
+  health:
+    diskspace:
+      # "DOWN" si quedan menos de esto libres en el disco del backend.
+      threshold: ${DISK_MIN_FREE:2GB}
+
+# =========================================================
+# Log en archivo con rotación (además de la consola).
+# backend/logs/mantasguajiras.log; cada archivo hasta 10 MB, se guardan
+# 30 días y nunca más de 300 MB en total.
+# =========================================================
+logging:
+  file:
+    name: ${LOG_FILE:logs/mantasguajiras.log}
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+      total-size-cap: 300MB
+  level:
+    com.mantasguajiras: INFO

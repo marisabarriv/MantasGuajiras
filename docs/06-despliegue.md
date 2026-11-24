@@ -366,6 +366,10 @@ Si tu usuario o contraseña de PostgreSQL no son `postgres`/`postgres`, usa las 
 | `DB_USERNAME`             | prod      | Usuario de la aplicación en PostgreSQL (no `postgres`).             |
 | `DB_PASSWORD`             | prod      | Contraseña de ese usuario.                                          |
 | `CORS_ALLOWED_ORIGINS`    | prod      | Dominio(s) del frontend separados por comas. Por defecto: `localhost`. |
+| `LOG_FILE`                | todos     | Archivo de log con rotación. Por defecto `logs/mantasguajiras.log` (dentro de `backend`). |
+| `SLOW_REQUEST_MS`         | todos     | Las peticiones más lentas que esto quedan en el log como "Lenta" (por defecto 1000). |
+| `DISK_MIN_FREE`           | todos     | Espacio libre mínimo; por debajo, `/actuator/health` dice `DOWN` (por defecto `2GB`). |
+| `DB_POOL_SIZE`            | todos     | Conexiones simultáneas a PostgreSQL (por defecto 10). |
 | `VITE_API_URL`            | frontend  | Dirección del backend al compilar el frontend.                      |
 
 ## 14.3. Producción
@@ -377,10 +381,14 @@ Si tu usuario o contraseña de PostgreSQL no son `postgres`/`postgres`, usa las 
 ```
 
 ```bash
-SPRING_PROFILES_ACTIVE=prod java -jar target/backend-1.0.0-rc.1.jar
+SPRING_PROFILES_ACTIVE=prod java -Xmx512m -XX:+ExitOnOutOfMemoryError -jar target/backend-1.0.0-rc.1.jar
 ```
 
 El perfil `prod` toma la conexión, las claves y el administrador inicial **solo** de variables de entorno y desactiva Swagger.
+
+`-Xmx512m` fija la memoria máxima y `-XX:+ExitOnOutOfMemoryError` hace que, si alguna vez se agota, el proceso termine en vez de quedar respondiendo con errores. Instalarlo como **servicio que se reinicie solo** (servicio de Windows con WinSW/NSSM, o `systemd` con `Restart=always`). Detalle y mediciones: `docs/12-rendimiento-y-monitoreo.md`.
+
+**Estado y log.** `GET /actuator/health` responde `{"status":"UP"}` si la base de datos y el disco están bien (útil para el monitor del hosting). El log queda en `backend/logs/` con rotación; qué registra y cómo usarlo ante un problema: `docs/12-rendimiento-y-monitoreo.md` §3 y §6.
 
 **Frontend.** Con `VITE_API_URL` apuntando al backend real:
 
@@ -417,6 +425,8 @@ El resultado queda en `frontend/dist` y se publica en cualquier servidor web (Ng
 - [ ] Dependabot activado en GitHub (Settings → Code security → Dependabot alerts y security updates).
 - [ ] `main` protegida en GitHub (sección 14.6).
 - [ ] Prueba de restauración **completa** en el entorno de despliegue: restaurar con `restore-db` en una base nueva, apuntar una instancia del backend a ella y revisar inventario, últimas ventas y usuarios.
+- [ ] Backend instalado como servicio que se reinicia solo, con `-Xmx512m -XX:+ExitOnOutOfMemoryError` (14.3).
+- [ ] `/actuator/health` responde `UP` en el servidor real y alguien sabe dónde está el log (`docs/12` §6).
 - [ ] Recorrido manual de los flujos críticos: venta normal, venta con precio especial, compra, producción, ajuste de inventario, personalizada con abono y pago final, inicio de sesión como vendedor para confirmar que no puede editar productos.
 
 ## 14.4A. Seguridad del dispositivo y datos locales

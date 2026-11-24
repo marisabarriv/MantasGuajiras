@@ -5,6 +5,8 @@ import java.util.UUID;
 
 /**
  * Filtros del historial de movimientos. Todos son opcionales y se combinan.
+ * El periodo se resuelve con {@link com.mantasguajiras.backend.common.query.DateRange}
+ * (sin fechas: los últimos 30 días; máximo 93).
  *
  * @param productId producto
  * @param type      "IN" (entradas) u "OUT" (salidas)

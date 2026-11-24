@@ -160,7 +160,8 @@ jobs:
 
       - name: Esperar a que todo esté arriba
         run: |
-          timeout 120 bash -c 'until curl -s -o /dev/null -X POST -H "Content-Type: application/json" -d "{}" http://localhost:8080/auth/login; do sleep 2; done'
+          # El estado del sistema debe decir UP (base de datos y disco).
+          timeout 120 bash -c 'until curl -sf http://localhost:8080/actuator/health | grep -q "\"status\":\"UP\"}$"; do sleep 2; done'
           timeout 60 bash -c 'until curl -s -o /dev/null http://localhost:4173/; do sleep 2; done'
 
       - name: Prueba de punta a punta

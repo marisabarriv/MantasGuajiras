@@ -3,6 +3,7 @@ package com.mantasguajiras.backend.sale.service.impl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mantasguajiras.backend.common.exception.BusinessException;
 import com.mantasguajiras.backend.common.exception.ResourceNotFoundException;
+import com.mantasguajiras.backend.common.query.DateRange;
 import com.mantasguajiras.backend.inventorymovement.service.InventoryMovementService;
 import com.mantasguajiras.backend.product.entity.Product;
 import com.mantasguajiras.backend.product.repository.ProductRepository;
@@ -152,9 +154,13 @@ public class SaleServiceImpl implements SaleService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SaleResponse> findAll() {
+    public List<SaleResponse> findAll(LocalDate from, LocalDate to) {
 
-        return saleRepository.findAllByOrderByCreatedAtDesc()
+        DateRange range = DateRange.resolve(from, to);
+
+        return saleRepository
+                .findByCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtDesc(
+                        range.start(), range.endExclusive())
                 .stream()
                 .map(saleMapper::toResponse)
                 .toList();
