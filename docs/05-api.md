@@ -145,7 +145,7 @@ Unidades iniciales: **Metro (`m`)** y **Unidad (`#`)**.
 
 | Método | Ruta                               | Rol   | Descripción                                         |
 | ------ | ---------------------------------- | ----- | --------------------------------------------------- |
-| GET    | `/api/inventory-movements`         | Todos | Historial, del más reciente al más antiguo. Filtros opcionales y combinables: `productId`, `type` (`IN`/`OUT`), `source` (`SALE`, `PURCHASE`, `PRODUCTION`, `ORDER`, `ADJUSTMENT`), `username`, `from` y `to` (`AAAA-MM-DD`, incluidas). Valores inválidos → 400. |
+| GET    | `/api/inventory-movements`         | Todos | Historial, del más reciente al más antiguo. Filtros opcionales y combinables: `productId`, `type` (`IN`/`OUT`), `source` (`SALE`, `PURCHASE`, `PRODUCTION`, `ORDER`, `ADJUSTMENT`), `username`, `from` y `to` (`AAAA-MM-DD`, incluidas). **Siempre un periodo:** sin fechas, los últimos 30 días; máximo 93 días por consulta. Valores inválidos o periodo mayor → 400. |
 | GET    | `/api/inventory-movements/{id}`    | Todos | Consultar un movimiento.                            |
 | POST   | `/api/inventory-movements`         | ADMIN | Movimiento manual.                                  |
 
@@ -153,8 +153,8 @@ Unidades iniciales: **Metro (`m`)** y **Unidad (`#`)**.
 
 | Método | Ruta               | Rol   | Descripción                                                              |
 | ------ | ------------------ | ----- | ------------------------------------------------------------------------ |
-| POST   | `/api/sales`       | Todos | Registrar venta. El backend recalcula precios y total, y descuenta el inventario. Campos opcionales: `clientRequestId` (UUID; si ya existe una venta con ese identificador se devuelve la existente, sin duplicar) y `offlineCreatedAt` (hora real de una venta hecha sin conexión, con zona horaria). |
-| GET    | `/api/sales`       | ADMIN | Historial de ventas con montos.                                          |
+| POST   | `/api/sales`       | Todos | Registrar venta. El backend recalcula precios y total, y descuenta el inventario. Cabecera opcional `X-Offline-Sync: 1` (la envía la app al sincronizar ventas hechas sin conexión; solo marca la operación en el log). Campos opcionales: `clientRequestId` (UUID; si ya existe una venta con ese identificador se devuelve la existente, sin duplicar) y `offlineCreatedAt` (hora real de una venta hecha sin conexión, con zona horaria). |
+| GET    | `/api/sales`       | ADMIN | Historial de ventas con montos y detalle, del periodo `from`–`to` (`AAAA-MM-DD`, incluidas). Sin fechas, los últimos 30 días; máximo 93 días → si no, 400. |
 | GET    | `/api/sales/{id}`  | ADMIN | Detalle de una venta.                                                    |
 | PUT    | `/api/sales/{id}`  | ADMIN | Rechazado: las ventas no se modifican después de registrarse.           |
 | DELETE | `/api/sales/{id}`  | ADMIN | Rechazado: las ventas no se eliminan.                                    |

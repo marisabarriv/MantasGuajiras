@@ -123,6 +123,7 @@ async function readError(response, fallbackMessage, { redirectOn401 }) {
  * - auth: enviar el token (false en login y registro).
  * - redirectOn401: volver al inicio si la sesión venció
  *   (false en login, donde 401 significa "contraseña incorrecta").
+ * - headers: cabeceras adicionales.
  */
 export async function apiRequest(path, {
     method = "GET",
@@ -130,12 +131,13 @@ export async function apiRequest(path, {
     fallbackMessage,
     auth = true,
     redirectOn401 = true,
+    headers = {},
 } = {}) {
 
     const response = await send(path, {
         method,
         auth,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...headers },
         body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 

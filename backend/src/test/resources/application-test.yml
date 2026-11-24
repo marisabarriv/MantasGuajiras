@@ -37,5 +37,10 @@ initial-admin:
   password: Prueba123
 
 logging:
+  file:
+    name: target/test-logs/mantasguajiras.log
   level:
     root: WARN
+    com.mantasguajiras: WARN
+    # El registro de operaciones se prueba en RequestLoggingTest.
+    com.mantasguajiras.backend.common.monitoring: INFO

@@ -136,3 +136,8 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Periodo del historial: atajos arriba, fechas debajo */
+.sales-period .inv-filters {
+    grid-column: 1 / -1;
+}

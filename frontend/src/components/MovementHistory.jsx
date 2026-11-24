@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import useAutoRefresh from "../hooks/useAutoRefresh";
+import useShowMore from "../hooks/useShowMore";
+import ShowMoreButton from "./ShowMoreButton";
 
 import InventoryService from "../services/InventoryService";
 import {
@@ -8,18 +10,20 @@ import {
     MOVEMENT_TYPE_LABELS,
     SOURCE_TYPE_LABELS,
 } from "../utils/inventoryFormat";
+import { DEFAULT_DAYS, MAX_DAYS } from "../utils/period";
 
 /**
  * Historial de movimientos de inventario.
  * - Con productId: solo los de ese producto (se usa en el modal).
  * - Sin productId: todos (pestaña "Historial de movimientos").
+ * Sin fechas se muestran los últimos 30 días (máximo 3 meses por consulta).
  * reloadKey: cambia su valor para volver a cargar.
  */
 const EMPTY_FILTERS = { type: "", source: "", username: "", from: "", to: "" };
 
 function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }) {
 
-    // Filtros solo en el historial general (el de un producto ya está acotado).
+    // Tipo, origen y usuario solo en el historial general; las fechas, en ambos.
     const showFilters = showProduct;
     const [filters, setFilters] = useState(EMPTY_FILTERS);
     // El usuario se escribe: se aplica medio segundo después de dejar de escribir.
@@ -71,12 +75,16 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
 
     }, [productId, filters, reloadKey, refreshKey, takeSilent]);
 
+    const page = useShowMore(movements, `${productId}|${JSON.stringify(filters)}`);
+
     const setFilter = (name) => (event) =>
         setFilters((current) => ({ ...current, [name]: event.target.value }));
 
-    const filterBar = showFilters && (
+    const filterBar = (
+        <>
         <div className="history-filters" role="group" aria-label="Filtrar movimientos">
 
+            {showFilters && (<>
             <label>
                 <span>Tipo</span>
                 <select value={filters.type} onChange={setFilter("type")}>
@@ -106,6 +114,7 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
                     autoComplete="off"
                 />
             </label>
+            </>)}
 
             <label>
                 <span>Desde</span>
@@ -131,6 +140,12 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
             )}
 
         </div>
+        <p className="history-note">
+            {filters.from || filters.to
+                ? `Máximo ${MAX_DAYS} días (unos 3 meses) por consulta.`
+                : `Se muestran los últimos ${DEFAULT_DAYS} días. Usa las fechas para ver otros periodos (máximo 3 meses por consulta).`}
+        </p>
+        </>
     );
 
 
@@ -154,7 +169,7 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
                 <p className="inv-message">
                     {hasFilters
                         ? "Ningún movimiento coincide con los filtros."
-                        : "Todavía no hay movimientos registrados."}
+                        : `No hay movimientos en los últimos ${DEFAULT_DAYS} días.`}
                 </p>
             </>
         );
@@ -165,7 +180,7 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
         {filterBar}
         <ul className="inv-movements">
 
-            {movements.map((movement) => {
+            {page.items.map((movement) => {
 
                 const isIn = movement.movementTypeName === "IN";
 
@@ -222,6 +237,7 @@ function MovementHistory({ productId = null, reloadKey = 0, showProduct = true }
             })}
 
         </ul>
+        <ShowMoreButton remaining={page.remaining} onClick={page.showMore} />
         </>
     );
 }

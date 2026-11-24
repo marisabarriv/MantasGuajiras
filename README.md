@@ -191,7 +191,9 @@ MantasGuajiras/
 │   ├── 07-modelo-de-datos.md
 │   ├── 08-frontend.md
 │   ├── 09-copias-de-seguridad.md
-│   └── 10-certificacion.md          Matriz de certificación: criterios, estado y evidencia
+│   ├── 10-certificacion.md          Matriz de certificación: criterios, estado y evidencia
+│   ├── 11-pendientes-responsable.md Tareas que solo puede hacer la dueña del proyecto
+│   └── 12-rendimiento-y-monitoreo.md Prueba de carga, estado del sistema, log y respuesta a incidentes
 │
 └── README.md
 ```
@@ -328,8 +330,10 @@ El backend es responsable de:
 | `ProductRulesTest`         | Categoría ↔ unidad, enteros en mantas, precio de compra = precio unitario.     |
 | `ImageSignatureTest`       | La foto de perfil se valida por su contenido real.                            |
 | `UnexpectedErrorLoggingTest` | Un error no previsto queda en el log con un código de referencia y el usuario no ve detalles internos. |
+| `DateRangeTest`, `HistoryAndMonitoringHttpTest` | Historiales por periodo (30 días por defecto, máximo 93), estado del sistema (`/actuator/health`) sin detalles internos y registro de operaciones con usuario y motivo del rechazo, sin contraseñas. |
+| `MonitoringUnitTest` | Peticiones lentas registradas sin parámetros; alerta en el log si la base o el disco fallan y aviso al recuperarse. |
 
-**Cobertura (JaCoCo):** 92 % de líneas del backend (91 % en las reglas de negocio críticas). El build falla si baja del 85 % de líneas o del 65 % de ramas. Informe: `backend/target/site/jacoco/index.html` tras `./mvnw test`, y como artefacto `cobertura-backend` en cada ejecución de la CI. Las pruebas se ejecutan en orden aleatorio para detectar dependencias ocultas entre ellas.
+**Cobertura (JaCoCo):** 92 % de líneas del backend (119 pruebas) (91 % en las reglas de negocio críticas). El build falla si baja del 85 % de líneas o del 65 % de ramas. Informe: `backend/target/site/jacoco/index.html` tras `./mvnw test`, y como artefacto `cobertura-backend` en cada ejecución de la CI. Las pruebas se ejecutan en orden aleatorio para detectar dependencias ocultas entre ellas.
 
 **Frontend:** `npm run lint` y `npm run build`.
 
@@ -338,6 +342,8 @@ El backend es responsable de:
 **Estado de certificación:** `docs/10-certificacion.md` lista cada criterio de calidad con su estado (verificado, pendiente o fallido) y la evidencia que lo respalda.
 
 **Integración continua:** `.github/workflows/ci.yml` ejecuta todo lo anterior en cada push y pull request (pestaña **Actions** de GitHub), además de un escaneo de vulnerabilidades conocidas en las dependencias del backend y del frontend (OSV-Scanner). Dependabot (`.github/dependabot.yml`) propone actualizaciones cada semana.
+
+**Rendimiento:** prueba de carga con 3 años de datos y 40 usuarios simultáneos, sin errores de servidor y con p95 por debajo de 270 ms (`docs/12-rendimiento-y-monitoreo.md`; scripts en `scripts/perf/`).
 
 **Manuales:** recorrido de los flujos críticos desde la interfaz (lista en `docs/06-despliegue.md`, sección 14.4).
 

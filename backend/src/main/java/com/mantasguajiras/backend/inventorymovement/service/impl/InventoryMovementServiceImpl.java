@@ -1,5 +1,6 @@
 package com.mantasguajiras.backend.inventorymovement.service.impl;
 
+import com.mantasguajiras.backend.common.query.DateRange;
 import com.mantasguajiras.backend.inventorymovement.dto.requests.MovementFilter;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -78,10 +79,8 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                                         "Origen no válido: usa SALE, PURCHASE, PRODUCTION, ORDER o ADJUSTMENT.");
                 }
 
-                if (filter.from() != null && filter.to() != null && filter.from().isAfter(filter.to())) {
-                        throw new IllegalArgumentException(
-                                        "La fecha inicial no puede ser posterior a la fecha final.");
-                }
+                // Siempre un periodo: sin fechas, los últimos 30 días; máximo 93.
+                DateRange range = DateRange.resolve(filter.from(), filter.to());
 
                 Specification<InventoryMovement> specification = (root, query, cb) -> {
 
@@ -101,14 +100,8 @@ public class InventoryMovementServiceImpl implements InventoryMovementService {
                                                 cb.lower(root.join("createdBy", JoinType.LEFT).get("username")),
                                                 username));
                         }
-                        if (filter.from() != null) {
-                                predicates.add(cb.greaterThanOrEqualTo(
-                                                root.get("createdAt"), filter.from().atStartOfDay()));
-                        }
-                        if (filter.to() != null) {
-                                predicates.add(cb.lessThan(
-                                                root.get("createdAt"), filter.to().plusDays(1).atStartOfDay()));
-                        }
+                        predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), range.start()));
+                        predicates.add(cb.lessThan(root.get("createdAt"), range.endExclusive()));
 
                         return cb.and(predicates.toArray(Predicate[]::new));
                 };

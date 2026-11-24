@@ -19,9 +19,9 @@ const InventoryService = {
 
 
     /**
-     * Historial (más reciente primero). Sin productId devuelve todos.
+     * Historial (más reciente primero). Sin productId, de todos los productos.
      * filters (opcionales): { type: "IN"|"OUT", source, username, from, to }
-     * con fechas AAAA-MM-DD.
+     * con fechas AAAA-MM-DD. Sin fechas, los últimos 30 días; máximo 93.
      */
     findMovements(productId = null, filters = {}) {
 

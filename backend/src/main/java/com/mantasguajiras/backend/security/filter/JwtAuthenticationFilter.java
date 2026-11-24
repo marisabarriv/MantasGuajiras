@@ -1,5 +1,6 @@
 package com.mantasguajiras.backend.security.filter;
 
+import com.mantasguajiras.backend.common.monitoring.RequestLoggingFilter;
 import java.io.IOException;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -85,6 +86,12 @@ public class JwtAuthenticationFilter
 
         } catch (Exception ignored) {
             // Token inválido o expirado.
+        }
+
+        // Para el registro de operaciones (RequestLoggingFilter).
+        var current = SecurityContextHolder.getContext().getAuthentication();
+        if (current != null && current.isAuthenticated()) {
+            request.setAttribute(RequestLoggingFilter.USERNAME_ATTRIBUTE, current.getName());
         }
 
         filterChain.doFilter(request, response);

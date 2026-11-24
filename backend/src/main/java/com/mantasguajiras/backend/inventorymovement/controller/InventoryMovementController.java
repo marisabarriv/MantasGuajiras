@@ -27,6 +27,8 @@ public class InventoryMovementController {
      * Filtros opcionales y combinables:
      *   productId, type (IN/OUT), source (SALE, PURCHASE, PRODUCTION, ORDER,
      *   ADJUSTMENT), username, from y to (fechas AAAA-MM-DD, incluidas).
+     * Siempre devuelve un periodo: sin fechas, los últimos 30 días;
+     * máximo 93 días por consulta.
      */
     @GetMapping
     public List<InventoryMovementResponse> findAll(

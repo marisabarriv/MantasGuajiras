@@ -638,3 +638,20 @@
     font: inherit;
     font-weight: 400;
 }
+
+/* Aviso del periodo consultado (historiales) */
+.history-note {
+    margin: -6px 0 14px;
+
+    color: inherit;
+    opacity: 0.75;
+    font-size: 0.85rem;
+}
+
+/* "Ver más" al final de las listas largas */
+.show-more {
+    display: flex;
+    justify-content: center;
+
+    margin: 16px 0 8px;
+}
