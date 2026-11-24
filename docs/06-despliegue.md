@@ -360,6 +360,8 @@ Si tu usuario o contraseña de PostgreSQL no son `postgres`/`postgres`, usa las 
 | `INITIAL_ADMIN_USERNAME`  | todos     | Administrador que se crea si no existe ninguno.                     |
 | `INITIAL_ADMIN_PHONE`     | todos     | Teléfono de ese administrador.                                      |
 | `INITIAL_ADMIN_PASSWORD`  | todos     | Contraseña inicial (4 a 12 caracteres). Cambiarla al primer ingreso. |
+| `LOGIN_MAX_ATTEMPTS`      | todos     | Intentos fallidos seguidos antes del bloqueo temporal (por defecto 5). |
+| `LOGIN_LOCK_MINUTES`      | todos     | Minutos de bloqueo tras alcanzar el límite (por defecto 15). |
 | `DB_URL`                  | prod      | `jdbc:postgresql://servidor:5432/mantas_guajiras_db`                |
 | `DB_USERNAME`             | prod      | Usuario de la aplicación en PostgreSQL (no `postgres`).             |
 | `DB_PASSWORD`             | prod      | Contraseña de ese usuario.                                          |
@@ -411,7 +413,8 @@ El resultado queda en `frontend/dist` y se publica en cualquier servidor web (Ng
 - [ ] `CORS_ALLOWED_ORIGINS` con el dominio real (o mismo origen mediante proxy).
 - [ ] Copias automáticas programadas **y** una prueba de restauración exitosa (`docs/09-copias-de-seguridad.md`).
 - [ ] Segunda copia fuera del equipo o servidor (`CopyTo`).
-- [ ] CI en verde en GitHub (pestaña **Actions**): pruebas del backend, lint y build del frontend, y prueba de punta a punta.
+- [ ] CI en verde en GitHub (pestaña **Actions**): pruebas del backend, lint y build del frontend, escaneo de dependencias y prueba de punta a punta.
+- [ ] Dependabot activado en GitHub (Settings → Code security → Dependabot alerts y security updates).
 - [ ] Prueba de restauración **completa** en el entorno de despliegue: restaurar con `restore-db` en una base nueva, apuntar una instancia del backend a ella y revisar inventario, últimas ventas y usuarios.
 - [ ] Recorrido manual de los flujos críticos: venta normal, venta con precio especial, compra, producción, ajuste de inventario, personalizada con abono y pago final, inicio de sesión como vendedor para confirmar que no puede editar productos.
 
@@ -422,6 +425,8 @@ El navegador guarda en `localStorage` la sesión (token), el catálogo para vend
 | Riesgo                                     | Medida                                                                                     |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------ |
 | Código malicioso inyectado en la página (XSS) | React escapa todo el texto; no hay HTML insertado sin escapar. La versión compilada incluye una **política de seguridad de contenido (CSP)**: solo ejecuta scripts del propio sitio y solo envía datos al propio sitio y al backend. |
+| Adivinar contraseñas (fuerza bruta)        | Tras 5 intentos fallidos seguidos con el mismo usuario o teléfono, ese acceso queda bloqueado 15 minutos, incluso con la contraseña correcta (`LOGIN_MAX_ATTEMPTS`, `LOGIN_LOCK_MINUTES`). El bloqueo queda en el log. Si un empleado queda bloqueado por error, basta esperar o que el administrador le restablezca la contraseña. |
+| Dependencias con vulnerabilidades conocidas | La CI revisa backend y frontend con OSV-Scanner en cada push; Dependabot propone actualizaciones cada semana. |
 | Token robado o dispositivo perdido         | El token vence (`JWT_EXPIRATION`). **Desactivar al usuario en Administrar usuarios corta su acceso de inmediato**, aunque su token no haya vencido (el backend revisa en cada petición que la cuenta siga activa). |
 | Ventas pendientes al cerrar sesión         | Se avisa antes de cerrar sesión; las ventas quedan a nombre de quien las hizo y solo se envían cuando esa persona vuelve a entrar. Otro usuario del mismo dispositivo no las envía. |
 | Datos visibles en el dispositivo           | El catálogo contiene productos, precios y existencias (información que el vendedor ya ve). Las ventas con montos del historial no se guardan en el dispositivo. |

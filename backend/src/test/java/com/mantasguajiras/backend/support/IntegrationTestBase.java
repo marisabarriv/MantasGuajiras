@@ -66,7 +66,7 @@ public abstract class IntegrationTestBase {
         String username = "v" + UUID.randomUUID().toString().substring(0, 8);
         userRepository.save(User.builder()
                 .username(username)
-                .phone("31" + String.valueOf(System.nanoTime()).substring(4, 12))
+                .phone("31" + randomDigits(8))
                 .password("{noop}no-se-usa")
                 .role(Role.SELLER)
                 .active(true)
@@ -109,5 +109,15 @@ public abstract class IntegrationTestBase {
         return inventoryRepository.findById(productId)
                 .map(inventory -> inventory.getQuantity())
                 .orElse(BigDecimal.ZERO);
+    }
+
+    /** Dígitos aleatorios de longitud fija (teléfonos únicos de prueba). */
+    protected static String randomDigits(int length) {
+        StringBuilder digits = new StringBuilder(length);
+        java.util.concurrent.ThreadLocalRandom random = java.util.concurrent.ThreadLocalRandom.current();
+        for (int i = 0; i < length; i++) {
+            digits.append(random.nextInt(10));
+        }
+        return digits.toString();
     }
 }

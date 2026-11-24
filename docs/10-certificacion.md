@@ -7,7 +7,7 @@
 | **Código**               | DOC-10                         |
 | **Versión**              | v1.0.0-rc.1                    |
 | **Estado**               | En curso                       |
-| **Última actualización** | 24/11/2026 (Fase 2)            |
+| **Última actualización** | 24/11/2026 (Fase 3)            |
 
 ---
 
@@ -45,6 +45,8 @@ Cada criterio tiene **prioridad**, **estado** y **evidencia**. Un criterio solo 
 | `T-mov` | `MovementFilterTest` (3): ajuste 15 → 12 con motivo y usuario; filtros por tipo, origen, usuario y fechas | `backend/src/test` |
 | `T-name` | `ProductNameTest` (4): nombres de producto únicos | `backend/src/test` |
 | `T-sim` | `SimultaneousRetryTest` (2): misma venta o compra enviada 4 veces a la vez | `backend/src/test` |
+| `T-auth` | `AuthenticationSecurityTest` (10): inicio de sesión real, tokens, usuarios desactivados, permisos por HTTP, registro, bloqueo por intentos | `backend/src/test` |
+| `T-lock` | `LoginAttemptServiceTest` (2): duración y vencimiento del bloqueo | `backend/src/test` |
 | `T-api` | `ApiValidationTest` (10): datos inválidos por HTTP → 400/404/405, nunca 500 | `backend/src/test` |
 | `T-log` | `UnexpectedErrorLoggingTest`: error interno registrado con código, sin detalles al usuario | `backend/src/test` |
 | `E2E` | `frontend/e2e/offline-sync.e2e.cjs` (10 escenarios, 41 comprobaciones, navegador real) | se ejecuta en CI |
@@ -314,32 +316,32 @@ Ninguno puede quedar abierto para dar 10/10.
 | ID | Criterio | Pr. | Estado | Evidencia / nota |
 | -- | -------- | --- | ------ | ---------------- |
 | SEG-01 | Inicio de sesión | B | ✅ | `E2E`, `MAN` |
-| SEG-02 | Hash seguro | B | ✅ | BCrypt (`REV`) |
-| SEG-03 | Contraseñas nunca en respuestas | B | ⏳ | `UserResponse` no tiene el campo (`REV`); falta prueba |
-| SEG-04 | JWT validado | B | ✅ | `T-perm`, `E2E` |
-| SEG-05 | Tokens vencidos rechazados | A | ⏳ | Implementado; falta prueba |
+| SEG-02 | Hash seguro | B | ✅ | `T-auth` (la contraseña guardada empieza por `$2`, BCrypt) |
+| SEG-03 | Contraseñas nunca en respuestas | B | ✅ | `T-auth` (`/auth/login`, `/api/me` y `/users` sin contraseñas ni hashes) |
+| SEG-04 | JWT validado | B | ✅ | `T-auth` (token alterado o firmado con otra clave → 401) |
+| SEG-05 | Tokens vencidos rechazados | A | ✅ | `T-auth` (token vencido → 401) |
 | SEG-06 | Rutas protegidas | B | ✅ | `T-perm` |
 | SEG-07 | Roles en el backend | B | ✅ | `T-perm` |
 | SEG-08 | Vendedor sin funciones de administrador | B | ✅ | `T-perm` |
 | SEG-09 | No cambiar el rol propio | B | ✅ | `/users/**` solo ADMIN (`T-perm`); `/api/me` no acepta rol (`REV`) |
-| SEG-10 | Sin acceso a recursos ajenos por id | A | ⏳ | `/api/me` usa la sesión, no un id (`REV`); falta prueba |
-| SEG-11 | Inactivos no entran | A | ⏳ | Implementado (cuenta deshabilitada, rechazada en cada petición); falta prueba |
+| SEG-10 | Sin acceso a recursos ajenos por id | A | ✅ | `/api/me` usa la sesión, no un id (`REV`); `/users/{id}` solo ADMIN (`T-auth`) |
+| SEG-11 | Inactivos no entran | A | ✅ | `T-auth` (no inicia sesión y su token deja de servir al momento) |
 | SEG-12 | Identificadores únicos | A | ✅ | UNIQUE |
-| SEG-13 | Teléfonos únicos | A | ⏳ | Implementado; falta prueba |
-| SEG-14 | Usuarios únicos | A | ⏳ | Implementado; falta prueba |
+| SEG-13 | Teléfonos únicos | A | ✅ | `T-auth` (registro con teléfono repetido → 409) |
+| SEG-14 | Usuarios únicos | A | ✅ | `T-auth` (registro con usuario repetido → 409) |
 | SEG-15 | Sesiones correctas | A | ✅ | `E2E` |
 | SEG-16 | Cierre de sesión | A | ✅ | `E2E` |
 | SEG-17 | Sin datos sensibles en logs | A | ✅ | `log-resolved-exception: false`; `T-log` |
 | SEG-18 | Sin secretos en git | B | ✅ | `.gitignore` y `git ls-files` revisados |
 | SEG-19 | CORS solo autorizados | A | ⏳ | Configurable (`CORS_ALLOWED_ORIGINS`); valor de producción pendiente |
 | SEG-20 | Endpoints sensibles protegidos | B | ✅ | `T-perm` |
-| SEG-21 | Protección contra fuerza bruta | A | ❌ | No hay límite de intentos de inicio de sesión |
+| SEG-21 | Protección contra fuerza bruta | A | ✅ | `T-auth`, `T-lock`: 5 fallos → bloqueo 15 min (429), configurable; corregido el 24/11 |
 | SEG-22 | Sin inyección | A | ✅ | JPA con parámetros, Bean Validation (`REV`) |
 | SEG-23 | Sin XSS | A | ✅ | Sin HTML sin escapar (`REV`); CSP sin violaciones (`E2E`) |
 | SEG-24 | Dependencias revisadas | A | ⏳ | `AUD` frontend 0; backend pendiente |
-| SEG-25 | Errores de autenticación sin información extra | A | ✅ | Mensaje único "Usuario o contraseña incorrectos" (`REV`) |
+| SEG-25 | Errores de autenticación sin información extra | A | ✅ | `T-auth` (mismo mensaje para usuario inexistente y contraseña incorrecta) |
 
-**Pruebas HTTP de permisos:** vendedor crea producto ✅ · ve historial monetario ✅ · registra compra ✅ · crea administrador (`POST /users`) ⏳ · cambia su rol ⏳ · sin sesión registra venta ⏳ · token vencido ⏳.
+**Pruebas HTTP de permisos:** vendedor crea producto ✅ · ve historial monetario ✅ · registra compra ✅ · crea administrador (`POST /users`) ✅ `T-auth` · cambia su rol (`PUT /users/{id}`, `/promote`) ✅ `T-auth` · sin sesión registra venta ✅ `T-auth` · token vencido ✅ `T-auth`.
 
 **Archivos:** 20 MB ⏳ (implementado en frontend y backend; falta prueba del 413) · tipo ✅ `T-img` · firma real ✅ `T-img` · malformados ✅ `T-img` · suplantación ✅ `T-img` · memoria ⏳ · sin rutas internas ✅ (`REV`: la foto está en la base, no en disco).
 
