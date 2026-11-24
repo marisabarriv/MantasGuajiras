@@ -11,9 +11,15 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+        private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
         @ExceptionHandler(ResourceNotFoundException.class)
         public ResponseEntity<ErrorResponse> handleNotFound(
@@ -230,11 +236,19 @@ public class GlobalExceptionHandler {
                         Exception ex,
                         HttpServletRequest request) {
 
+                // Error no previsto: se registra con un código corto que también
+                // ve el usuario, para encontrarlo en el log. Al usuario no se le
+                // muestran detalles internos.
+                String errorCode = UUID.randomUUID().toString().substring(0, 8);
+
+                log.error("Error interno [{}] en {} {}",
+                                errorCode, request.getMethod(), request.getRequestURI(), ex);
+
                 ErrorResponse response = ErrorResponse.builder()
                                 .timestamp(LocalDateTime.now())
                                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                                 .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                                .message("Ha ocurrido un error interno.")
+                                .message("Ha ocurrido un error interno. Código de referencia: " + errorCode + ".")
                                 .path(request.getRequestURI())
                                 .build();
 
