@@ -27,10 +27,11 @@ const OrderService = {
     },
 
 
-    addPayment(id, amount) {
+    /** clientRequestId: el mismo en los reintentos, para no cobrar dos veces. */
+    addPayment(id, amount, clientRequestId) {
         return request(`/api/orders/${id}/payments`, {
             method: "POST",
-            body: { amount },
+            body: { amount, clientRequestId },
             fallbackMessage: "No fue posible registrar el pago.",
         });
     },

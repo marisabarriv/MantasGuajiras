@@ -46,4 +46,11 @@ public class ProductionRequest {
         message = "La cantidad de mantas debe ser mayor que cero."
     )
     private BigDecimal outputQuantity;
+
+    /**
+     * Opcional. Identificador único que genera el dispositivo. Si ya existe
+     * una operación con este identificador, se devuelve la existente en lugar
+     * de registrarla otra vez.
+     */
+    private UUID clientRequestId;
 }

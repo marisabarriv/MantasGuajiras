@@ -6,7 +6,9 @@
 2. Se corta la conexión **después** de que el servidor guardó la venta: al reintentar no se duplica.
 3. Conflicto: otro vendedor vende la última unidad. La venta se rechaza sin dejar el inventario negativo, y "Reintentar" la registra después de un ajuste.
 4. Dispositivo compartido: aviso al cerrar sesión con ventas pendientes, otro vendedor no envía ventas ajenas y la venta queda a nombre de quien la hizo.
-5. Actualización automática del inventario y ausencia de violaciones de la política de seguridad (CSP).
+5. Compra: se corta la conexión justo al guardar y se pulsa otra vez → una sola compra y el inventario sube una sola vez.
+6. Ajuste con motivo obligatorio y filtros del historial (origen y usuario).
+7. Actualización automática del inventario y ausencia de violaciones de la política de seguridad (CSP).
 
 Se ejecuta sola en GitHub Actions (`.github/workflows/ci.yml`) en cada push.
 

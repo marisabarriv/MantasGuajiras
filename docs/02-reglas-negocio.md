@@ -137,7 +137,7 @@ Toda operación que modifique el stock deberá generar el movimiento de inventar
 
 ## RN-12. Ajustes por conteo físico
 
-**Administradores y vendedores** pueden ajustar el inventario por conteo físico: se escribe la cantidad real que hay en el local y el sistema registra la diferencia como entrada o salida.
+**Administradores y vendedores** pueden ajustar el inventario por conteo físico: se escribe la cantidad real que hay en el local y el sistema registra la diferencia como entrada o salida. **El motivo es obligatorio** (por ejemplo, "conteo del lunes" o "manta dañada").
 
 El objetivo es que el administrador conozca el estado real del local sin tener que estar presente contando. Por eso cada ajuste queda registrado como movimiento de inventario con **quién lo hizo, cuándo, la diferencia y el motivo**, visible en el historial de Inventario.
 
@@ -276,6 +276,12 @@ Los movimientos de inventario deberán conservar la información necesaria para 
 * Cantidad.
 * Observaciones cuando correspondan.
 * Fecha de la operación.
+
+---
+
+## RN-25A. Consulta del historial
+
+El historial de movimientos se puede filtrar por producto, tipo (entrada o salida), origen (venta, compra, producción, personalizada o ajuste), usuario y rango de fechas.
 
 ---
 

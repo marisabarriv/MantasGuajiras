@@ -1,5 +1,6 @@
 package com.mantasguajiras.backend.inventory.dto.requests;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
@@ -26,6 +27,9 @@ public class InventoryAdjustmentRequest {
     @PositiveOrZero(message = "La cantidad contada no puede ser negativa.")
     private BigDecimal countedQuantity;
 
+    // Obligatorio: el administrador debe poder entender cada ajuste sin
+    // estar en el local (por ejemplo, "conteo del lunes" o "manta dañada").
+    @NotBlank(message = "Escribe el motivo del ajuste (por ejemplo, conteo semanal o manta dañada).")
     @Size(max = 150, message = "El motivo no puede superar los 150 caracteres.")
     private String reason;
 }

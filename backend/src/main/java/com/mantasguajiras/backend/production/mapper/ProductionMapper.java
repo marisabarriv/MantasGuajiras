@@ -40,6 +40,7 @@ public interface ProductionMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "items", ignore = true)
+    @Mapping(target = "clientRequestId", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
     void updateEntity(
         ProductionRequest request,

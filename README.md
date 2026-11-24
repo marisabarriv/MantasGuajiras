@@ -60,6 +60,7 @@ Todos los módulos están implementados e integrados. El sistema se ejecuta en u
 * Bloqueo de la fila de inventario para que dos ventas simultáneas no vendan la misma unidad.
 * Una manta no puede quedar en metros ni una tela en `#`; no se cambia la unidad de un producto con historial.
 * Ventas, compras y producciones registradas no se editan ni se borran (trazabilidad).
+* Ninguna operación se registra dos veces por un reintento tras un corte de conexión (ventas, compras, producción, personalizadas y pagos).
 * Permisos por rol aplicados en el servidor (ver **Roles**).
 
 ---
@@ -147,7 +148,7 @@ MantasGuajiras/
 │   │   ├── sale/  purchase/  production/  order/
 │   │   └── user/
 │   ├── src/main/resources/
-│   │   ├── db/migration/            Migraciones Flyway (V1 … V20)
+│   │   ├── db/migration/            Migraciones Flyway (V1 … V21)
 │   │   ├── application.yml
 │   │   ├── application-dev.example.yml
 │   │   └── application-prod.yml
@@ -305,7 +306,13 @@ El backend es responsable de:
 
 | Prueba                     | Qué comprueba                                                                 |
 | -------------------------- | ----------------------------------------------------------------------------- |
-| `BackendApplicationTests`  | Las 20 migraciones se aplican desde cero y el esquema coincide con las entidades. |
+| `BackendApplicationTests`  | Las 21 migraciones se aplican desde cero y el esquema coincide con las entidades. |
+| `SalePricingTest`          | Precio especial ($80.000 → $70.000 = 12,5 %), varios productos, precio histórico, rechazos, producto desactivado, ventas inmodificables. |
+| `PurchaseFlowTest`         | Compras: entradas de inventario, total, productos no comprables o inactivos, sin cambios parciales, reintento sin duplicar. |
+| `ProductionFlowTest`       | Producción: consumo de tela y mantas generadas, tela insuficiente, validaciones, reintento sin duplicar. |
+| `CustomOrderFlowTest`      | Personalizadas: abono, pagos, saldo, límites, reintentos de la personalizada y de cada pago sin duplicar. |
+| `MovementFilterTest`       | Ajuste 15 → 12 con motivo y usuario; filtros del historial por tipo, origen, usuario y fechas. |
+| `ApiValidationTest`        | Datos inválidos enviados por HTTP responden 400/404/405 con mensaje claro, nunca 500. |
 | `RolePermissionsTest`      | Qué puede y qué no puede hacer cada rol.                                      |
 | `ConcurrentSaleTest`       | Dos ventas simultáneas de la última unidad: solo una se registra. Una venta sin conexión reenviada no se duplica; si al sincronizar ya no hay existencias, se rechaza. |
 | `ProductRulesTest`         | Categoría ↔ unidad, enteros en mantas, precio de compra = precio unitario.     |
@@ -314,7 +321,7 @@ El backend es responsable de:
 
 **Frontend:** `npm run lint` y `npm run build`.
 
-**Punta a punta** (`frontend/e2e/offline-sync.e2e.cjs`): navegador real contra backend y base de prueba. Cubre ventas sin conexión, app reabierta sin conexión, corte de conexión justo al enviar (no duplica), conflicto con otro vendedor y "Reintentar", dispositivo compartido entre vendedores, actualización automática y ausencia de violaciones de la CSP. Instrucciones en `frontend/e2e/README.md`.
+**Punta a punta** (`frontend/e2e/offline-sync.e2e.cjs`): navegador real contra backend y base de prueba. Cubre ventas sin conexión, app reabierta sin conexión, corte de conexión justo al enviar (no duplica), conflicto con otro vendedor y "Reintentar", dispositivo compartido entre vendedores, compra con corte de conexión al guardar (no duplica), motivo obligatorio y filtros del historial, actualización automática y ausencia de violaciones de la CSP. Instrucciones en `frontend/e2e/README.md`.
 
 **Estado de certificación:** `docs/10-certificacion.md` lista cada criterio de calidad con su estado (verificado, pendiente o fallido) y la evidencia que lo respalda.
 

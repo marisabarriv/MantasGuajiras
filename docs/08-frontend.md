@@ -271,7 +271,7 @@ En dispositivos con pantallas pequeñas, el diseño puede reorganizar los elemen
 | `NewSalePage`       | Punto de venta: búsqueda, escáner, carrito, precio especial por producto, protección contra doble envío. |
 | `CustomOrdersPage`  | Mantas personalizadas: registro con tela usada, abono inicial, pagos posteriores y saldo; filtro pagadas/pendientes. |
 | `ProductsPage`      | Lista por categoría, búsqueda y escáner. ADMIN: crear y editar (`ProductForm`). Vendedor: solo consulta. |
-| `InventoryPage`     | Existencias con estado (agotado, bajo, normal), historial de movimientos con quién hizo cada uno, y ajuste por conteo físico (todos los roles). |
+| `InventoryPage`     | Existencias con estado (agotado, bajo, normal), historial de movimientos con quién hizo cada uno (filtros por producto, tipo, origen, usuario y fechas) y ajuste por conteo físico con motivo obligatorio (todos los roles). |
 | `ProductionPage`    | Registrar producción (tela consumida → mantas generadas) e historial. Sin montos de dinero.       |
 | `SalesPage`         | Historial de ventas con montos (ADMIN).                                                           |
 | `PurchasesPage`     | Registrar compras e historial (ADMIN).                                                            |
@@ -865,6 +865,8 @@ Verificación: `npm run lint` y `npm run build` sin errores.
 | `components/ConnectionBanner.jsx` | Aviso superior: sin conexión, enviando, rechazadas.                             |
 | `hooks/useAutoRefresh.js`         | Recarga silenciosa de cada pantalla.                                             |
 | `public/sw.js`                    | Guarda **solo el código** de la app (index.html, `/assets/`, íconos) para abrirla sin conexión. Nunca guarda respuestas de la API. |
+
+**Compras, producción, personalizadas y pagos** usan el mismo mecanismo en línea: cada formulario genera su `clientRequestId` al abrirse y lo conserva en los reintentos. Si falla la conexión al guardar, el mensaje indica que se puede volver a pulsar sin riesgo de duplicar.
 
 **Por qué no se duplican ventas.** Cada intento de venta genera un `clientRequestId`. Si la conexión se corta justo después de enviar, el servidor pudo haberla guardado sin que el dispositivo lo sepa; al reenviarla con el mismo identificador, el servidor devuelve la venta existente.
 

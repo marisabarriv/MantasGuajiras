@@ -194,6 +194,43 @@ public class GlobalExceptionHandler {
                                 request);
         }
 
+        /**
+         * Un valor de la dirección con formato incorrecto: un identificador
+         * mal escrito (/api/products/abc) o una fecha inválida en un filtro.
+         * Antes respondía 500.
+         */
+        @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+        public ResponseEntity<ErrorResponse> handleTypeMismatch(
+                        org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.BAD_REQUEST,
+                                "El valor de \"" + ex.getName() + "\" no es válido.",
+                                request);
+        }
+
+        /** Falta un parámetro obligatorio en la dirección. */
+        @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+        public ResponseEntity<ErrorResponse> handleMissingParameter(
+                        org.springframework.web.bind.MissingServletRequestParameterException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.BAD_REQUEST,
+                                "Falta el dato \"" + ex.getParameterName() + "\".",
+                                request);
+        }
+
+        /** Método HTTP no permitido en esa dirección (por ejemplo, PATCH donde solo hay GET). */
+        @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+        public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+                        org.springframework.web.HttpRequestMethodNotSupportedException ex,
+                        HttpServletRequest request) {
+
+                return build(HttpStatus.METHOD_NOT_ALLOWED,
+                                "Esta operación no está permitida en esta dirección.",
+                                request);
+        }
+
         /** Ruta que no existe (antes caía en el manejador general y respondía 500). */
         @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
         public ResponseEntity<ErrorResponse> handleNoResource(
