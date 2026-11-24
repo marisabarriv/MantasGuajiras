@@ -188,7 +188,8 @@ MantasGuajiras/
 │   ├── 06-despliegue.md
 │   ├── 07-modelo-de-datos.md
 │   ├── 08-frontend.md
-│   └── 09-copias-de-seguridad.md
+│   ├── 09-copias-de-seguridad.md
+│   └── 10-certificacion.md          Matriz de certificación: criterios, estado y evidencia
 │
 └── README.md
 ```
@@ -309,10 +310,13 @@ El backend es responsable de:
 | `ConcurrentSaleTest`       | Dos ventas simultáneas de la última unidad: solo una se registra. Una venta sin conexión reenviada no se duplica; si al sincronizar ya no hay existencias, se rechaza. |
 | `ProductRulesTest`         | Categoría ↔ unidad, enteros en mantas, precio de compra = precio unitario.     |
 | `ImageSignatureTest`       | La foto de perfil se valida por su contenido real.                            |
+| `UnexpectedErrorLoggingTest` | Un error no previsto queda en el log con un código de referencia y el usuario no ve detalles internos. |
 
 **Frontend:** `npm run lint` y `npm run build`.
 
 **Punta a punta** (`frontend/e2e/offline-sync.e2e.cjs`): navegador real contra backend y base de prueba. Cubre ventas sin conexión, app reabierta sin conexión, corte de conexión justo al enviar (no duplica), conflicto con otro vendedor y "Reintentar", dispositivo compartido entre vendedores, actualización automática y ausencia de violaciones de la CSP. Instrucciones en `frontend/e2e/README.md`.
+
+**Estado de certificación:** `docs/10-certificacion.md` lista cada criterio de calidad con su estado (verificado, pendiente o fallido) y la evidencia que lo respalda.
 
 **Integración continua:** `.github/workflows/ci.yml` ejecuta todo lo anterior en cada push y pull request (pestaña **Actions** de GitHub).
 
