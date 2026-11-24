@@ -17,7 +17,9 @@
           powershell -ExecutionPolicy Bypass -File scripts\backup\restore-test.ps1 -BackupFile C:\ruta\mantas_....dump
 #>
 param(
-    [string] $BackupFile
+    [string] $BackupFile,
+    # Solo para copias antiguas sin .sha256: permite probarlas igual.
+    [switch] $AllowMissingHash
 )
 
 . (Join-Path $PSScriptRoot 'common.ps1')
@@ -66,16 +68,8 @@ try {
 
     Write-Log $cfg "PRUEBA DE RESTAURACIÓN de $BackupFile"
 
-    # 1. Huella
-    if (Test-Path "$BackupFile.sha256") {
-        $expected = (Get-Content "$BackupFile.sha256" -Raw).Trim()
-        $actual = (Get-FileHash -Algorithm SHA256 $BackupFile).Hash
-        if ($expected -ne $actual) { throw 'La huella SHA-256 no coincide: el archivo está dañado o fue modificado.' }
-        Write-Log $cfg 'Huella SHA-256 correcta.'
-    }
-    else {
-        Write-Log $cfg 'Advertencia: la copia no tiene archivo .sha256; no se pudo verificar la huella.'
-    }
+    # 1. Huella (obligatoria)
+    Assert-BackupHash $cfg $BackupFile $AllowMissingHash.IsPresent
 
     # 2. Restaurar en una base temporal
     & (Get-PgTool $cfg 'dropdb') @connArgs --if-exists $testDb

@@ -20,6 +20,13 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+# Las pruebas no usan la documentación interactiva de la API.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 jwt:
   secret: clave-solo-para-pruebas-automaticas-no-usar-en-ningun-otro-lado
   expiration: 3600000

@@ -50,7 +50,7 @@ PostgreSQL lee las contraseñas del archivo `pgpass.conf`. Así ningún script c
    - `PgBin`: la carpeta `bin` de tu PostgreSQL. Compruébala en el Explorador; por ejemplo `C:\Program Files\PostgreSQL\17\bin` (el número depende de tu versión).
    - `Database`: el nombre de tu base (por defecto `mantas_guajiras_db`).
    - `BackupDir`: dónde se guardan las copias. Por defecto `C:\Users\TU_USUARIO\MantasGuajiras-backups`, **fuera del proyecto**, para que nunca terminen en un ZIP ni en git.
-   - `CopyTo`: **muy recomendado.** Una carpeta de OneDrive o Google Drive (o una USB). Si el disco del computador se daña o te lo roban, las copias de `BackupDir` se pierden con él.
+   - `CopyTo`: **muy recomendado.** Una carpeta de OneDrive o Google Drive (o una USB). Si el disco del computador se daña o te lo roban, las copias de `BackupDir` se pierden con él. La misma política de retención (`RetentionDays` y `MinKeep`) se aplica también a esta carpeta, así que no se llena con el tiempo.
 
 `backup.config.ps1` está en `.gitignore` y no se sube.
 
@@ -128,7 +128,7 @@ Si alguna dice `off`, cámbiala a `on` en `postgresql.conf` y reinicia el servic
 
 ### Qué verifica la prueba de restauración
 
-1. La huella SHA-256 del archivo (detecta archivos dañados o modificados).
+1. La huella SHA-256 del archivo (detecta archivos dañados o modificados). **Es obligatoria:** si falta el archivo `.sha256` o no coincide, la prueba falla. Solo para una copia antigua sin huella que sabes que es buena se puede forzar con `-AllowMissingHash` (en Linux, `ALLOW_MISSING_HASH=1`).
 2. Que `pg_restore` pueda restaurarlo completo en una base temporal.
 3. Integridad de los datos restaurados (`scripts/backup/integrity-check.sql`):
    - el inventario de cada producto es igual a la suma de sus movimientos;
@@ -153,7 +153,7 @@ La base temporal se elimina al terminar. **Tu base de trabajo nunca se modifica.
    powershell -ExecutionPolicy Bypass -File scripts\backup\restore-db.ps1 -BackupFile "C:\Users\TU_USUARIO\MantasGuajiras-backups\mantas_2026-11-23_210000.dump"
    ```
 
-   Por seguridad, el script **nunca sobrescribe** una base existente: restaura en `mantas_guajiras_db_restaurada` y te pide escribir el nombre para confirmar.
+   El script comprueba primero la huella SHA-256: si falta o no coincide, se detiene (usa otra copia o, solo si sabes que es buena, agrega `-AllowMissingHash`). Por seguridad **nunca sobrescribe** una base existente: restaura en `mantas_guajiras_db_restaurada` y te pide escribir el nombre para confirmar.
 5. En `backend/src/main/resources/application-dev.yml` cambia el final de `spring.datasource.url` por `/mantas_guajiras_db_restaurada`.
 6. Arranca el backend y revisa inventario, últimas ventas y usuarios.
 7. Cuando confirmes que todo está bien, puedes conservar la base dañada un tiempo por si hace falta revisarla, y borrarla después desde pgAdmin.
