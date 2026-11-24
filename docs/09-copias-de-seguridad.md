@@ -193,7 +193,9 @@ Probada el 24/11/2026 con la versión exacta anterior (commit `a6f5ada`, base en
 
 ---
 
-## 5. Linux / servidor (futuro)
+## 5. Linux / servidor
+
+Con el kit de producción (`deploy/`), las copias ya vienen programadas en el servicio `backup`: al arrancar, cada 2 horas de 6:00 a 21:00 y prueba de restauración los domingos. Ver `docs/13-produccion.md` §6. Lo siguiente es para un servidor sin Docker.
 
 ```bash
 # Contraseña en ~/.pgpass  (chmod 600 ~/.pgpass)

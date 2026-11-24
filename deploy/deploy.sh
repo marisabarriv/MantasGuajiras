@@ -15,6 +15,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 [[ -f .env ]] || { echo "Falta deploy/.env: copia .env.example a .env y complétalo."; exit 1; }
+chmod 600 .env   # las claves solo las lee el dueño
 set -a; . ./.env; set +a
 
 # Versión = commit actual del repositorio (o la indicada en APP_COMMIT).

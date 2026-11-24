@@ -374,6 +374,8 @@ Si tu usuario o contraseña de PostgreSQL no son `postgres`/`postgres`, usa las 
 
 ## 14.3. Producción
 
+> **Forma recomendada: el kit `deploy/`** (Docker + HTTPS automático + copias), con guía paso a paso, opciones de infraestructura y pruebas en **[13-produccion.md](13-produccion.md)**. Lo que sigue describe las piezas por separado, para instalar sin Docker.
+
 **Backend.**
 
 ```bash

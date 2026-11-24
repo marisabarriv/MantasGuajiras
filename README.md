@@ -68,7 +68,7 @@ Todos los módulos están implementados e integrados. El sistema se ejecuta en u
 
 ## 📌 Pendiente para producción
 
-* Elegir dónde se instalará (servidor o equipo dedicado) y configurar HTTPS y dominio.
+* Elegir dónde se instalará (recomendado: servidor en la nube) y el dominio. El **kit de instalación** ya está listo y probado: `deploy/` y **`docs/13-produccion.md`** (HTTPS automático, copias, actualizar con vuelta atrás automática, importar los datos del PC).
 * Recorrido manual de los flujos críticos con datos reales.
 * Completar la lista de `docs/06-despliegue.md` → sección 14.4.
 
@@ -173,8 +173,12 @@ MantasGuajiras/
 ├── database/
 │   └── exports/                     Exportación del esquema (referencia)
 │
+├── deploy/                          Kit de producción: Docker Compose, Caddy (HTTPS),
+│                                    deploy.sh, verify.sh, import-data.sh
+│
 ├── scripts/
-│   └── backup/                      Copias de seguridad y prueba de restauración
+│   ├── backup/                      Copias de seguridad y prueba de restauración
+│   └── perf/                        Prueba de carga (docs/12)
 │
 ├── docs/
 │   ├── diagrams/
@@ -193,7 +197,8 @@ MantasGuajiras/
 │   ├── 09-copias-de-seguridad.md
 │   ├── 10-certificacion.md          Matriz de certificación: criterios, estado y evidencia
 │   ├── 11-pendientes-responsable.md Tareas que solo puede hacer la dueña del proyecto
-│   └── 12-rendimiento-y-monitoreo.md Prueba de carga, estado del sistema, log y respuesta a incidentes
+│   ├── 12-rendimiento-y-monitoreo.md Prueba de carga, estado del sistema, log y respuesta a incidentes
+│   └── 13-produccion.md             Instalación en un servidor con el kit deploy/ (HTTPS, copias, actualizar y volver atrás)
 │
 └── README.md
 ```
@@ -216,6 +221,9 @@ Incluye:
 * Modelo de datos.
 * Frontend.
 * Copias de seguridad y recuperación.
+* Certificación de calidad (matriz de criterios) y pendientes de la responsable.
+* Rendimiento, monitoreo y respuesta a incidentes.
+* Puesta en producción con el kit `deploy/`.
 * Diagramas técnicos y funcionales.
 
 ---
@@ -353,7 +361,7 @@ El backend es responsable de:
 
 **Versión actual:** `v1.0.0-rc.1` (versión candidata)
 
-**Estado:** funcionalmente completo, en uso local, en preparación para producción.
+**Estado:** funcionalmente completo, en uso local; kit de producción listo y probado (`docs/13-produccion.md`), a la espera de elegir servidor y dominio.
 
 La versión `v1.0.0` corresponderá a la primera puesta en uso con los datos reales del negocio.
 

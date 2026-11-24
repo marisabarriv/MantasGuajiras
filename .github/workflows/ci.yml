@@ -178,3 +178,84 @@ jobs:
           path: |
             ${{ runner.temp }}/*.log
             ${{ runner.temp }}/*.png
+
+  # Kit de producción (deploy/): compila las imágenes Docker reales,
+  # instala con HTTPS (certificado local), verifica, ejecuta la prueba de
+  # punta a punta por HTTPS en el mismo dominio y la prueba de restauración.
+  deploy-kit:
+    name: Kit de producción (Docker + HTTPS)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Configuración de prueba (claves generadas al azar)
+        working-directory: deploy
+        run: |
+          cat > .env <<ENV
+          SITE_ADDRESS=localhost
+          POSTGRES_PASSWORD=$(openssl rand -hex 16)
+          DB_USERNAME=mantas_app
+          DB_PASSWORD=$(openssl rand -hex 16)
+          JWT_SECRET=$(openssl rand -hex 32)
+          JWT_EXPIRATION=3600000
+          INITIAL_ADMIN_USERNAME=admine2e
+          INITIAL_ADMIN_PHONE=3001112233
+          INITIAL_ADMIN_PASSWORD=Prueba123
+          BACKUP_DIR=$RUNNER_TEMP/backups
+          BACKUP_COPY_TO=$RUNNER_TEMP/backups-copia
+          LOGIN_MAX_ATTEMPTS=50
+          ENV
+
+      - name: Instalar (compila, arranca y verifica)
+        working-directory: deploy
+        run: ./deploy.sh
+
+      - name: Solo el servidor web tiene puertos abiertos
+        working-directory: deploy
+        run: |
+          docker compose ps --format '{{.Service}} {{.Ports}}'
+          test -z "$(docker compose ps --format '{{.Service}} {{.Ports}}' | grep -v '^web ' | grep -- '->')"
+          ! nc -z -w2 localhost 5432
+
+      - name: Instalar navegador
+        working-directory: frontend
+        run: |
+          npm ci
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Prueba de punta a punta por HTTPS
+        working-directory: frontend
+        env:
+          E2E_APP: https://localhost
+          E2E_API: https://localhost
+          E2E_INSECURE_TLS: "1"
+          E2E_SCREENSHOTS: ${{ runner.temp }}
+        run: node e2e/offline-sync.e2e.cjs
+
+      - name: Copia y prueba de restauración dentro del kit
+        working-directory: deploy
+        run: |
+          docker compose exec -T backup /scripts/backup-db.sh
+          docker compose exec -T backup /scripts/restore-test.sh
+
+      - name: Guardar registros si falla
+        if: failure()
+        working-directory: deploy
+        run: docker compose logs --no-color > "$RUNNER_TEMP/kit.log" 2>&1 || true
+
+      - name: Subir registros si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kit-registros
+          path: |
+            ${{ runner.temp }}/*.log
+            ${{ runner.temp }}/*.png
