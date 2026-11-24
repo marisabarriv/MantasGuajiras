@@ -7,7 +7,7 @@
 | **Código**               | DOC-10                         |
 | **Versión**              | v1.0.0-rc.1                    |
 | **Estado**               | En curso                       |
-| **Última actualización** | 24/11/2026 (Fase 1)            |
+| **Última actualización** | 24/11/2026 (Fase 2)            |
 
 ---
 
@@ -43,9 +43,11 @@ Cada criterio tiene **prioridad**, **estado** y **evidencia**. Un criterio solo 
 | `T-pro` | `ProductionFlowTest` (5): consumo de tela, mantas, insuficiente, validaciones, reintento | `backend/src/test` |
 | `T-ord` | `CustomOrderFlowTest` (6): abono, pagos, saldo, pagada, límites, reintentos de pedido y pago | `backend/src/test` |
 | `T-mov` | `MovementFilterTest` (3): ajuste 15 → 12 con motivo y usuario; filtros por tipo, origen, usuario y fechas | `backend/src/test` |
+| `T-name` | `ProductNameTest` (4): nombres de producto únicos | `backend/src/test` |
+| `T-sim` | `SimultaneousRetryTest` (2): misma venta o compra enviada 4 veces a la vez | `backend/src/test` |
 | `T-api` | `ApiValidationTest` (10): datos inválidos por HTTP → 400/404/405, nunca 500 | `backend/src/test` |
 | `T-log` | `UnexpectedErrorLoggingTest`: error interno registrado con código, sin detalles al usuario | `backend/src/test` |
-| `E2E` | `frontend/e2e/offline-sync.e2e.cjs` (7 escenarios, 30 comprobaciones, navegador real) | se ejecuta en CI |
+| `E2E` | `frontend/e2e/offline-sync.e2e.cjs` (10 escenarios, 41 comprobaciones, navegador real) | se ejecuta en CI |
 | `CI` | GitHub Actions: backend + frontend + E2E. Ejecución #1 en verde (24/11/2026) | pestaña **Actions** |
 | `BKP` | Pruebas de los scripts de respaldo contra PostgreSQL: copia sana, archivo dañado, inventario alterado, falta de `.sha256`, retención en `CopyTo` | sesión del 23-24/11/2026; `scripts/backup` |
 | `AUD` | `npm audit`: 0 vulnerabilidades (producción y desarrollo) tras `npm audit fix` | 24/11/2026 |
@@ -125,7 +127,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | API-17 | Errores inesperados en log sin secretos | A | ✅ | `T-log` (corregido el 24/11: antes no se registraban) |
 | API-18 | Endpoints con pruebas de integración | M | ✅ | `T-sale`, `T-com`, `T-pro`, `T-ord`, `T-mov`, `T-api`, `T-perm` |
 | API-19 | Tiempos de espera y fallos de dependencias | M | ⏳ | Frontend: 20 s. Backend: valores por defecto del pool |
-| API-20 | Correcta con solicitudes simultáneas | A | ✅ | `T-conc` |
+| API-20 | Correcta con solicitudes simultáneas | A | ✅ | `T-conc`, `T-sim` |
 
 **Pruebas adicionales:** campos vacíos ✅ (`T-perm`, `T-api`), cantidades negativas ✅ (`T-api`), precios negativos ✅ (`T-api`), UUID inválido ✅ (`T-api`: antes respondía 500), id inexistente ✅ (`T-api`), tipos incorrectos ✅ (`T-api`), repetición ✅ (todas las operaciones), interrupción ✅ (`E2E` esc. 2 y 5), simultáneas ✅ (`T-conc`).
 
@@ -176,14 +178,14 @@ Ninguno puede quedar abierto para dar 10/10.
 | PROD-14 | Con historial no se rompe la consistencia | A | ✅ | `T-conc` (cambio de unidad bloqueado) |
 | PROD-15 | Desactivados no se usan en operaciones nuevas | A | ✅ | `T-sale` (venta), `T-com` (compra) |
 | PROD-16 | Códigos internos no se duplican | A | ✅ | Restricción UNIQUE + secuencia |
-| PROD-17 | Búsquedas y filtros | M | ⏳ | Falta prueba |
+| PROD-17 | Búsquedas y filtros | M | ⏳ | Falta prueba de búsqueda y filtros en Productos |
 | PROD-18 | Cambios reflejados en inventario | A | ✅ | `E2E` (stock inicial) |
 
 **Casos extremos (comportamiento definido):**
 
 | Caso | Comportamiento actual | Estado |
 | ---- | --------------------- | ------ |
-| Dos productos con el mismo nombre | Se permite (solo el código de barras y el código interno son únicos) | ⏳ Decisión de negocio pendiente |
+| Dos productos con el mismo nombre | **No se permite** (decisión 24/11): sin distinguir mayúsculas ni espacios, incluidos los desactivados | ✅ `T-name` |
 | Precio cero | Se rechaza (`unitPrice` debe ser > 0) | ✅ `T-api` |
 | Cambiar la unidad de una manta con existencias | Se rechaza | ✅ `T-conc` |
 | Cambiar la categoría de un producto con historial | Permitido solo si la unidad no cambia | ⏳ Falta prueba |
@@ -297,7 +299,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | PRO-07 | Responsables | A | ✅ | `T-pro` |
 | PRO-08 | Historial | A | ✅ | `T-pro` |
 | PRO-09 | Crear personalizadas | A | ✅ | `T-ord` |
-| PRO-10 | Transiciones de estado válidas | M | ⏳ | Estado calculado (pendiente → pagada por pagos). **No existe "cancelada"**: decisión de negocio pendiente |
+| PRO-10 | Transiciones de estado válidas | M | ✅ | Decisión 24/11: solo pendiente → pagada (calculado por pagos); sin "cancelada". `T-ord` |
 | PRO-11 | Pagos y abonos | A | ✅ | `T-ord` |
 | PRO-12 | Saldos correctos | A | ✅ | `T-ord` |
 | PRO-13 | Sin pagos superiores al saldo | A | ✅ | `T-ord` |
@@ -305,7 +307,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | PRO-15 | Permisos ADMIN/VENDEDOR | A | ⏳ | Decisión: ambos roles. Falta prueba de permisos |
 | PRO-16 | Sin duplicados por reintento | B | ✅ | `T-pro`, `T-ord` |
 | PRO-17 | Transaccional | A | ✅ | `T-pro`, `T-ord` |
-| PRO-18 | Historial de completados/cancelados | M | ⏳ | Depende de PRO-10 |
+| PRO-18 | Historial de completados/cancelados | M | ✅ | Las pagadas conservan pagos e historial; no se eliminan (`T-ord`). No hay canceladas (decisión) |
 
 ## 9. Usuarios, roles y seguridad
 
@@ -351,15 +353,15 @@ Ninguno puede quedar abierto para dar 10/10.
 | OFF-04 | Sobreviven al cierre | A | ✅ | `E2E` (app reabierta) |
 | OFF-05 | Identificador único | B | ✅ | `E2E`, `T-conc` |
 | OFF-06 | Sincroniza al volver | A | ✅ | `E2E` |
-| OFF-07 | Sin duplicados al repetir | B | ✅ | `E2E` esc. 2, `T-conc` |
+| OFF-07 | Sin duplicados al repetir | B | ✅ | `E2E` esc. 2 y 7 (dos pestañas), `T-conc`, `T-sim` (4 envíos simultáneos) |
 | OFF-08 | Venta confirmada no se reprocesa | B | ✅ | `E2E`, `T-conc` |
 | OFF-09 | Informa pendientes | A | ✅ | `E2E` |
 | OFF-10 | Informa fallos | A | ✅ | `E2E` esc. 3 |
 | OFF-11 | Errores recuperables | A | ✅ | `E2E` ("Reintentar") |
-| OFF-12 | Interrupción en la transmisión | A | ✅ | `E2E` esc. 1–2 |
+| OFF-12 | Interrupción en la transmisión | A | ✅ | `E2E` esc. 1, 2 y 9 (sin espacio: no se da por guardada, carrito conservado) |
 | OFF-13 | Interrupción en la respuesta | B | ✅ | `E2E` esc. 2 |
 | OFF-14 | Sin pérdidas al reiniciar el navegador | A | ✅ | `E2E` |
-| OFF-15 | Cambio de usuario con pendientes | B | ✅ | `E2E` esc. 4 |
+| OFF-15 | Cambio de usuario con pendientes | B | ✅ | `E2E` esc. 4 y 8 (sesión vencida sin conexión) |
 | OFF-16 | Identidad correcta | B | ✅ | `E2E` esc. 4 |
 | OFF-17 | Stock validado al sincronizar | B | ✅ | `E2E` esc. 3, `T-conc` |
 | OFF-18 | Conflictos local/remoto | A | ✅ | `E2E` esc. 3 |
@@ -367,6 +369,8 @@ Ninguno puede quedar abierto para dar 10/10.
 | OFF-20 | Resultado verificable por operación | M | ✅ | `client_request_id` en el servidor + estado en el dispositivo |
 
 **Escenarios A, B, C y D:** ✅ (`E2E` escenarios 1, 2, 4 y 3; se ejecutan en cada push en `CI`).
+
+**Casos límite adicionales (Fase 2, 24/11/2026):** ✅ dos pestañas sincronizando a la vez (`E2E` esc. 7) · ✅ la misma venta o compra enviada 4 veces simultáneamente (`T-sim`) · ✅ sesión vencida mientras no hay conexión (`E2E` esc. 8) · ✅ dispositivo sin espacio para guardar (`E2E` esc. 9).
 
 ## 11. Frontend y experiencia de usuario
 
@@ -554,7 +558,7 @@ Referencias para la revisión final: OWASP ASVS nivel 2 y OWASP Top 10.
 | RES-05 | Errores inesperados registrados | A | ✅ | `T-log` |
 | RES-06 | Procesos recuperables | A | ✅ | `E2E` |
 | RES-07 | Consistencia transaccional | A | ✅ | `T-conc` |
-| RES-08 | Sesiones vencidas | A | ✅ | `REV`, `E2E` |
+| RES-08 | Sesiones vencidas | A | ✅ | `E2E` esc. 8: vencida sin conexión → sigue vendiendo → pide iniciar sesión → envía |
 | RES-09 | Recuperación tras reinicios | M | ⏳ | — |
 | RES-10 | Saturación | Bj | ⏳ | — |
 | RES-11 | Sin reenvío de formularios | A | ✅ | Ver UX-06 |
@@ -593,7 +597,7 @@ NEG-01 a NEG-14: ⏳ **pendientes de validación por la responsable del negocio*
 
 ## Resumen
 
-Conteo automático de la matriz (24/11/2026, después de la Fase 1). Antes de la Fase 1: 189 ✅ · 169 ⏳ · 29 ❌.
+Conteo automático de la matriz (24/11/2026, después de la Fase 2). Evolución: inicio 189 ✅ → Fase 1 256 ✅ → Fase 2 258 ✅.
 
 | Área | Criterios | ✅ | ⏳ | ❌ |
 | ---- | --------- | -- | -- | -- |
@@ -604,7 +608,7 @@ Conteo automático de la matriz (24/11/2026, después de la Fase 1). Antes de la
 | 5. Inventario y movimientos | 20 | 20 | 0 | 0 |
 | 6. Ventas | 33 | 33 | 0 | 0 |
 | 7. Compras | 15 | 14 | 1 | 0 |
-| 8. Producción y pedidos personalizados | 18 | 15 | 3 | 0 |
+| 8. Producción y pedidos personalizados | 18 | 17 | 1 | 0 |
 | 9. Usuarios, roles y seguridad | 25 | 16 | 8 | 1 |
 | 10. Funcionamiento offline y sincronización | 20 | 20 | 0 | 0 |
 | 11. Frontend y experiencia de usuario | 25 | 7 | 17 | 1 |
@@ -617,7 +621,7 @@ Conteo automático de la matriz (24/11/2026, después de la Fase 1). Antes de la
 | 18. Errores y resiliencia | 12 | 9 | 3 | 0 |
 | 19. Documentación y operación | 20 | 13 | 3 | 4 |
 | 20. Aceptación del negocio | 14 | 0 | 14 | 0 |
-| **Total** | **387** | **256** (66 %) | **110** | **21** |
+| **Total** | **387** | **258** (67 %) | **108** | **21** |
 
 Bloqueadores absolutos (sección 0): **8 cerrados** (1, 2, 3, 4, 5, 6, 7, 12), **0 abiertos** y **4 por comprobar** (8 y 9: actualización con datos; 10: copias en Windows; 11: dependencias Maven).
 
@@ -626,7 +630,7 @@ Bloqueadores absolutos (sección 0): **8 cerrados** (1, 2, 3, 4, 5, 6, 7, 12), *
 | Fase | Contenido | Cierra |
 | ---- | --------- | ------ |
 | **1. Reglas funcionales** ✅ | Hecha el 24/11/2026: identificador único en compras, producción, personalizadas y pagos (V21); 39 pruebas nuevas; motivo obligatorio; filtros del historial; 400 en lugar de 500 con datos mal escritos. Quedan 2 decisiones de negocio (nombres repetidos, estado "cancelada") | B-2, B-4, API-14, COM-*, PRO-*, DES-*, VEN-*, INV-14/17-19 |
-| **2. Offline** | Ya verificado (escenarios A–D en `CI`) | — |
+| **2. Offline** ✅ | Hecha el 24/11/2026: escenarios A–D más dos pestañas, envíos simultáneos, sesión vencida sin conexión y dispositivo sin espacio. Decisiones aplicadas: nombres únicos y sin estado "cancelada" | OFF-*, RES-08, PRO-10/18 |
 | **3. Seguridad** | Límite de intentos de inicio de sesión; pruebas de token vencido, usuario inactivo y `POST /users` por vendedor; escaneo de dependencias Maven | SEG-05/11/21/24 |
 | **4. Recuperación** | Ejecutar los `.ps1` en el PC del negocio; simulacro cronometrado de pérdida total; prueba de actualización V19 → V20 con datos; definir RPO y RTO | BKP-02/17/18, DB-09, B-8/9 |
 | **5. Calidad** | JaCoCo, protección de `main`, formateo | QA-22/24, ARQ-17 |

@@ -312,6 +312,8 @@ El backend es responsable de:
 | `ProductionFlowTest`       | Producción: consumo de tela y mantas generadas, tela insuficiente, validaciones, reintento sin duplicar. |
 | `CustomOrderFlowTest`      | Personalizadas: abono, pagos, saldo, límites, reintentos de la personalizada y de cada pago sin duplicar. |
 | `MovementFilterTest`       | Ajuste 15 → 12 con motivo y usuario; filtros del historial por tipo, origen, usuario y fechas. |
+| `ProductNameTest`          | No se permiten nombres de producto repetidos (mayúsculas, espacios, productos desactivados). |
+| `SimultaneousRetryTest`    | La misma venta o compra enviada 4 veces a la vez se registra una sola vez. |
 | `ApiValidationTest`        | Datos inválidos enviados por HTTP responden 400/404/405 con mensaje claro, nunca 500. |
 | `RolePermissionsTest`      | Qué puede y qué no puede hacer cada rol.                                      |
 | `ConcurrentSaleTest`       | Dos ventas simultáneas de la última unidad: solo una se registra. Una venta sin conexión reenviada no se duplica; si al sincronizar ya no hay existencias, se rechaza. |
@@ -321,7 +323,7 @@ El backend es responsable de:
 
 **Frontend:** `npm run lint` y `npm run build`.
 
-**Punta a punta** (`frontend/e2e/offline-sync.e2e.cjs`): navegador real contra backend y base de prueba. Cubre ventas sin conexión, app reabierta sin conexión, corte de conexión justo al enviar (no duplica), conflicto con otro vendedor y "Reintentar", dispositivo compartido entre vendedores, compra con corte de conexión al guardar (no duplica), motivo obligatorio y filtros del historial, actualización automática y ausencia de violaciones de la CSP. Instrucciones en `frontend/e2e/README.md`.
+**Punta a punta** (`frontend/e2e/offline-sync.e2e.cjs`): navegador real contra backend y base de prueba. Cubre ventas sin conexión, app reabierta sin conexión, corte de conexión justo al enviar (no duplica), conflicto con otro vendedor y "Reintentar", dispositivo compartido entre vendedores, compra con corte de conexión al guardar (no duplica), motivo obligatorio y filtros del historial, dos pestañas sincronizando a la vez, sesión vencida sin conexión, dispositivo sin espacio, actualización automática y ausencia de violaciones de la CSP (10 escenarios). Instrucciones en `frontend/e2e/README.md`.
 
 **Estado de certificación:** `docs/10-certificacion.md` lista cada criterio de calidad con su estado (verificado, pendiente o fallido) y la evidencia que lo respalda.
 

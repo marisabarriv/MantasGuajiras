@@ -106,7 +106,8 @@ Validaciones al crear o editar:
 * `purchasePrice` igual a `unitPrice` (si no se envía, se toma `unitPrice`).
 * En mantas, `minimumStock` e `initialStock` son enteros.
 * No se cambia la unidad de un producto que ya tiene existencias o movimientos.
-* `name` hasta 100 caracteres; `barcode` hasta 50 y único.
+* `name` hasta 100 caracteres y **único** (sin distinguir mayúsculas ni espacios sobrantes; incluye productos desactivados) → si se repite, `409`.
+* `barcode` hasta 50 y único.
 
 ## Categorías — `/api/product-categories`
 
