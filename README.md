@@ -62,6 +62,7 @@ Todos los módulos están implementados e integrados. El sistema se ejecuta en u
 * Ventas, compras y producciones registradas no se editan ni se borran (trazabilidad).
 * Ninguna operación se registra dos veces por un reintento tras un corte de conexión (ventas, compras, producción, personalizadas y pagos).
 * Permisos por rol aplicados en el servidor (ver **Roles**).
+* Bloqueo temporal tras 5 intentos fallidos de inicio de sesión.
 
 ---
 
@@ -314,6 +315,8 @@ El backend es responsable de:
 | `MovementFilterTest`       | Ajuste 15 → 12 con motivo y usuario; filtros del historial por tipo, origen, usuario y fechas. |
 | `ProductNameTest`          | No se permiten nombres de producto repetidos (mayúsculas, espacios, productos desactivados). |
 | `SimultaneousRetryTest`    | La misma venta o compra enviada 4 veces a la vez se registra una sola vez. |
+| `AuthenticationSecurityTest` | Inicio de sesión real: contraseñas cifradas y nunca en respuestas, mensajes genéricos, token vencido o alterado, usuario desactivado, vendedor sin poder crear administradores, registro pendiente, bloqueo tras 5 intentos. |
+| `LoginAttemptServiceTest`  | El bloqueo dura lo configurado y se levanta solo. |
 | `ApiValidationTest`        | Datos inválidos enviados por HTTP responden 400/404/405 con mensaje claro, nunca 500. |
 | `RolePermissionsTest`      | Qué puede y qué no puede hacer cada rol.                                      |
 | `ConcurrentSaleTest`       | Dos ventas simultáneas de la última unidad: solo una se registra. Una venta sin conexión reenviada no se duplica; si al sincronizar ya no hay existencias, se rechaza. |
@@ -327,7 +330,7 @@ El backend es responsable de:
 
 **Estado de certificación:** `docs/10-certificacion.md` lista cada criterio de calidad con su estado (verificado, pendiente o fallido) y la evidencia que lo respalda.
 
-**Integración continua:** `.github/workflows/ci.yml` ejecuta todo lo anterior en cada push y pull request (pestaña **Actions** de GitHub).
+**Integración continua:** `.github/workflows/ci.yml` ejecuta todo lo anterior en cada push y pull request (pestaña **Actions** de GitHub), además de un escaneo de vulnerabilidades conocidas en las dependencias del backend y del frontend (OSV-Scanner). Dependabot (`.github/dependabot.yml`) propone actualizaciones cada semana.
 
 **Manuales:** recorrido de los flujos críticos desde la interfaz (lista en `docs/06-despliegue.md`, sección 14.4).
 

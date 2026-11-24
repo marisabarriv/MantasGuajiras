@@ -55,7 +55,7 @@ class AuthenticationSecurityTest {
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         return userRepository.save(User.builder()
                 .username("u" + suffix)
-                .phone("32" + String.valueOf(System.nanoTime()).substring(4, 12))
+                .phone("32" + randomDigits(8))
                 .password(passwordEncoder.encode(PASSWORD))
                 .role(role)
                 .active(active)
@@ -107,7 +107,7 @@ class AuthenticationSecurityTest {
 
         String wrongPassword = login(seller.getUsername(), "Otra999").andExpect(status().isUnauthorized())
                 .andReturn().getResponse().getContentAsString();
-        String unknownUser = login("noexiste" + System.nanoTime() % 1000, "Otra999").andExpect(status().isUnauthorized())
+        String unknownUser = login("noexiste" + randomDigits(3), "Otra999").andExpect(status().isUnauthorized())
                 .andReturn().getResponse().getContentAsString();
 
         assertThat(wrongPassword).contains("Usuario o contraseña incorrectos");
@@ -196,7 +196,7 @@ class AuthenticationSecurityTest {
     @Test
     void registroPublicoQuedaPendienteYNoAdmiteDuplicados() throws Exception {
         String suffix = UUID.randomUUID().toString().substring(0, 6);
-        String phone = "33" + String.valueOf(System.nanoTime()).substring(4, 12);
+        String phone = "33" + randomDigits(8);
         String body = "{\"username\":\"r%s\",\"phone\":\"%s\",\"password\":\"Clave123\"}";
 
         mvc.perform(post("/auth/register").contentType(MediaType.APPLICATION_JSON)
@@ -244,5 +244,15 @@ class AuthenticationSecurityTest {
             login(seller.getUsername(), "Mala" + attempt).andExpect(status().isUnauthorized());
         }
         login(seller.getUsername(), PASSWORD).andExpect(status().isOk());
+    }
+
+    /** Dígitos aleatorios de longitud fija (teléfonos únicos de prueba). */
+    protected static String randomDigits(int length) {
+        StringBuilder digits = new StringBuilder(length);
+        java.util.concurrent.ThreadLocalRandom random = java.util.concurrent.ThreadLocalRandom.current();
+        for (int i = 0; i < length; i++) {
+            digits.append(random.nextInt(10));
+        }
+        return digits.toString();
     }
 }

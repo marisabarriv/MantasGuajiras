@@ -242,6 +242,16 @@ Puede ajustar el inventario por conteo físico (RN-12). No tiene permisos para a
 
 ---
 
+## RN-23A. Protección del inicio de sesión
+
+* Las contraseñas se guardan cifradas (BCrypt) y nunca aparecen en las respuestas.
+* Ante usuario o contraseña incorrectos el mensaje es siempre el mismo, para no revelar qué usuarios existen.
+* Tras 5 intentos fallidos seguidos, ese usuario o teléfono queda bloqueado 15 minutos.
+* Desactivar a un usuario corta su acceso de inmediato, aunque tenga una sesión abierta.
+* El registro público crea vendedores **pendientes de aprobación**; no pueden entrar hasta que un administrador los active.
+
+---
+
 ## RN-24A. Matriz de permisos (implementada)
 
 Los permisos se aplican en el backend (`SecurityConfig`). El frontend solo oculta las opciones que el rol no puede usar.
