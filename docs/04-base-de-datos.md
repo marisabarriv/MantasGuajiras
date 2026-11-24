@@ -362,5 +362,6 @@ Agrega `client_request_id` (UUID, único) a `purchase`, `production`, `orders` y
 
 ## Verificación
 
+- **Actualización con datos:** probada desde V19 (versión anterior) con datos reales de prueba hasta V21; datos idénticos e integridad correcta. Detalle en `docs/09-copias-de-seguridad.md` §4.2.
 - La prueba `BackendApplicationTests` aplica las 21 migraciones sobre una base vacía y comprueba que el esquema coincide con las entidades (`ddl-auto: validate`).
 - `scripts/backup/integrity-check.sql` comprueba que el inventario de cada producto sea igual a la suma de sus movimientos. Se ejecuta en cada prueba de restauración (ver `docs/09-copias-de-seguridad.md`).

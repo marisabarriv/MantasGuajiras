@@ -7,7 +7,7 @@
 | **Código**               | DOC-10                         |
 | **Versión**              | v1.0.0-rc.1                    |
 | **Estado**               | En curso                       |
-| **Última actualización** | 24/11/2026 (Fase 3)            |
+| **Última actualización** | 24/11/2026 (Fase 4)            |
 
 ---
 
@@ -48,6 +48,9 @@ Cada criterio tiene **prioridad**, **estado** y **evidencia**. Un criterio solo 
 | `T-auth` | `AuthenticationSecurityTest` (10): inicio de sesión real, tokens, usuarios desactivados, permisos por HTTP, registro, bloqueo por intentos | `backend/src/test` |
 | `T-lock` | `LoginAttemptServiceTest` (2): duración y vencimiento del bloqueo | `backend/src/test` |
 | `T-api` | `ApiValidationTest` (10): datos inválidos por HTTP → 400/404/405, nunca 500 | `backend/src/test` |
+| `UPG` | Actualización V19 → V21 con datos reales de prueba (versión anterior `a6f5ada` → actual): datos idénticos, integridad y 12 comprobaciones funcionales | 24/11/2026; `docs/09` §4.2 |
+| `SIM` | Simulacro de pérdida total con 3 años de datos: recuperación técnica en 7,5 s, datos idénticos | 24/11/2026; `docs/09` §7 |
+| `OSV` | Escaneo de dependencias en CI (OSV-Scanner): la ejecución #6 encontró 32 avisos en el backend (Spring Boot 4.1.0); tras actualizar a 4.1.3, la #7 da **0** | GitHub Actions |
 | `T-log` | `UnexpectedErrorLoggingTest`: error interno registrado con código, sin detalles al usuario | `backend/src/test` |
 | `E2E` | `frontend/e2e/offline-sync.e2e.cjs` (10 escenarios, 41 comprobaciones, navegador real) | se ejecuta en CI |
 | `CI` | GitHub Actions: backend + frontend + E2E. Ejecución #1 en verde (24/11/2026) | pestaña **Actions** |
@@ -71,10 +74,10 @@ Ninguno puede quedar abierto para dar 10/10.
 | 5 | Una venta puede quedar guardada parcialmente | ✅ No ocurre | `T-conc` (rollback) |
 | 6 | La sincronización offline atribuye ventas al usuario equivocado | ✅ No ocurre | `E2E` escenario 4 |
 | 7 | Se exponen contraseñas o secretos | ✅ No ocurre | `.gitignore` revisado; `log-resolved-exception: false`; `T-log` (sin detalles al usuario); contraseñas con BCrypt |
-| 8 | Se pierden datos al restaurar o actualizar | ⏳ | Restaurar nunca sobrescribe (`BKP`). Falta probar una actualización de versión sobre una base con datos (DB-09). |
-| 9 | Las migraciones destruyen datos existentes | ⏳ | V20 solo agrega columnas. Falta la prueba DB-09. |
-| 10 | Los backups no pueden restaurarse | ✅ (Linux) · ⏳ (Windows) | `BKP` con los scripts `.sh`. Los `.ps1` deben ejecutarse una vez en el PC del negocio. |
-| 11 | Vulnerabilidades críticas sin resolver | ⏳ | `AUD` frontend: 0. Falta escanear las dependencias Maven del backend. |
+| 8 | Se pierden datos al restaurar o actualizar | ✅ No ocurre | Restaurar nunca sobrescribe (`BKP`); actualización con datos sin pérdidas (`UPG`); recuperación total sin pérdidas (`SIM`) |
+| 9 | Las migraciones destruyen datos existentes | ✅ No ocurre | `UPG` (V19 → V21: datos idénticos) |
+| 10 | Los backups no pueden restaurarse | ✅ (Linux) · ⏳ (Windows) | `BKP` y `SIM` con los scripts `.sh` (pérdida total recuperada en 7,5 s). Los `.ps1` deben ejecutarse una vez en el PC del negocio. |
+| 11 | Vulnerabilidades críticas sin resolver | ✅ No hay | `OSV`: se encontraron críticas (Tomcat, Spring Web) y se corrigieron con Spring Boot 4.1.3; la CI lo revisa en cada push |
 | 12 | Las pruebas modifican la base de trabajo | ✅ No ocurre | Perfil `test` con base propia; CI con bases temporales |
 
 ---
@@ -101,7 +104,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | ARQ-16 | Sin advertencias de compilación | M | ✅ | Compilación con `showDeprecation`: 0 advertencias |
 | ARQ-17 | Formato y estilo consistentes | Bj | ❌ | Indentación irregular (p. ej. `ProductCategoryController`, `DataInitializer`); sin formateador |
 | ARQ-18 | Operaciones complejas documentadas | M | ✅ | Comentarios en inventario, ventas y offline; `docs/08` §30A |
-| ARQ-19 | Dependencias justificadas y al día | M | ⏳ | `AUD` frontend; backend sin escaneo ni Dependabot |
+| ARQ-19 | Dependencias justificadas y al día | M | ✅ | `OSV` en cada push + Dependabot semanal; Spring Boot 4.1.3 |
 | ARQ-20 | Decisiones arquitectónicas documentadas | M | ✅ | `docs/03`, `docs/02` RN-24A y RN-27 |
 
 `BaseEntity` / `AuditableEntity`: no se considera defecto (decisión acordada).
@@ -145,7 +148,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | DB-06 | Índices en consultas importantes | M | ⏳ | Existen en movimientos; sin análisis de planes |
 | DB-07 | Migraciones versionadas | A | ✅ | V1–V21 |
 | DB-08 | Migran desde base vacía | A | ✅ | `T-ctx`, `CI`, `E2E` |
-| DB-09 | Base existente se actualiza desde la versión anterior | B | ⏳ | Falta prueba con datos en V19 → V20 |
+| DB-09 | Base existente se actualiza desde la versión anterior | B | ✅ | `UPG` |
 | DB-10 | Esquema = entidades | A | ✅ | `ddl-auto: validate` en `T-ctx` |
 | DB-11 | Dinero en decimales | A | ✅ | `NUMERIC(12,2)` / `BigDecimal` |
 | DB-12 | Sin punto flotante para dinero | A | ✅ | Búsqueda en código: ningún `double`/`float` |
@@ -338,7 +341,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | SEG-21 | Protección contra fuerza bruta | A | ✅ | `T-auth`, `T-lock`: 5 fallos → bloqueo 15 min (429), configurable; corregido el 24/11 |
 | SEG-22 | Sin inyección | A | ✅ | JPA con parámetros, Bean Validation (`REV`) |
 | SEG-23 | Sin XSS | A | ✅ | Sin HTML sin escapar (`REV`); CSP sin violaciones (`E2E`) |
-| SEG-24 | Dependencias revisadas | A | ⏳ | `AUD` frontend 0; backend pendiente |
+| SEG-24 | Dependencias revisadas | A | ✅ | `OSV` (backend y frontend: 0) + `AUD` |
 | SEG-25 | Errores de autenticación sin información extra | A | ✅ | `T-auth` (mismo mensaje para usuario inexistente y contraseña incorrecta) |
 
 **Pruebas HTTP de permisos:** vendedor crea producto ✅ · ve historial monetario ✅ · registra compra ✅ · crea administrador (`POST /users`) ✅ `T-auth` · cambia su rol (`PUT /users/{id}`, `/promote`) ✅ `T-auth` · sin sesión registra venta ✅ `T-auth` · token vencido ✅ `T-auth`.
@@ -463,12 +466,12 @@ Ninguno puede quedar abierto para dar 10/10.
 | BKP-14 | Integridad tras restaurar | A | ✅ | `integrity-check.sql` |
 | BKP-15 | Registros y relaciones completos | A | ✅ | Conteos comparados (`BKP`) |
 | BKP-16 | Procedimiento documentado | A | ✅ | `docs/09` |
-| BKP-17 | Tiempo de recuperación medido | A | ⏳ | Falta simulacro cronometrado |
-| BKP-18 | Pérdida total de la base principal | A | ⏳ | Falta simulacro |
+| BKP-17 | Tiempo de recuperación medido | A | ✅ | `SIM`: 7,5 s técnicos (restaurar 0,6 s + arrancar 6,9 s) |
+| BKP-18 | Pérdida total de la base principal | A | ✅ | `SIM`: base eliminada → restaurada → datos idénticos → operación normal |
 | BKP-19 | Sin errores silenciosos | A | ✅ | La prueba falla con código ≠ 0 y deja aviso en el Escritorio |
 | BKP-20 | Historial de copias | M | ✅ | `backup.log` |
 
-**RPO / RTO propuestos (a aprobar):** RPO **2 horas** en horario de operación (copias cada 2 h de 6:00 a 21:00 y al encender el equipo). RTO **4 horas**, pendiente de demostrar con un simulacro (BKP-17/18).
+**RPO / RTO propuestos (a aprobar por el negocio):** RPO **2 horas** en horario de operación. RTO **1 hora**; tiempo técnico demostrado **7,5 s** (`SIM`). Detalle en `docs/09` §6.
 
 ## 15. Logs, monitoreo y observabilidad
 
@@ -539,13 +542,13 @@ Pendiente en su mayoría hasta elegir la infraestructura (decisión de negocio).
 | DEP-11 | CORS autorizado | A | ⏳ | Configurable; falta el valor real |
 | DEP-12 | Swagger deshabilitado en producción | A | ✅ | 404 con perfil `prod` (verificado 23/11) |
 | DEP-13 | Arranque automático | M | ⏳ | — |
-| DEP-14 | Actualizar sin perder información | A | ⏳ | Depende de DB-09 |
-| DEP-15 | Procedimiento de rollback | A | ❌ | No documentado |
+| DEP-14 | Actualizar sin perder información | A | ✅ | `UPG` |
+| DEP-15 | Procedimiento de rollback | A | ✅ | Procedimiento de vuelta atrás: `docs/09` §4.1 |
 | DEP-16 | Versión desplegada verificable | Bj | ⏳ | — |
 | DEP-17 | Producción y pruebas separadas | B | ✅ | Bases y perfiles distintos |
 | DEP-18 | Verificación tras desplegar | M | ⏳ | — |
-| DEP-19 | Migraciones en entorno previo | A | ⏳ | — |
-| DEP-20 | Recuperación del servicio documentada | M | ⏳ | — |
+| DEP-19 | Migraciones en entorno previo | A | ✅ | `UPG` en un entorno aparte con la versión anterior |
+| DEP-20 | Recuperación del servicio documentada | M | ✅ | `docs/09` §3 (recuperación) y §7 (simulacro) |
 
 Referencias para la revisión final: OWASP ASVS nivel 2 y OWASP Top 10.
 
@@ -585,7 +588,7 @@ Referencias para la revisión final: OWASP ASVS nivel 2 y OWASP Top 10.
 | DOC-13 | Offline | A | ✅ | `docs/06` §15.4, `docs/08` §30A |
 | DOC-14 | Copias y restauración | A | ✅ | `docs/09` |
 | DOC-15 | Despliegue | A | ⏳ | Genérico hasta definir la infraestructura |
-| DOC-16 | Rollback | A | ❌ | — |
+| DOC-16 | Rollback | A | ✅ | `docs/09` §4.1 |
 | DOC-17 | Manual de usuario | A | ❌ | — |
 | DOC-18 | Solución de problemas | M | ❌ | Solo para copias y offline |
 | DOC-19 | Coincide con el sistema | A | ✅ | Revisado el 23-24/11 |
@@ -599,33 +602,33 @@ NEG-01 a NEG-14: ⏳ **pendientes de validación por la responsable del negocio*
 
 ## Resumen
 
-Conteo automático de la matriz (24/11/2026, después de la Fase 2). Evolución: inicio 189 ✅ → Fase 1 256 ✅ → Fase 2 258 ✅.
+Conteo automático de la matriz (24/11/2026, después de las Fases 3 y 4). Evolución: inicio 189 ✅ → Fase 1 256 → Fase 2 258 → Fases 3-4 275 ✅.
 
 | Área | Criterios | ✅ | ⏳ | ❌ |
 | ---- | --------- | -- | -- | -- |
-| 1. Arquitectura y calidad del código | 20 | 13 | 6 | 1 |
+| 1. Arquitectura y calidad del código | 20 | 14 | 5 | 1 |
 | 2. Backend y API REST | 20 | 13 | 6 | 1 |
-| 3. Base de datos y persistencia | 20 | 15 | 4 | 1 |
+| 3. Base de datos y persistencia | 20 | 16 | 3 | 1 |
 | 4. Productos, categorías y unidades | 18 | 17 | 1 | 0 |
 | 5. Inventario y movimientos | 20 | 20 | 0 | 0 |
 | 6. Ventas | 33 | 33 | 0 | 0 |
 | 7. Compras | 15 | 14 | 1 | 0 |
 | 8. Producción y pedidos personalizados | 18 | 17 | 1 | 0 |
-| 9. Usuarios, roles y seguridad | 25 | 16 | 8 | 1 |
+| 9. Usuarios, roles y seguridad | 25 | 24 | 1 | 0 |
 | 10. Funcionamiento offline y sincronización | 20 | 20 | 0 | 0 |
 | 11. Frontend y experiencia de usuario | 25 | 7 | 17 | 1 |
 | 12. Fotografías y archivos | 12 | 6 | 6 | 0 |
 | 13. Rendimiento | 15 | 1 | 12 | 2 |
-| 14. Copias de seguridad y recuperación | 20 | 14 | 5 | 1 |
+| 14. Copias de seguridad y recuperación | 20 | 16 | 3 | 1 |
 | 15. Logs, monitoreo y observabilidad | 15 | 4 | 4 | 7 |
 | 16. Pruebas automatizadas y calidad continua | 25 | 22 | 2 | 1 |
-| 17. Infraestructura y despliegue | 20 | 4 | 15 | 1 |
+| 17. Infraestructura y despliegue | 20 | 8 | 12 | 0 |
 | 18. Errores y resiliencia | 12 | 9 | 3 | 0 |
-| 19. Documentación y operación | 20 | 13 | 3 | 4 |
+| 19. Documentación y operación | 20 | 14 | 3 | 3 |
 | 20. Aceptación del negocio | 14 | 0 | 14 | 0 |
-| **Total** | **387** | **258** (67 %) | **108** | **21** |
+| **Total** | **387** | **275** (71 %) | **94** | **18** |
 
-Bloqueadores absolutos (sección 0): **8 cerrados** (1, 2, 3, 4, 5, 6, 7, 12), **0 abiertos** y **4 por comprobar** (8 y 9: actualización con datos; 10: copias en Windows; 11: dependencias Maven).
+Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por comprobar en el equipo del negocio** (10: ejecutar las copias `.ps1` en Windows).
 
 ## Ruta propuesta
 
@@ -633,8 +636,8 @@ Bloqueadores absolutos (sección 0): **8 cerrados** (1, 2, 3, 4, 5, 6, 7, 12), *
 | ---- | --------- | ------ |
 | **1. Reglas funcionales** ✅ | Hecha el 24/11/2026: identificador único en compras, producción, personalizadas y pagos (V21); 39 pruebas nuevas; motivo obligatorio; filtros del historial; 400 en lugar de 500 con datos mal escritos. Quedan 2 decisiones de negocio (nombres repetidos, estado "cancelada") | B-2, B-4, API-14, COM-*, PRO-*, DES-*, VEN-*, INV-14/17-19 |
 | **2. Offline** ✅ | Hecha el 24/11/2026: escenarios A–D más dos pestañas, envíos simultáneos, sesión vencida sin conexión y dispositivo sin espacio. Decisiones aplicadas: nombres únicos y sin estado "cancelada" | OFF-*, RES-08, PRO-10/18 |
-| **3. Seguridad** | Límite de intentos de inicio de sesión; pruebas de token vencido, usuario inactivo y `POST /users` por vendedor; escaneo de dependencias Maven | SEG-05/11/21/24 |
-| **4. Recuperación** | Ejecutar los `.ps1` en el PC del negocio; simulacro cronometrado de pérdida total; prueba de actualización V19 → V20 con datos; definir RPO y RTO | BKP-02/17/18, DB-09, B-8/9 |
+| **3. Seguridad** ✅ | Hecha el 24/11/2026: bloqueo tras 5 intentos; 12 pruebas de seguridad con inicio de sesión real; escaneo de dependencias en CI (encontró y se corrigieron vulnerabilidades críticas); Dependabot | SEG-*, B-11 |
+| **4. Recuperación** ✅ | Hecha el 24/11/2026: actualización V19 → V21 con datos sin pérdidas; simulacro de pérdida total con 3 años de datos (7,5 s); `restore-db.sh`; procedimiento de vuelta atrás; RPO/RTO propuestos. **Queda en manos del negocio:** ejecutar los `.ps1` en el PC de Windows | BKP-17/18, DB-09, DEP-14/15/19, B-8/9/11 |
 | **5. Calidad** | JaCoCo, protección de `main`, formateo | QA-22/24, ARQ-17 |
 | **6. Rendimiento** | Paginación, N+1 del historial, endpoint de salud, logs a archivo con rotación, prueba de carga | REN-*, DB-18, OBS-* |
 | **7. Producción** | Infraestructura, HTTPS, dominio, CORS, rollback | DEP-* |
