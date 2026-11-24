@@ -411,8 +411,29 @@ El resultado queda en `frontend/dist` y se publica en cualquier servidor web (Ng
 - [ ] `CORS_ALLOWED_ORIGINS` con el dominio real (o mismo origen mediante proxy).
 - [ ] Copias automáticas programadas **y** una prueba de restauración exitosa (`docs/09-copias-de-seguridad.md`).
 - [ ] Segunda copia fuera del equipo o servidor (`CopyTo`).
-- [ ] `./mvnw test` en verde.
+- [ ] CI en verde en GitHub (pestaña **Actions**): pruebas del backend, lint y build del frontend, y prueba de punta a punta.
+- [ ] Prueba de restauración **completa** en el entorno de despliegue: restaurar con `restore-db` en una base nueva, apuntar una instancia del backend a ella y revisar inventario, últimas ventas y usuarios.
 - [ ] Recorrido manual de los flujos críticos: venta normal, venta con precio especial, compra, producción, ajuste de inventario, personalizada con abono y pago final, inicio de sesión como vendedor para confirmar que no puede editar productos.
+
+## 14.4A. Seguridad del dispositivo y datos locales
+
+El navegador guarda en `localStorage` la sesión (token), el catálogo para vender sin conexión y las ventas pendientes. Medidas aplicadas:
+
+| Riesgo                                     | Medida                                                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Código malicioso inyectado en la página (XSS) | React escapa todo el texto; no hay HTML insertado sin escapar. La versión compilada incluye una **política de seguridad de contenido (CSP)**: solo ejecuta scripts del propio sitio y solo envía datos al propio sitio y al backend. |
+| Token robado o dispositivo perdido         | El token vence (`JWT_EXPIRATION`). **Desactivar al usuario en Administrar usuarios corta su acceso de inmediato**, aunque su token no haya vencido (el backend revisa en cada petición que la cuenta siga activa). |
+| Ventas pendientes al cerrar sesión         | Se avisa antes de cerrar sesión; las ventas quedan a nombre de quien las hizo y solo se envían cuando esa persona vuelve a entrar. Otro usuario del mismo dispositivo no las envía. |
+| Datos visibles en el dispositivo           | El catálogo contiene productos, precios y existencias (información que el vendedor ya ve). Las ventas con montos del historial no se guardan en el dispositivo. |
+
+Recomendaciones de operación:
+
+* Un usuario por persona; nunca compartir contraseñas.
+* Bloqueo de pantalla en los celulares y computadores del local.
+* No instalar extensiones de navegador desconocidas en los equipos de venta.
+* Si se pierde un celular, desactivar al usuario desde **Administrar usuarios** y crearle uno nuevo.
+
+Guardar el token en una cookie `HttpOnly` reduciría más el riesgo ante XSS, pero exige cambiar la autenticación y la protección CSRF del backend. Con las medidas anteriores no se considera necesario para esta versión.
 
 ## 14.5. Compartir el proyecto sin claves
 

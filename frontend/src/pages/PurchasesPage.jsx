@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { getUser } from "../utils/session";
 import useAutoRefresh from "../hooks/useAutoRefresh";
 
 import Modal from "../components/Modal";
@@ -40,7 +41,7 @@ const isThisMonth = (value) => {
  */
 function PurchasesPage() {
 
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const user = getUser();
     const isAdmin = user.role === "ADMIN";
 
     const [purchases, setPurchases] = useState([]);

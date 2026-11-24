@@ -17,6 +17,7 @@ import {
   usePendingSales,
 } from "../utils/offlineStore";
 import { onSalesSynced, retryRejectedSale } from "../utils/offlineSync";
+import { getUser } from "../utils/session";
 import {
   formatNumber,
   formatQuantity,
@@ -41,7 +42,7 @@ const money = (value) =>
 const round2 = (value) => Math.round(Number(value) * 100) / 100;
 
 function NewSalePage() {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = getUser();
   const username = user.username || "usuario";
 
   const searchInputRef = useRef(null);

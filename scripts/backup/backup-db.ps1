@@ -6,7 +6,7 @@
     - Genera un archivo .dump (formato personalizado de pg_dump, comprimido).
     - Comprueba que el archivo se pueda leer (pg_restore --list).
     - Guarda su huella SHA-256 para detectar archivos dañados.
-    - Borra las copias viejas según RetentionDays / MinKeep.
+    - Borra las copias viejas según RetentionDays / MinKeep, también en CopyTo.
     - Opcional: deja una segunda copia en CopyTo (OneDrive, USB...).
 
     Uso:  powershell -ExecutionPolicy Bypass -File scripts\backup\backup-db.ps1
@@ -45,17 +45,11 @@ try {
         Write-Log $cfg "Segunda copia guardada en $($cfg.CopyTo)."
     }
 
-    # ---- Limpieza de copias viejas ----
-    $limit = (Get-Date).AddDays(-$cfg.RetentionDays)
-
-    Get-ChildItem $cfg.BackupDir -Filter 'mantas_*.dump' |
-        Sort-Object LastWriteTime -Descending |
-        Select-Object -Skip $cfg.MinKeep |
-        Where-Object { $_.LastWriteTime -lt $limit } |
-        ForEach-Object {
-            Remove-Item $_.FullName, "$($_.FullName).sha256" -ErrorAction SilentlyContinue
-            Write-Log $cfg "Copia antigua eliminada: $($_.Name)"
-        }
+    # ---- Limpieza de copias viejas (carpeta principal y segunda copia) ----
+    Remove-OldBackups $cfg $cfg.BackupDir
+    if ($cfg.CopyTo) {
+        Remove-OldBackups $cfg $cfg.CopyTo
+    }
 
     exit 0
 }

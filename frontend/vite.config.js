@@ -1,10 +1,61 @@
 import react from '@vitejs/plugin-react'
 import basicSsl from '@vitejs/plugin-basic-ssl'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
+import process from 'node:process'
 
 // Rutas del backend que se reenvían desde el servidor de Vite.
 const BACKEND = 'http://localhost:8080'
 const BACKEND_PATHS = ['/api', '/auth', '/users']
+
+/**
+ * Política de seguridad de contenido (CSP) solo en la versión compilada.
+ *
+ * Limita lo que el navegador acepta ejecutar y a dónde puede enviar datos:
+ * aunque alguien lograra inyectar código en la página, no podría cargar
+ * scripts de otros sitios ni enviar el token o las ventas guardadas a un
+ * servidor ajeno (connect-src solo permite este sitio y el backend).
+ *
+ * En desarrollo (npm run dev) no se aplica: Vite necesita scripts en línea
+ * para la recarga en caliente.
+ */
+function originOf(url) {
+  try {
+    return url ? new URL(url).origin : ''
+  } catch {
+    return ''
+  }
+}
+
+function contentSecurityPolicy(apiUrl) {
+  const apiOrigin = originOf(apiUrl)
+
+  const policy = [
+    "default-src 'self'",
+    "script-src 'self'",
+    // React aplica estilos en línea en algunos componentes (avatar).
+    "style-src 'self' 'unsafe-inline'",
+    // Fotos de perfil (blob:) y vista de la cámara.
+    "img-src 'self' data: blob:",
+    "media-src 'self' blob:",
+    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ''}`,
+    "worker-src 'self'",
+    "manifest-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; ')
+
+  return {
+    name: 'mantas-csp',
+    apply: 'build',
+    transformIndexHtml(html) {
+      return html.replace(
+        '<meta charset="UTF-8" />',
+        `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${policy}" />`
+      )
+    },
+  }
+}
 
 /**
  * Modos:
@@ -19,6 +70,7 @@ const BACKEND_PATHS = ['/api', '/auth', '/users']
 export default defineConfig(({ mode }) => {
 
   const celular = mode === 'celular'
+  const env = loadEnv(mode, process.cwd(), '')
 
   const proxy = Object.fromEntries(
     BACKEND_PATHS.map((path) => [
@@ -39,7 +91,11 @@ export default defineConfig(({ mode }) => {
   )
 
   return {
-    plugins: [react(), ...(celular ? [basicSsl()] : [])],
+    plugins: [
+      react(),
+      ...(celular ? [basicSsl()] : []),
+      contentSecurityPolicy(process.env.VITE_API_URL || env.VITE_API_URL),
+    ],
 
     server: {
       // Escuchar en la red local solo en modo celular.

@@ -312,6 +312,10 @@ El backend es responsable de:
 
 **Frontend:** `npm run lint` y `npm run build`.
 
+**Punta a punta** (`frontend/e2e/offline-sync.e2e.cjs`): navegador real contra backend y base de prueba. Cubre ventas sin conexión, app reabierta sin conexión, corte de conexión justo al enviar (no duplica), conflicto con otro vendedor y "Reintentar", dispositivo compartido entre vendedores, actualización automática y ausencia de violaciones de la CSP. Instrucciones en `frontend/e2e/README.md`.
+
+**Integración continua:** `.github/workflows/ci.yml` ejecuta todo lo anterior en cada push y pull request (pestaña **Actions** de GitHub).
+
 **Manuales:** recorrido de los flujos críticos desde la interfaz (lista en `docs/06-despliegue.md`, sección 14.4).
 
 ---

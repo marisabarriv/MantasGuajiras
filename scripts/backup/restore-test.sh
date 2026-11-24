@@ -4,6 +4,8 @@
 # Restaura la última copia (o la indicada como argumento) en una base
 # TEMPORAL, verifica integridad, compara conteos y la borra.
 # Uso: scripts/backup/restore-test.sh [archivo.dump]
+# La huella .sha256 es obligatoria. Solo para copias antiguas sin ella:
+#   ALLOW_MISSING_HASH=1 scripts/backup/restore-test.sh archivo.dump
 # =========================================================
 set -uo pipefail
 
@@ -28,9 +30,19 @@ trap 'dropdb --no-password --if-exists "$TEST_DB" 2>/dev/null' EXIT
 
 log "PRUEBA DE RESTAURACIÓN de $FILE"
 
-if [[ -f "$FILE.sha256" ]]; then
-    [[ "$(sha256sum "$FILE" | cut -d' ' -f1 | tr 'a-f' 'A-F')" == "$(tr -d '[:space:]' < "$FILE.sha256")" ]] \
-        && log "Huella SHA-256 correcta." || fail "la huella SHA-256 no coincide (archivo dañado)"
+if [[ ! -f "$FILE.sha256" ]]; then
+    if [[ "${ALLOW_MISSING_HASH:-0}" != "1" ]]; then
+        log "ERROR: falta $FILE.sha256; sin huella no se puede comprobar que la copia esté sana."
+        log "RESULTADO: LA PRUEBA DE RESTAURACIÓN FALLÓ."
+        exit 1
+    fi
+    log "ADVERTENCIA: la copia no tiene .sha256; se continúa porque ALLOW_MISSING_HASH=1."
+elif [[ "$(sha256sum "$FILE" | cut -d' ' -f1 | tr 'a-f' 'A-F')" == "$(tr -d '[:space:]' < "$FILE.sha256")" ]]; then
+    log "Huella SHA-256 correcta."
+else
+    log "ERROR: la huella SHA-256 no coincide: el archivo está dañado o fue modificado."
+    log "RESULTADO: LA PRUEBA DE RESTAURACIÓN FALLÓ."
+    exit 1
 fi
 
 dropdb --no-password --if-exists "$TEST_DB" 2>/dev/null

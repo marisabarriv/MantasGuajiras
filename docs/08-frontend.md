@@ -948,6 +948,14 @@ El frontend debe:
 * No confiar únicamente en validaciones del cliente.
 * Mostrar correctamente los errores de autorización o autenticación.
 
+Medidas implementadas:
+
+* **CSP** en la versión compilada (`vite.config.js`, plugin `mantas-csp`): `script-src 'self'`, `connect-src` limitado al sitio y al backend (`VITE_API_URL`), `object-src 'none'`. No se aplica con `npm run dev`, porque Vite necesita scripts en línea para la recarga en caliente.
+* Al **cerrar sesión con ventas sin enviar**, se pide confirmación y se explica que quedan guardadas a nombre de quien las hizo.
+* La sesión se lee siempre desde `utils/session.js`.
+
+Riesgos aceptados y recomendaciones de operación: `06-despliegue.md`, sección 14.4A.
+
 ---
 
 # 34. Compatibilidad
