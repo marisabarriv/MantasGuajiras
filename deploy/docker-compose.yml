@@ -7,7 +7,7 @@
 #   web     Caddy: la app y HTTPS automático. ÚNICO servicio con puertos
 #           abiertos (80 y 443).
 #   backend Spring Boot (perfil prod). Solo accesible desde "web".
-#   db      PostgreSQL 16. SIN puertos publicados: nadie fuera del
+#   db      PostgreSQL 17. SIN puertos publicados: nadie fuera del
 #           servidor puede conectarse.
 #   backup  Copias cada 2 horas (6:00–21:00) y prueba semanal.
 # Todos se reinician solos si se caen o si el servidor se reinicia.
@@ -17,7 +17,9 @@ name: mantasguajiras
 services:
 
   db:
-    image: postgres:16-alpine
+    # PostgreSQL 17 lee copias hechas con PostgreSQL 16 o 17. No cambiar
+    # POSTGRES_VERSION después de instalar (exigiría copiar y restaurar).
+    image: postgres:${POSTGRES_VERSION:-17}-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-mantas_guajiras_db}
@@ -83,7 +85,7 @@ services:
 
   backup:
     # Imagen completa (no alpine): los scripts de copia usan bash.
-    image: postgres:16
+    image: postgres:${POSTGRES_VERSION:-17}
     restart: unless-stopped
     depends_on:
       db:

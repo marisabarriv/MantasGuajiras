@@ -59,7 +59,10 @@ Cada criterio tiene **prioridad**, **estado** y **evidencia**. Un criterio solo 
 | `T-per` | `DateRangeTest` (8), `HistoryAndMonitoringHttpTest` (4) y `MonitoringUnitTest` (3): historiales por periodo, estado del sistema, registro de operaciones y rechazos, peticiones lentas, alertas | `backend/src/test` |
 | `LOAD` | Prueba de carga con 3 años de datos (33.000 ventas): 15 y 40 usuarios simultáneos, antes y después de las correcciones; integridad comprobada | 24/11/2026; `docs/12` §2; `scripts/perf` |
 | `SQL` | Conteo de consultas por historial con `log_statement`: 3 por historial de ventas o movimientos (antes, varias por cada venta) | 24/11/2026; `docs/12` §1 |
-| `E2E` | `frontend/e2e/offline-sync.e2e.cjs` (11 escenarios, 49 comprobaciones, navegador real) | se ejecuta en CI |
+| `E2E` | `frontend/e2e/offline-sync.e2e.cjs` (12 escenarios, 53 comprobaciones, navegador real), también por HTTPS a través del kit de producción | se ejecuta en CI (dos veces) |
+| `KIT` | Kit `deploy/` instalado desde cero: 18/18 comprobaciones de `verify.sh`; solo 80/443 abiertos; PostgreSQL inaccesible; usuario de base sin privilegios; E2E por HTTPS; copia y prueba de restauración; importación de datos (41.259 ventas) | 24/11/2026; `docs/13` §8; trabajo *Kit de producción* en la CI |
+| `DRILL` | Simulacros sobre el kit: PostgreSQL `kill -9` y corte de luz con ventas en curso (0 de 13.159 confirmadas perdidas), backend caído, actualización con copia previa (≈9 s sin servicio) y versión rota con vuelta atrás automática | 24/11/2026; `docs/13` §8 |
+| `T-db` | `DatabaseDownTest` (3): base caída → 503, nunca 401 ni 500 | `backend/src/test` |
 | `CI` | GitHub Actions: backend + frontend + E2E. Ejecución #1 en verde (24/11/2026) | pestaña **Actions** |
 | `BKP` | Pruebas de los scripts de respaldo contra PostgreSQL: copia sana, archivo dañado, inventario alterado, falta de `.sha256`, retención en `CopyTo` | sesión del 23-24/11/2026; `scripts/backup` |
 | `AUD` | `npm audit`: 0 vulnerabilidades (producción y desarrollo) tras `npm audit fix` | 24/11/2026 |
@@ -78,12 +81,12 @@ Ninguno puede quedar abierto para dar 10/10.
 | 2 | Se pueden duplicar ventas o compras confirmadas | ✅ No ocurre | Ventas (`T-conc`, `E2E`), compras (`T-com`, `E2E` esc. 5), producción (`T-pro`), personalizadas y pagos (`T-ord`). Cerrado en la Fase 1 (V21). |
 | 3 | Un vendedor puede hacer operaciones restringidas | ✅ No ocurre | `T-perm` |
 | 4 | Se pueden modificar precios históricos de ventas | ✅ No ocurre | `T-sale` (ventas inmodificables; la venta antigua conserva su precio tras cambiar el del producto) |
-| 5 | Una venta puede quedar guardada parcialmente | ✅ No ocurre | `T-conc` (rollback) |
+| 5 | Una venta puede quedar guardada parcialmente | ✅ No ocurre | `T-conc` (rollback); `DRILL`: con la base caída de golpe y por corte de luz, ninguna venta sin productos |
 | 6 | La sincronización offline atribuye ventas al usuario equivocado | ✅ No ocurre | `E2E` escenario 4 |
 | 7 | Se exponen contraseñas o secretos | ✅ No ocurre | `.gitignore` revisado; `log-resolved-exception: false`; `T-log` (sin detalles al usuario); contraseñas con BCrypt |
 | 8 | Se pierden datos al restaurar o actualizar | ✅ No ocurre | Restaurar nunca sobrescribe (`BKP`); actualización con datos sin pérdidas (`UPG`); recuperación total sin pérdidas (`SIM`) |
 | 9 | Las migraciones destruyen datos existentes | ✅ No ocurre | `UPG` (V19 → V21: datos idénticos) |
-| 10 | Los backups no pueden restaurarse | ✅ (Linux) · ⏳ (Windows) | `BKP` y `SIM` con los scripts `.sh` (pérdida total recuperada en 7,5 s). Los `.ps1` deben ejecutarse una vez en el PC del negocio. |
+| 10 | Los backups no pueden restaurarse | ✅ (Linux y servidor) · ⏳ (Windows) | `BKP` y `SIM` con los scripts `.sh` (pérdida total recuperada en 7,5 s); en el kit de producción, prueba de restauración en cada CI (`KIT`). Los `.ps1` deben ejecutarse una vez en el PC del negocio, mientras se use el PC. |
 | 11 | Vulnerabilidades críticas sin resolver | ✅ No hay | `OSV`: se encontraron críticas (Tomcat, Spring Web) y se corrigieron con Spring Boot 4.1.3; la CI lo revisa en cada push |
 | 12 | Las pruebas modifican la base de trabajo | ✅ No ocurre | Perfil `test` con base propia; CI con bases temporales |
 
@@ -493,7 +496,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | OBS-07 | Estado de PostgreSQL | M | ✅ | Componente `db` del estado; revisión cada 5 min con alerta en el log (`T-per`) |
 | OBS-08 | Espacio en disco | M | ✅ | Componente `diskSpace` (DOWN con menos de 2 GB libres, configurable) (`T-per`) |
 | OBS-09 | Crecimiento de logs | M | ✅ | ≈160 bytes por operación: menos de 2 MB al mes con el uso esperado (`LOAD`); tope de 300 MB |
-| OBS-10 | Alertas críticas | M | ⏳ | El backend deja ERROR en el log si la base o el disco fallan (`T-per`) y las copias avisan en el Escritorio. Falta un aviso que llegue a alguien sin abrir el log (monitor del hosting, Fase 7) |
+| OBS-10 | Alertas críticas | M | ⏳ | El backend deja ERROR en el log si la base o el disco fallan (`T-per`) y las copias avisan. Falta el aviso que llegue a alguien sin abrir el log: monitor externo sobre `/actuator/health` (`docs/11` #22) |
 | OBS-11 | Rotación de logs | M | ✅ | Archivo con rotación: 10 MB por archivo, 30 días, 300 MB en total (`docs/12` §3.2) |
 | OBS-12 | Usuario por operación | A | ✅ | `created_by` |
 | OBS-13 | Solicitud ↔ error | M | ✅ | Código de referencia (`T-log`) |
@@ -532,28 +535,28 @@ Ninguno puede quedar abierto para dar 10/10.
 
 ## 17. Infraestructura y despliegue
 
-Pendiente en su mayoría hasta elegir la infraestructura (decisión de negocio).
+Kit de instalación listo y probado (`docs/13-produccion.md`). Queda lo que depende de elegir el servidor y el dominio (decisión de negocio).
 
 | ID | Criterio | Pr. | Estado | Nota |
 | -- | -------- | --- | ------ | ---- |
-| DEP-01 | Infraestructura definida | A | ⏳ | Decisión pendiente |
-| DEP-02 | HTTPS backend | B | ⏳ | — |
-| DEP-03 | HTTPS frontend | B | ⏳ | — |
+| DEP-01 | Infraestructura definida | A | ⏳ | Kit de instalación listo y probado; recomendación: VPS Ubuntu con 2 GB (`docs/13` §2). Falta la decisión de la responsable (`docs/11` #17) |
+| DEP-02 | HTTPS backend | B | ⏳ | HTTPS en el mismo dominio para app y API, con redirección y HSTS: probado con certificado local (`KIT`). El certificado real se emite solo al instalar con el dominio (`docs/11` #18-19) |
+| DEP-03 | HTTPS frontend | B | ⏳ | Igual que DEP-02: probado con certificado local (`KIT`); falta el dominio |
 | DEP-04 | Secretos inyectados de forma segura | A | ✅ | Perfil `prod` solo con variables de entorno (`E2E`, `CI`) |
 | DEP-05 | Sin credenciales productivas en el repo | B | ✅ | Revisado |
-| DEP-06 | PostgreSQL no expuesto | A | ⏳ | Documentado (`docs/06` §14.3) |
-| DEP-07 | Puertos mínimos | A | ⏳ | — |
-| DEP-08 | Firewall | A | ⏳ | — |
-| DEP-09 | Dominio | M | ⏳ | — |
-| DEP-10 | Certificados | A | ⏳ | — |
-| DEP-11 | CORS autorizado | A | ⏳ | Configurable; falta el valor real |
+| DEP-06 | PostgreSQL no expuesto | A | ✅ | Sin puertos publicados; inaccesible desde fuera, verificado en cada CI (`KIT`) |
+| DEP-07 | Puertos mínimos | A | ✅ | Solo 80 y 443 (servidor web); SSH 22 para administrar (`KIT`, `docs/13` §7) |
+| DEP-08 | Firewall | A | ⏳ | `ufw` con 22/80/443 documentado (`docs/13` §3 y §7); se aplica al instalar |
+| DEP-09 | Dominio | M | ⏳ | Decisión de la responsable (`docs/11` #18) |
+| DEP-10 | Certificados | A | ⏳ | Emisión y renovación automáticas con Caddy (Let's Encrypt); se comprueba al instalar con el dominio |
+| DEP-11 | CORS autorizado | A | ✅ | App y API en el mismo dominio (no requiere CORS); `CORS_ALLOWED_ORIGINS` = `https://` + dominio, automático (`KIT`) |
 | DEP-12 | Swagger deshabilitado en producción | A | ✅ | 404 con perfil `prod` (verificado 23/11) |
-| DEP-13 | Arranque automático | M | ⏳ | — |
+| DEP-13 | Arranque automático | M | ✅ | Todos los servicios se reinician solos: corte de luz simulado → todo arriba en 14 s (`DRILL`) |
 | DEP-14 | Actualizar sin perder información | A | ✅ | `UPG` |
-| DEP-15 | Procedimiento de rollback | A | ✅ | Procedimiento de vuelta atrás: `docs/09` §4.1 |
-| DEP-16 | Versión desplegada verificable | Bj | ⏳ | — |
+| DEP-15 | Procedimiento de rollback | A | ✅ | Vuelta atrás automática si la verificación falla, probada con una versión rota (`DRILL`); con cambios en la base: `docs/09` §4.1 y `import-data.sh` |
+| DEP-16 | Versión desplegada verificable | Bj | ✅ | `/actuator/info` (versión, fecha y commit) y *Mi perfil*; `verify.sh` comprueba que sea la recién instalada (`KIT`, `T-per`) |
 | DEP-17 | Producción y pruebas separadas | B | ✅ | Bases y perfiles distintos |
-| DEP-18 | Verificación tras desplegar | M | ⏳ | — |
+| DEP-18 | Verificación tras desplegar | M | ✅ | `deploy.sh` ejecuta `verify.sh` (18 comprobaciones) en cada instalación (`KIT`) |
 | DEP-19 | Migraciones en entorno previo | A | ✅ | `UPG` en un entorno aparte con la versión anterior |
 | DEP-20 | Recuperación del servicio documentada | M | ✅ | `docs/09` §3 (recuperación) y §7 (simulacro) |
 
@@ -563,7 +566,7 @@ Referencias para la revisión final: OWASP ASVS nivel 2 y OWASP Top 10.
 
 | ID | Criterio | Pr. | Estado | Nota |
 | -- | -------- | --- | ------ | ---- |
-| RES-01 | Fallo de PostgreSQL sin corrupción | A | ⏳ | Garantizado por PostgreSQL (WAL); `docs/09` §1.5; sin simulacro |
+| RES-01 | Fallo de PostgreSQL sin corrupción | A | ✅ | `kill -9` de PostgreSQL y corte de luz con ventas en curso: 0 de 13.159 ventas confirmadas perdidas; recuperación automática (WAL) e integridad correcta (`DRILL`) |
 | RES-02 | Fallo del backend sin operaciones parciales | B | ✅ | `T-conc` |
 | RES-03 | Errores de red comunicados | A | ✅ | `E2E` |
 | RES-04 | Reintentos sin duplicar | B | ✅ | Todas las operaciones (ver API-14) |
@@ -571,7 +574,7 @@ Referencias para la revisión final: OWASP ASVS nivel 2 y OWASP Top 10.
 | RES-06 | Procesos recuperables | A | ✅ | `E2E` |
 | RES-07 | Consistencia transaccional | A | ✅ | `T-conc` |
 | RES-08 | Sesiones vencidas | A | ✅ | `E2E` esc. 8: vencida sin conexión → sigue vendiendo → pide iniciar sesión → envía |
-| RES-09 | Recuperación tras reinicios | M | ⏳ | — |
+| RES-09 | Recuperación tras reinicios | M | ✅ | Base: UP en 1,2 s; backend: 9 s; corte de luz: 14 s; sin intervención (`DRILL`). Con la base caída, 503 y la venta queda en el dispositivo (`T-db`, `E2E`) |
 | RES-10 | Saturación | Bj | ✅ | 40 usuarios sin errores de servidor; si se agotara la memoria, el proceso se reinicia en vez de quedar dañado (`LOAD`, `docs/12` §2.4) |
 | RES-11 | Sin reenvío de formularios | A | ✅ | Ver UX-06 |
 | RES-12 | Operaciones en estado incierto identificadas | A | ✅ | Ventas pendientes y rechazadas visibles (`E2E`) |
@@ -594,7 +597,7 @@ Referencias para la revisión final: OWASP ASVS nivel 2 y OWASP Top 10.
 | DOC-12 | Producción y pedidos | M | ⏳ | Breve |
 | DOC-13 | Offline | A | ✅ | `docs/06` §15.4, `docs/08` §30A |
 | DOC-14 | Copias y restauración | A | ✅ | `docs/09` |
-| DOC-15 | Despliegue | A | ⏳ | Genérico hasta definir la infraestructura |
+| DOC-15 | Despliegue | A | ✅ | `docs/13-produccion.md`: opciones, instalación paso a paso, actualizar, volver atrás, copias, seguridad y pruebas |
 | DOC-16 | Rollback | A | ✅ | `docs/09` §4.1 |
 | DOC-17 | Manual de usuario | A | ❌ | — |
 | DOC-18 | Solución de problemas | M | ✅ | Servidor: `docs/12` §6; copias: `docs/09`; sin conexión: `docs/06` §15.4 |
@@ -609,7 +612,7 @@ NEG-01 a NEG-14: ⏳ **pendientes de validación por la responsable del negocio*
 
 ## Resumen
 
-Conteo automático de la matriz (24/11/2026, después de la Fase 6). Evolución: inicio 189 ✅ → Fase 1 256 → Fase 2 258 → Fases 3-4 275 → Fase 5 288 → Fase 6 315 ✅.
+Conteo automático de la matriz (24/11/2026, después de la Fase 7). Evolución: inicio 189 ✅ → Fase 1 256 → Fase 2 258 → Fases 3-4 275 → Fase 5 288 → Fase 6 315 → Fase 7 324 ✅.
 
 | Área | Criterios | ✅ | ⏳ | ❌ |
 | ---- | --------- | -- | -- | -- |
@@ -629,11 +632,11 @@ Conteo automático de la matriz (24/11/2026, después de la Fase 6). Evolución:
 | 14. Copias de seguridad y recuperación | 20 | 16 | 3 | 1 |
 | 15. Logs, monitoreo y observabilidad | 15 | 14 | 1 | 0 |
 | 16. Pruebas automatizadas y calidad continua | 25 | 24 | 1 | 0 |
-| 17. Infraestructura y despliegue | 20 | 8 | 12 | 0 |
-| 18. Errores y resiliencia | 12 | 10 | 2 | 0 |
-| 19. Documentación y operación | 20 | 15 | 3 | 2 |
+| 17. Infraestructura y despliegue | 20 | 14 | 6 | 0 |
+| 18. Errores y resiliencia | 12 | 12 | 0 | 0 |
+| 19. Documentación y operación | 20 | 16 | 2 | 2 |
 | 20. Aceptación del negocio | 14 | 0 | 14 | 0 |
-| **Total** | **387** | **315** (81 %) | **68** | **4** |
+| **Total** | **387** | **324** (84 %) | **59** | **4** |
 
 Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por comprobar en el equipo del negocio** (10: ejecutar las copias `.ps1` en Windows).
 
@@ -647,5 +650,5 @@ Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por c
 | **4. Recuperación** ✅ | Hecha el 24/11/2026: actualización V19 → V21 con datos sin pérdidas; simulacro de pérdida total con 3 años de datos (7,5 s); `restore-db.sh`; procedimiento de vuelta atrás; RPO/RTO propuestos. **Queda en manos del negocio:** ejecutar los `.ps1` en el PC de Windows | BKP-17/18, DB-09, DEP-14/15/19, B-8/9/11 |
 | **5. Calidad** ✅ | Hecha el 24/11/2026: cobertura 92 % con umbral en el build; 13 pruebas nuevas (104 en total) incluido el recorrido completo por HTTP; orden aleatorio; código muerto eliminado; `.editorconfig`; E2E por todas las páginas y roles. **Queda en manos de la dueña:** proteger `main` (`docs/06` §14.6) | QA-18/24, ARQ-09/13/17, UX-01/14 |
 | **6. Rendimiento** ✅ | Hecha el 24/11/2026: prueba de carga con 3 años de datos y 40 usuarios (encontró que el servidor se quedaba sin memoria y daba 123 errores 500; corregido); historiales por periodo; N+1 eliminado; listas de a 100; estado del sistema (`/actuator/health`); log a archivo con rotación y una línea por operación; guía de incidentes (`docs/12`); 15 pruebas nuevas (119 en total). **Queda en manos de la dueña:** confirmar cuántas personas usan la app a la vez | REN-*, DB-17/18, API-12, OBS-*, RES-10, DOC-18 |
-| **7. Producción** | Infraestructura, HTTPS, dominio, CORS, rollback | DEP-* |
+| **7. Producción** ✅ | Hecha el 24/11/2026: kit `deploy/` (Docker, HTTPS automático, mismo dominio, PostgreSQL cerrado, copias, reinicio automático); `deploy.sh` con copia previa, verificación y vuelta atrás automática; `import-data.sh`; versión visible; simulacros de caída de la base, corte de luz y versión rota sin perder ventas; corregido el 401 con la base caída (ahora 503 y la venta queda en el dispositivo); CI instala el kit y repite la E2E por HTTPS. **Queda en manos de la dueña:** servidor, dominio e instalación (`docs/11` #17-23) | DEP-*, RES-01/09, DOC-15 |
 | **8. Aceptación** | Recorrido de los 24 escenarios con la responsable del negocio; manual de usuario | NEG-*, DOC-17 |

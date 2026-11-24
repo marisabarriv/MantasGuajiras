@@ -465,6 +465,11 @@ const pendingIds = (page) => page.evaluate(() =>
 
         await page.goto(APP + '/products');
         await page.getByRole('heading', { level: 1, name: 'Productos' }).waitFor();
+        // Esperar a que termine de cargar (con muchos productos tarda un poco más).
+        await page.getByText('Cargando productos').waitFor({ state: 'detached', timeout: 15000 }).catch(() => {});
+        if (isAdmin) {
+            await page.getByRole('button', { name: '+ Crear producto' }).waitFor({ timeout: 10000 }).catch(() => {});
+        }
         const canCreate = await page.getByRole('button', { name: '+ Crear producto' }).count();
         check(isAdmin ? canCreate === 1 : canCreate === 0, `${who}: ${isAdmin ? 'puede' : 'no puede'} crear productos`);
 
