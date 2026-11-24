@@ -621,8 +621,11 @@ function NewSalePage() {
       finishCart();
       reloadStock();
     } catch (error) {
-      if (isConnectionError(error)) {
-        // Sin conexión: la venta se guarda en el dispositivo y se envía sola después.
+      // Sin conexión, o el servidor no pudo atenderla (5xx: base de datos
+      // caída, reinicio...): la venta se guarda en el dispositivo y se envía
+      // sola después. Su clientRequestId evita duplicarla si el servidor
+      // alcanzó a guardarla.
+      if (isConnectionError(error) || error.status >= 500) {
         const saved = addPendingSale({
           clientRequestId,
           username: user.username,
@@ -1231,7 +1234,7 @@ function NewSalePage() {
                 {completedSale.offline ? (
                   <>
                     <p>
-                      No hay conexión: la venta quedó guardada en este
+                      No hay conexión con el servidor: la venta quedó guardada en este
                       dispositivo y se enviará sola cuando vuelva la conexión.
                     </p>
                     <p>

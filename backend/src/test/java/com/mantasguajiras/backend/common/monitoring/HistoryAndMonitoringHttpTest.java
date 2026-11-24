@@ -120,7 +120,15 @@ class HistoryAndMonitoringHttpTest extends IntegrationTestBase {
         healthMonitor.check();
         assertThat(HealthMonitor.describe(healthEndpoint.health())).contains("db: UP", "diskSpace: UP");
 
-        // Fuera de health, Actuator no publica nada.
+        // Versión instalada: pública y sin secretos.
+        String info = mvc.perform(get("/actuator/info"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.build.version").exists())
+                .andExpect(jsonPath("$.app.commit").exists())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(info).doesNotContainIgnoringCase("password").doesNotContain("jdbc", "secret");
+
+        // Fuera de health e info, Actuator no publica nada.
         mvc.perform(get("/actuator/env")).andExpect(status().is4xxClientError());
         mvc.perform(get("/actuator/metrics").header("Authorization", token)).andExpect(status().is4xxClientError());
     }

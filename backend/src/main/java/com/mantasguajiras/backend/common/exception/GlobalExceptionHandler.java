@@ -21,6 +21,30 @@ public class GlobalExceptionHandler {
 
         private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+        /** Mensaje cuando PostgreSQL no responde (caído, reiniciando, sin red). */
+        public static final String DATABASE_DOWN_MESSAGE =
+                        "La base de datos no responde en este momento. Intenta de nuevo en unos minutos;"
+                                        + " las ventas guardadas en el dispositivo se enviarán solas.";
+
+        /**
+         * PostgreSQL no disponible: 503 (temporal), no 500. La app guarda la
+         * venta en el dispositivo y la reenvía; con su identificador único
+         * no se duplica aunque el servidor alcanzara a guardarla.
+         */
+        @ExceptionHandler({
+                        org.springframework.dao.DataAccessResourceFailureException.class,
+                        org.springframework.dao.TransientDataAccessException.class,
+                        org.springframework.transaction.CannotCreateTransactionException.class })
+        public ResponseEntity<ErrorResponse> handleDatabaseDown(
+                        Exception ex,
+                        HttpServletRequest request) {
+
+                log.warn("Base de datos no disponible en {} {}: {}",
+                                request.getMethod(), request.getRequestURI(), ex.getClass().getSimpleName());
+
+                return build(HttpStatus.SERVICE_UNAVAILABLE, DATABASE_DOWN_MESSAGE, request);
+        }
+
         @ExceptionHandler(ResourceNotFoundException.class)
         public ResponseEntity<ErrorResponse> handleNotFound(
                         ResourceNotFoundException ex,

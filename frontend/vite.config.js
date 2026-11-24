@@ -2,6 +2,14 @@ import react from '@vitejs/plugin-react'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 import { defineConfig, loadEnv } from 'vite'
 import process from 'node:process'
+import { readFileSync } from 'node:fs'
+
+// Versión visible en "Mi perfil": la de package.json y, si se compila
+// con APP_COMMIT (lo hace el kit de despliegue), el commit exacto.
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
+const appVersion = process.env.APP_COMMIT
+  ? `${pkg.version} (${process.env.APP_COMMIT.slice(0, 7)})`
+  : pkg.version
 
 // Rutas del backend que se reenvían desde el servidor de Vite.
 const BACKEND = 'http://localhost:8080'
@@ -106,8 +114,9 @@ export default defineConfig(({ mode }) => {
 
     // En modo celular las peticiones van a la misma dirección de la
     // página (rutas relativas) y Vite las reenvía al backend.
-    define: celular
-      ? { 'import.meta.env.VITE_API_URL': JSON.stringify('') }
-      : {},
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion),
+      ...(celular ? { 'import.meta.env.VITE_API_URL': JSON.stringify('') } : {}),
+    },
   }
 })
