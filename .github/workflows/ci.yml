@@ -199,6 +199,11 @@ jobs:
     name: Kit de producción (Docker + HTTPS)
     runs-on: ubuntu-latest
     needs: [backend, frontend]
+    env:
+      # El kit guarda las fechas en hora de Colombia. El navegador de las
+      # pruebas debe usar la misma: en UTC, desde las 7 p. m. ya es "mañana"
+      # y "Vendido hoy" daba $0 (escenario 13).
+      TZ: America/Bogota
     steps:
       - uses: actions/checkout@v4
 
