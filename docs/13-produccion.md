@@ -79,7 +79,13 @@ Por eso una dirección como `http://192.168.1.10` o un certificado "casero" **no
    - Si el proveedor tiene su propio firewall en el panel, abre allí también **solo** 22, 80 y 443.
    - `unattended-upgrades` instala solas las actualizaciones de seguridad del sistema.
 
-4. **Traer el proyecto.** El repositorio es privado: crea una *deploy key* de solo lectura.
+4. **Traer el proyecto.** Si el repositorio es **público**, basta con:
+
+   ```bash
+   git clone https://github.com/marisabarriv/MantasGuajiras.git /opt/mantasguajiras
+   ```
+
+   Si es **privado**, crea antes una *deploy key* de solo lectura:
 
    ```bash
    ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519 && cat ~/.ssh/id_ed25519.pub

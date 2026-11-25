@@ -57,10 +57,22 @@ app:
 
   security:
     login:
-      # Protección contra adivinar contraseñas: tras este número de intentos
-      # fallidos seguidos, el usuario o teléfono queda bloqueado unos minutos.
+      # Protección contra adivinar contraseñas. Fallos permitidos en la
+      # ventana de lock-minutes antes de bloquear:
+      #   max-attempts              una cuenta desde una misma conexión
+      #   max-attempts-per-address  una conexión, con cualquier cuenta
+      #   max-attempts-per-account  una cuenta, desde muchas conexiones
       max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
+      max-attempts-per-address: ${LOGIN_MAX_ATTEMPTS_PER_ADDRESS:30}
+      max-attempts-per-account: ${LOGIN_MAX_ATTEMPTS_PER_ACCOUNT:50}
       lock-minutes: ${LOGIN_LOCK_MINUTES:15}
+
+    register:
+      # Registro público: cuentas nuevas por conexión y en total, en la
+      # ventana indicada. Un administrador puede crear usuarios sin límite.
+      max-per-address: ${REGISTER_MAX_PER_ADDRESS:10}
+      max-total: ${REGISTER_MAX_TOTAL:30}
+      window-minutes: ${REGISTER_WINDOW_MINUTES:60}
 
   monitoring:
     # Las consultas que tarden más que esto quedan en el log como "Lenta".

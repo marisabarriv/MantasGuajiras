@@ -48,7 +48,7 @@ Si un vendedor abre una sección de administrador, ve **"Sección restringida"**
 2. Pulsa **Iniciar sesión**. La sesión dura **12 horas**: toda la jornada.
 3. **¿Primera vez?** Pulsa *Crear cuenta*. La cuenta queda **esperando aprobación** hasta que un administrador la active.
 
-> Si escribes mal la contraseña **5 veces seguidas**, ese usuario queda bloqueado **15 minutos**. Así se frena a quien intente adivinarla.
+> Si escribes mal la contraseña **5 veces**, no podrás volver a intentarlo durante **15 minutos**. Así se frena a quien intente adivinarla. Si tienes prisa, pide a un administrador que te restablezca la contraseña: podrás entrar de inmediato.
 
 ### Instalar la app en el celular
 
@@ -267,7 +267,9 @@ Las compras no se editan ni se borran. Si hubo un error, se corrige con un ajust
 | *No hay suficiente inventario de … Disponible: N* | Alguien vendió o contó antes que tú | Corrige la cantidad del carrito. Si el inventario está mal, ajústalo con motivo |
 | *La base de datos no responde en este momento…* | Problema momentáneo del servidor | La venta queda guardada en el dispositivo y se envía sola; avisa al administrador si dura |
 | *Tu sesión expiró. Vuelve a iniciar sesión.* | Pasaron 12 horas | Vuelve a iniciar sesión. Las ventas pendientes se envían a tu nombre |
-| *Demasiados intentos fallidos. Espera…* | 5 contraseñas erradas seguidas | Espera 15 minutos o pide que te restablezcan la contraseña |
+| *Demasiados intentos fallidos. Espera…* | 5 contraseñas erradas | Espera 15 minutos o pide que te restablezcan la contraseña |
+| *Demasiados intentos fallidos desde esta conexión…* | Muchas contraseñas erradas, con varios usuarios, en el mismo Wi-Fi | Espera el tiempo que indica el mensaje |
+| *Se crearon demasiadas cuentas en poco tiempo…* | Muchos registros seguidos | Espera, o pide a un administrador que cree tu cuenta |
 | *Ya existe un producto llamado …* | Nombres repetidos no se permiten | Usa otro nombre, por ejemplo con el color o el tamaño |
 | *La cantidad contada es igual a la registrada* | El ajuste no cambia nada | No hace falta ajustar |
 | *Elige un periodo de máximo 93 días* | Consulta muy larga | Consulta por partes |

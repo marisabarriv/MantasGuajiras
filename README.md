@@ -149,7 +149,7 @@ MantasGuajiras/
 │   │   ├── sale/  purchase/  production/  order/
 │   │   └── user/
 │   ├── src/main/resources/
-│   │   ├── db/migration/            Migraciones Flyway (V1 … V21)
+│   │   ├── db/migration/            Migraciones Flyway (V1 … V22)
 │   │   ├── application.yml
 │   │   ├── application-dev.example.yml
 │   │   └── application-prod.yml
@@ -321,7 +321,7 @@ El backend es responsable de:
 
 | Prueba                     | Qué comprueba                                                                 |
 | -------------------------- | ----------------------------------------------------------------------------- |
-| `BackendApplicationTests`  | Las 21 migraciones se aplican desde cero y el esquema coincide con las entidades. |
+| `BackendApplicationTests`  | Las 22 migraciones se aplican desde cero y el esquema coincide con las entidades. |
 | `SalePricingTest`          | Precio especial ($80.000 → $70.000 = 12,5 %), varios productos, precio histórico, rechazos, producto desactivado, ventas inmodificables. |
 | `PurchaseFlowTest`         | Compras: entradas de inventario, total, productos no comprables o inactivos, sin cambios parciales, reintento sin duplicar. |
 | `ProductionFlowTest`       | Producción: consumo de tela y mantas generadas, tela insuficiente, validaciones, reintento sin duplicar. |
@@ -329,8 +329,8 @@ El backend es responsable de:
 | `MovementFilterTest`       | Ajuste 15 → 12 con motivo y usuario; filtros del historial por tipo, origen, usuario y fechas. |
 | `ProductNameTest`          | No se permiten nombres de producto repetidos (mayúsculas, espacios, productos desactivados). |
 | `SimultaneousRetryTest`    | La misma venta o compra enviada 4 veces a la vez se registra una sola vez. |
-| `AuthenticationSecurityTest` | Inicio de sesión real: contraseñas cifradas y nunca en respuestas, mensajes genéricos, token vencido o alterado, usuario desactivado, vendedor sin poder crear administradores, registro pendiente, bloqueo tras 5 intentos. |
-| `LoginAttemptServiceTest`  | El bloqueo dura lo configurado y se levanta solo. |
+| `AuthenticationSecurityTest` | Inicio de sesión real: contraseñas cifradas y nunca en respuestas, mensajes genéricos, token vencido o alterado, usuario desactivado, vendedor sin poder crear administradores, registro pendiente y limitado, bloqueo tras 5 intentos y desbloqueo al restablecer la contraseña. |
+| `LoginAttemptServiceTest`  | Límites de inicio de sesión y registro: duración, reinicio del backend, nadie bloquea a otra persona, ataques repartidos, fallos simultáneos. |
 | `BusinessFlowHttpTest`     | Recorrido completo por HTTP: datos maestros → compra → producción → venta → personalizada y pagos → inventario → historial → usuarios → perfil y foto. |
 | `UserManagementTest`       | Usuarios: duplicados, roles, no cambiarse el propio rol, contraseñas, foto de perfil (tipo real, 20 MB). |
 | `LastAdminRuleTest`        | Nunca se queda el sistema sin un administrador activo. |
@@ -345,7 +345,7 @@ El backend es responsable de:
 | `DateRangeTest`, `HistoryAndMonitoringHttpTest` | Historiales por periodo (30 días por defecto, máximo 93), estado del sistema (`/actuator/health`) sin detalles internos y registro de operaciones con usuario y motivo del rechazo, sin contraseñas. |
 | `MonitoringUnitTest` | Peticiones lentas registradas sin parámetros; alerta en el log si la base o el disco fallan y aviso al recuperarse. |
 
-**Cobertura (JaCoCo):** 92 % de líneas del backend (119 pruebas) (91 % en las reglas de negocio críticas). El build falla si baja del 85 % de líneas o del 65 % de ramas. Informe: `backend/target/site/jacoco/index.html` tras `./mvnw test`, y como artefacto `cobertura-backend` en cada ejecución de la CI. Las pruebas se ejecutan en orden aleatorio para detectar dependencias ocultas entre ellas.
+**Cobertura (JaCoCo):** 93 % de líneas del backend (135 pruebas). El build falla si baja del 85 % de líneas o del 65 % de ramas. Informe: `backend/target/site/jacoco/index.html` tras `./mvnw test`, y como artefacto `cobertura-backend` en cada ejecución de la CI. Las pruebas se ejecutan en orden aleatorio para detectar dependencias ocultas entre ellas.
 
 **Frontend:** `npm run lint` y `npm run build`.
 
@@ -355,7 +355,7 @@ El backend es responsable de:
 
 **Estado de certificación:** `docs/10-certificacion.md` lista cada criterio de calidad con su estado (verificado, pendiente o fallido) y la evidencia que lo respalda.
 
-**Integración continua:** `.github/workflows/ci.yml` ejecuta todo lo anterior en cada push y pull request (pestaña **Actions** de GitHub), además de un escaneo de vulnerabilidades conocidas en las dependencias del backend y del frontend (OSV-Scanner). Dependabot (`.github/dependabot.yml`) propone actualizaciones cada semana.
+**Integración continua:** `.github/workflows/ci.yml` ejecuta todo lo anterior en cada push y pull request (pestaña **Actions** de GitHub), además de un escaneo de vulnerabilidades conocidas en las dependencias del backend y del frontend (OSV-Scanner). Dependabot (`.github/dependabot.yml`) propone actualizaciones cada semana. CodeQL analiza el código. Para reportar un problema de seguridad: `SECURITY.md`.
 
 **Rendimiento:** prueba de carga con 3 años de datos y 40 usuarios simultáneos, sin errores de servidor y con p95 por debajo de 270 ms (`docs/12-rendimiento-y-monitoreo.md`; scripts en `scripts/perf/`).
 

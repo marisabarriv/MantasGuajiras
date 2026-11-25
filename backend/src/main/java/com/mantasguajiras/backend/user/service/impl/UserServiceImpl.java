@@ -16,6 +16,7 @@ import com.mantasguajiras.backend.common.exception.BusinessException;
 import com.mantasguajiras.backend.common.exception.DuplicateResourceException;
 import com.mantasguajiras.backend.common.exception.ResourceNotFoundException;
 import com.mantasguajiras.backend.security.dto.requests.RegisterRequest;
+import com.mantasguajiras.backend.security.service.LoginAttemptService;
 import com.mantasguajiras.backend.user.dto.requests.ChangePasswordRequest;
 import com.mantasguajiras.backend.user.dto.requests.ResetPasswordRequest;
 import com.mantasguajiras.backend.user.dto.requests.UpdateUserRequest;
@@ -46,6 +47,7 @@ public class UserServiceImpl implements UserService {
         private final UserProfileImageRepository profileImageRepository;
         private final UserMapper userMapper;
         private final PasswordEncoder passwordEncoder;
+        private final LoginAttemptService loginAttemptService;
 
         // =========================================================
         // REGISTRO PÚBLICO
@@ -169,6 +171,9 @@ public class UserServiceImpl implements UserService {
                 user.setPassword(passwordEncoder.encode(request.getNewPassword()));
 
                 userRepository.save(user);
+
+                // Si estaba bloqueada por intentos fallidos, puede entrar ya.
+                loginAttemptService.unlock(user.getUsername(), user.getPhone());
         }
 
         /**

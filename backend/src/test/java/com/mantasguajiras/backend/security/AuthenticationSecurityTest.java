@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,12 +14,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -45,11 +48,18 @@ class AuthenticationSecurityTest {
     @Autowired private MockMvc mvc;
     @Autowired private UserRepository userRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private JdbcTemplate jdbc;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
 
     // ---------------------------------------------------------------
+
+    /** Todas las pruebas comparten dirección: que los fallos de una no bloqueen a otra. */
+    @BeforeEach
+    void forgetAttempts() {
+        jdbc.update("DELETE FROM access_attempt");
+    }
 
     private User newUser(Role role, boolean active) {
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
@@ -63,7 +73,15 @@ class AuthenticationSecurityTest {
     }
 
     private ResultActions login(String identifier, String password) throws Exception {
+        return loginFrom("127.0.0.1", identifier, password);
+    }
+
+    private ResultActions loginFrom(String address, String identifier, String password) throws Exception {
         return mvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .with(request -> {
+                    request.setRemoteAddr(address);
+                    return request;
+                })
                 .content("{\"identifier\":\"" + identifier + "\",\"password\":\"" + password + "\"}"));
     }
 
@@ -225,11 +243,68 @@ class AuthenticationSecurityTest {
         }
         login(victim.getUsername(), "Mala5")
                 .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"))
                 .andExpect(jsonPath("$.message", containsString("Demasiados intentos")));
 
         login(victim.getUsername(), PASSWORD).andExpect(status().isTooManyRequests());
         login(victim.getUsername().toUpperCase(), PASSWORD).andExpect(status().isTooManyRequests());
         login(other.getUsername(), PASSWORD).andExpect(status().isOk());
+
+        loginFrom("190.1.1.1", victim.getUsername(), PASSWORD).andExpect(status().isOk());
+    }
+
+    @Test
+    void restablecerLaContrasenaQuitaElBloqueo() throws Exception {
+        User seller = newUser(Role.SELLER, true);
+        String admin = tokenOf(newUser(Role.ADMIN, true));
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            login(seller.getUsername(), "Mala" + attempt);
+            login(seller.getPhone(), "Mala" + attempt);
+        }
+        login(seller.getUsername(), PASSWORD).andExpect(status().isTooManyRequests());
+
+        mvc.perform(patch("/users/" + seller.getId() + "/reset-password").header("Authorization", bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"newPassword\":\"Nueva456\"}"))
+                .andExpect(status().is2xxSuccessful());
+
+        login(seller.getUsername(), "Nueva456").andExpect(status().isOk());
+        login(seller.getPhone(), "Nueva456").andExpect(status().isOk());
+    }
+
+    @Test
+    void laCabeceraXForwardedForNoEvitaElBloqueo() throws Exception {
+        User seller = newUser(Role.SELLER, true);
+        for (int attempt = 1; attempt <= 6; attempt++) {
+            mvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON)
+                    .header("X-Forwarded-For", "198.51.100." + attempt)
+                    .content("{\"identifier\":\"" + seller.getUsername() + "\",\"password\":\"Mala1\"}"));
+        }
+        login(seller.getUsername(), PASSWORD).andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void elRegistroPublicoSeLimitaPeroElAdministradorSiguePudiendoCrear() throws Exception {
+        String admin = tokenOf(newUser(Role.ADMIN, true));
+        for (int i = 0; i < 10; i++) {
+            register().andExpect(status().isCreated());
+        }
+        register().andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"))
+                .andExpect(jsonPath("$.message", containsString("demasiadas cuentas")));
+
+        mvc.perform(post("/users").header("Authorization", bearer(admin)).contentType(MediaType.APPLICATION_JSON)
+                        .content(newAccountJson(",\"role\":\"SELLER\",\"active\":true")))
+                .andExpect(status().is2xxSuccessful());
+    }
+
+    private ResultActions register() throws Exception {
+        return mvc.perform(post("/auth/register").contentType(MediaType.APPLICATION_JSON)
+                .content(newAccountJson("")));
+    }
+
+    private static String newAccountJson(String extra) {
+        return "{\"username\":\"r" + UUID.randomUUID().toString().substring(0, 8) + "\",\"phone\":\"33"
+                + randomDigits(8) + "\",\"password\":\"Clave123\"" + extra + "}";
     }
 
     @Test

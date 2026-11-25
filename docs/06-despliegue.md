@@ -360,8 +360,14 @@ Si tu usuario o contraseña de PostgreSQL no son `postgres`/`postgres`, usa las 
 | `INITIAL_ADMIN_USERNAME`  | todos     | Administrador que se crea si no existe ninguno.                     |
 | `INITIAL_ADMIN_PHONE`     | todos     | Teléfono de ese administrador.                                      |
 | `INITIAL_ADMIN_PASSWORD`  | todos     | Contraseña inicial (4 a 12 caracteres). Cambiarla al primer ingreso. |
-| `LOGIN_MAX_ATTEMPTS`      | todos     | Intentos fallidos seguidos antes del bloqueo temporal (por defecto 5). |
-| `LOGIN_LOCK_MINUTES`      | todos     | Minutos de bloqueo tras alcanzar el límite (por defecto 15). |
+| `LOGIN_MAX_ATTEMPTS`      | todos     | Fallos de una cuenta desde una misma conexión antes del bloqueo temporal (por defecto 5). |
+| `LOGIN_MAX_ATTEMPTS_PER_ADDRESS` | todos | Fallos de una conexión con cualquier cuenta (por defecto 30). |
+| `LOGIN_MAX_ATTEMPTS_PER_ACCOUNT` | todos | Fallos de una cuenta desde muchas conexiones (por defecto 50). |
+| `LOGIN_LOCK_MINUTES`      | todos     | Ventana en la que se cuentan los fallos y duración del bloqueo, en minutos (por defecto 15). |
+| `REGISTER_MAX_PER_ADDRESS` | todos    | Cuentas nuevas por conexión en la ventana (por defecto 10). |
+| `REGISTER_MAX_TOTAL`      | todos     | Cuentas nuevas en total en la ventana (por defecto 30). |
+| `REGISTER_WINDOW_MINUTES` | todos     | Ventana del límite de registro, en minutos (por defecto 60). |
+| `SERVER_FORWARD_HEADERS_STRATEGY` | prod | `native` **solo** si el backend está detrás de un servidor web y nadie más llega a él (el kit ya lo pone). Sin esto, todas las personas parecerían venir de la misma conexión; puesto sin servidor web delante, la dirección se podría falsificar. |
 | `DB_URL`                  | prod      | `jdbc:postgresql://servidor:5432/mantas_guajiras_db`                |
 | `DB_USERNAME`             | prod      | Usuario de la aplicación en PostgreSQL (no `postgres`).             |
 | `DB_PASSWORD`             | prod      | Contraseña de ese usuario.                                          |
@@ -438,8 +444,9 @@ El navegador guarda en `localStorage` la sesión (token), el catálogo para vend
 | Riesgo                                     | Medida                                                                                     |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------ |
 | Código malicioso inyectado en la página (XSS) | React escapa todo el texto; no hay HTML insertado sin escapar. La versión compilada incluye una **política de seguridad de contenido (CSP)**: solo ejecuta scripts del propio sitio y solo envía datos al propio sitio y al backend. |
-| Adivinar contraseñas (fuerza bruta)        | Tras 5 intentos fallidos seguidos con el mismo usuario o teléfono, ese acceso queda bloqueado 15 minutos, incluso con la contraseña correcta (`LOGIN_MAX_ATTEMPTS`, `LOGIN_LOCK_MINUTES`). El bloqueo queda en el log. Si un empleado queda bloqueado por error, basta esperar o que el administrador le restablezca la contraseña. |
-| Dependencias con vulnerabilidades conocidas | La CI revisa backend y frontend con OSV-Scanner en cada push; Dependabot propone actualizaciones cada semana. |
+| Adivinar contraseñas (fuerza bruta)        | Tras 5 fallos con el mismo usuario o teléfono **desde una misma conexión**, ese acceso queda bloqueado 15 minutos, incluso con la contraseña correcta. Quien falla a propósito solo se bloquea a sí mismo. También se bloquea una conexión con 30 fallos en cuentas distintas, y una cuenta con 50 fallos repartidos (salvo en las conexiones desde las que esa persona ya entró en los últimos 30 días). Los bloqueos se guardan en la base (sobreviven a un reinicio, sin usuarios ni direcciones en claro) y quedan en el log. Si un empleado queda bloqueado por error, basta esperar o que el administrador le restablezca la contraseña: el bloqueo se quita al momento. |
+| Cuentas falsas en masa                     | El registro público admite 10 cuentas por conexión y 30 en total por hora; las cuentas quedan inactivas hasta que un administrador las aprueba. El administrador puede crear usuarios sin límite. |
+| Dependencias con vulnerabilidades conocidas | La CI revisa backend y frontend con OSV-Scanner en cada push; Dependabot propone actualizaciones cada semana; CodeQL analiza el código. |
 | Token robado o dispositivo perdido         | El token vence (`JWT_EXPIRATION`). **Desactivar al usuario en Administrar usuarios corta su acceso de inmediato**, aunque su token no haya vencido (el backend revisa en cada petición que la cuenta siga activa). |
 | Ventas pendientes al cerrar sesión         | Se avisa antes de cerrar sesión; las ventas quedan a nombre de quien las hizo y solo se envían cuando esa persona vuelve a entrar. Otro usuario del mismo dispositivo no las envía. |
 | Datos visibles en el dispositivo           | El catálogo contiene productos, precios y existencias (información que el vendedor ya ve). Las ventas con montos del historial no se guardan en el dispositivo. |
@@ -532,8 +539,21 @@ Para que nada llegue a `main` sin pasar la CI y sin revisión:
 2. Rama: `main`.
 3. Activar:
    * **Require a pull request before merging** (los cambios entran por pull request).
-   * **Require status checks to pass** y marcar: `Backend (pruebas)`, `Frontend (lint y build)`, `Dependencias (vulnerabilidades conocidas)` y `Punta a punta (ventas sin conexión)`.
+   * **Require status checks to pass**, con **Require branches to be up to date before merging**, y marcar: `Backend (pruebas)`, `Frontend (lint y build)`, `Dependencias (vulnerabilidades conocidas)`, `Punta a punta (ventas sin conexión)` y `Kit de producción (Docker + HTTPS)`.
    * **Block force pushes**.
 4. Guardar.
 
 Con una sola persona en el proyecto no hace falta exigir aprobaciones de otros revisores; basta con que la CI esté en verde.
+
+**Activa desde el 24/11/2026** (regla "Proteger main"); desde el 25/11 con las 5 comprobaciones y la rama actualizada.
+
+## 14.7. Seguridad del repositorio en GitHub
+
+En *Settings → Advanced Security* (gratis en repositorios públicos), encendidos el 25/11/2026:
+
+* **Dependabot alerts** y **Dependabot security updates**.
+* **CodeQL** (configuración predeterminada: Actions, Java, JavaScript y Python).
+* **Secret Protection** y **Push protection**.
+* **Private vulnerability reporting** (`SECURITY.md`).
+
+En *Settings → Actions → General*, el permiso por defecto es de solo lectura. Si el repositorio pasa a privado y vuelve a público, revisar esta lista: GitHub apaga varias opciones.

@@ -144,7 +144,7 @@ WARN  Rechazada POST /auth/login 401 120 ms usuario=-: Usuario o contraseña inc
 WARN  Lenta GET /api/sales 1234 ms usuario=admin
 ERROR Error interno [a1b2c3d4] en POST /api/purchases   (con el detalle técnico)
 ERROR Estado del sistema: DOWN (db: DOWN, diskSpace: UP)
-WARN  Inicio de sesión bloqueado 15 min para 'vend1' tras 5 intentos fallidos
+WARN  Inicio de sesión bloqueado 15 min para 've***' desde una conexión tras 5 intentos fallidos
 ```
 
 - `[sin conexión]`: la venta llegó desde la cola de ventas hechas sin internet (OBS-04). Así los rechazos al sincronizar también quedan en el servidor, no solo en el dispositivo.
@@ -211,6 +211,6 @@ Primero: abrir `http://localhost:8080/actuator/health` y el log `backend/logs/ma
 | Un usuario ve "Error interno… Código de referencia: a1b2c3d4" | Buscar `a1b2c3d4` en el log | La línea tiene el detalle técnico. Si se repite, reportarlo con esa línea. |
 | Un vendedor dice que una venta sin conexión "no pasó" | Buscar `[sin conexión]` y su usuario en el log | `Rechazada … : motivo` dice por qué (normalmente falta de inventario). Ajustar el inventario y pulsar **Reintentar** en el dispositivo. |
 | Todo va lento | Buscar `Lenta` en el log | Ver qué pantalla es. Si es un historial, consultar un periodo más corto. |
-| Alguien no puede entrar | Buscar `Inicio de sesión bloqueado` | Espera 15 min, o un administrador le restablece la contraseña. |
+| Alguien no puede entrar | Buscar `Inicio de sesión bloqueado` | Espera 15 min, o un administrador le restablece la contraseña (entra de inmediato). |
 | El backend se cerró solo | Buscar `OutOfMemoryError` en la consola o en el log | Volverá a arrancar si está como servicio (§4). Si se repite, avisar a desarrollo. |
 | Se perdió o dañó información | — | `docs/09-copias-de-seguridad.md` §4 (restaurar la última copia). |

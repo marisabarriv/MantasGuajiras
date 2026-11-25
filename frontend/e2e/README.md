@@ -64,5 +64,6 @@ Variables opcionales: `E2E_APP` (por defecto `http://localhost:4173`), `E2E_API`
 Contra el kit de producción (`deploy/`, ver `docs/13-produccion.md`) con certificado local:
 
 ```bash
-E2E_APP=https://localhost E2E_API=https://localhost E2E_INSECURE_TLS=1 node e2e/offline-sync.e2e.cjs
+(cd ../deploy && docker compose cp web:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt)
+NODE_EXTRA_CA_CERTS=../deploy/caddy-root.crt E2E_APP=https://localhost E2E_API=https://localhost E2E_INSECURE_TLS=1 node e2e/offline-sync.e2e.cjs
 ```

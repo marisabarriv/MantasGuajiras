@@ -40,7 +40,7 @@ Guía completa: `docs/09-copias-de-seguridad.md`.
 
 ## D. GitHub
 
-- [x] **13. Proteger `main`** (`docs/06-despliegue.md` §14.6): exigir pull request y que la CI esté en verde.
+- [x] **13. Proteger `main`** (`docs/06-despliegue.md` §14.6): exigir pull request, rama actualizada y las 5 comprobaciones de la CI en verde.
 - [x] **14. Activar Dependabot:** *Settings → Code security → Dependabot alerts* y *Dependabot security updates*.
 
 ## E. Aceptación del negocio (al final)
@@ -56,7 +56,7 @@ El kit de instalación ya está listo y probado. Guía paso a paso: **`docs/13-p
 
 - [ ] **17. Decidir dónde se instalará.** Recomendado: un **servidor en la nube (VPS)** con Ubuntu 24.04 y al menos **2 GB de RAM** (`docs/13` §2). Un computador en la tienda también sirve, pero es más complicado y depende de la luz y el internet del local.
 - [ ] **18. Dominio:** elegir el nombre (por ejemplo `ventas.tudominio.com`) y crear el registro **A** apuntando a la IP del servidor. **Es obligatorio:** sin un dominio con HTTPS real, los celulares no pueden vender sin conexión, instalar la app ni usar la cámara.
-- [ ] **19. Instalar** siguiendo `docs/13` §3, pasos 2 a 7 (o pedírselo a quien te ayude con el servidor): firewall, Docker, *deploy key* de GitHub, `deploy/.env` con claves nuevas y `./deploy.sh`. Debe terminar en *"instalada y verificada"*.
+- [ ] **19. Instalar** siguiendo `docs/13` §3, pasos 2 a 7 (o pedírselo a quien te ayude con el servidor): firewall, Docker, traer el proyecto, `deploy/.env` con claves **nuevas** y `./deploy.sh`. Debe terminar en *"instalada y verificada"*.
 - [ ] **20. Cambiar a producción:**
   - [ ] Primero, **en cada dispositivo, que no queden ventas pendientes sin conexión**.
   - [ ] Después, copia en tu PC e importarla en el servidor con `import-data.sh` (`docs/13` §3, paso 8).
@@ -76,3 +76,5 @@ El kit de instalación ya está listo y probado. Guía paso a paso: **`docs/13-p
 | 24/11/2026 | 6 | `backup.config.ps1` creado. **Falta `CopyTo`** (OneDrive o Google Drive). |
 | 24/11/2026 | 9 | Simulacro superado; ver `docs/09` §7. |
 | 24/11/2026 | 13, 14 | Regla "Proteger main" activa (pull request, 4 comprobaciones de la CI, sin push forzado ni borrado; sin excepciones). Alertas y actualizaciones de seguridad de Dependabot activas. |
+| 25/11/2026 | 13, 14 | Auditoría externa: ahora son 5 comprobaciones obligatorias y la rama debe estar actualizada. Encendidos CodeQL, secret scanning, push protection y reporte privado de vulnerabilidades. 0 alertas de Dependabot. |
+| 25/11/2026 | 6, 17–23 | Copia externa y despliegue: aplazados por decisión de la responsable. |

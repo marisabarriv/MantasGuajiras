@@ -10,6 +10,15 @@ Se publicará cuando la responsable del negocio firme el acta de aceptación (`d
 
 Versión candidata. Se llevó por las 8 fases de la certificación (`docs/10-certificacion.md`).
 
+### Auditoría externa (25/11/2026)
+
+- **Inicio de sesión:** los bloqueos se guardan en la base (V22) y sobreviven a un reinicio. Límites por cuenta y conexión, por conexión y por cuenta: nadie puede bloquear a otra persona a propósito.
+- **Registro público:** límite de cuentas nuevas por conexión y en total.
+- **Corregido:** restablecer la contraseña no quitaba el bloqueo, aunque el aviso lo prometía. Ahora la persona entra de inmediato.
+- `main` exige las 5 comprobaciones de la CI y la rama actualizada. CI con permisos mínimos y acciones fijadas a un commit.
+- CodeQL, secret scanning, push protection y reporte privado de vulnerabilidades (`SECURITY.md`).
+- Spring Boot 4.2.0, React 19.3.1 y las demás actualizaciones de Dependabot.
+
 ### Fase 8 — Aceptación
 
 - Ensayo automático de los 24 escenarios de aceptación por la interfaz, como vendedor en celular y como administrador (`frontend/e2e/acceptance.e2e.cjs`). Corre en cada cambio.

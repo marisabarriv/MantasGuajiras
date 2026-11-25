@@ -25,6 +25,13 @@ El ensayo **no reemplaza** esta aceptación. Un programa puede comprobar que el 
 ## 2. Antes de empezar
 
 - **Dónde:** idealmente en la instalación definitiva (`docs/13`), **antes** de cargar los datos reales. También sirve una copia de tus datos en una base de prueba. Nunca hagas pruebas que cambien inventario en la base con la que vendes.
+- **En tu PC, sin tocar la base real:** detén el backend y, desde la carpeta del proyecto, abre PowerShell y arráncalo sobre la copia de aceptación:
+
+  ```powershell
+  cd backend; $env:SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5432/mantas_guajiras_aceptacion"; .\mvnw.cmd spring-boot:run
+  ```
+
+  Todo lo que hagas queda en la copia. Al terminar, cierra esa ventana y arranca el backend como siempre. Para crear la copia de nuevo: `restore-db.ps1` con la última copia y `-TargetDatabase mantas_guajiras_aceptacion` (`docs/09` §4). Los escenarios 22 a 24 en el **celular** necesitan la instalación con HTTPS; en el PC se prueban desconectando la red desde el navegador.
 - **Quién:** tú como administradora y, si puedes, una vendedora real con su celular.
 - **Con qué:** tus productos y precios reales (al menos una manta, una tela y una manta de pocas unidades), una factura de compra real y una producción típica.
 - **Guía:** el manual (`docs/14-manual-de-usuario.md`) explica cada paso con imágenes.
@@ -32,7 +39,7 @@ El ensayo **no reemplaza** esta aceptación. Un programa puede comprobar que el 
 
 ## 3. Los 24 escenarios
 
-Marca **Resultado**: ✔ si se comporta como esperas, ✘ si no (y anota qué pasó en *Observaciones*). La columna *Ensayo* indica que la prueba automática ya lo comprobó el 24/11/2026.
+Marca **Resultado**: ✔ si se comporta como esperas, ✘ si no (y anota qué pasó en *Observaciones*). La columna *Ensayo* indica que la prueba automática ya lo comprobó el 24/11/2026 (y se repite en cada cambio).
 
 ### Productos
 
