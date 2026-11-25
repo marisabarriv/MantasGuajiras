@@ -465,4 +465,4 @@ La tecnología se adapta al negocio, no el negocio a la tecnología.
 
 ## 📜 Licencia
 
-Este proyecto es de uso privado.
+Este proyecto es de uso privado: **todos los derechos reservados**. El código se puede ver, pero no copiar, modificar, distribuir ni usar sin permiso por escrito. Ver [`LICENSE`](LICENSE).
