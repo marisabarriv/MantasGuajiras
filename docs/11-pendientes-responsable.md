@@ -8,8 +8,8 @@ Marca cada casilla cuando la completes y anota la fecha.
 
 ## A. Antes de traer la versión nueva a tu PC
 
-- [ ] **1. Copia de seguridad de tu base actual** (pgAdmin → clic derecho en la base → *Backup*, o `backup-db.ps1` si ya lo configuraste). Al arrancar, el backend aplicará las migraciones V20 y V21.
-- [ ] **2. Traer los cambios:** en VS Code, en la rama del proyecto, `git pull`.
+- [x] **1. Copia de seguridad de tu base actual** (pgAdmin → clic derecho en la base → *Backup*, o `backup-db.ps1` si ya lo configuraste). Al arrancar, el backend aplicará las migraciones V20 y V21.
+- [x] **2. Traer los cambios:** en VS Code, en la rama del proyecto, `git pull`.
 - [ ] **3. Revisar si tienes productos con el mismo nombre** (antes se permitía; ahora no). En pgAdmin → *Query Tool*:
 
   ```sql
@@ -18,19 +18,19 @@ Marca cada casilla cuando la completes y anota la fecha.
   ```
 
   Si aparece alguno, cámbiale el nombre a uno de ellos desde **Productos → Editar**.
-- [ ] **4. Actualizar `backend/.env`:** `JWT_EXPIRATION=43200000` (sesión de 12 horas, para que dure la jornada y sirva para vender sin conexión).
-- [ ] **4A. Después del `git pull`, actualizar dependencias:** en VS Code, terminal en `backend`, ejecutar `./mvnw.cmd -DskipTests package` (descarga la librería nueva del estado del sistema). Al arrancar, comprobar en el navegador que `http://localhost:8080/actuator/health` dice `"status":"UP"`. El log queda en `backend\logs\mantasguajiras.log`.
+- [x] **4. Actualizar `backend/.env`:** `JWT_EXPIRATION=43200000` (sesión de 12 horas, para que dure la jornada y sirva para vender sin conexión).
+- [x] **4A. Después del `git pull`, actualizar dependencias:** en VS Code, terminal en `backend`, ejecutar `./mvnw.cmd -DskipTests package` (descarga la librería nueva del estado del sistema). Al arrancar, comprobar en el navegador que `http://localhost:8080/actuator/health` dice `"status":"UP"`. El log queda en `backend\logs\mantasguajiras.log`.
 
 ## B. Copias de seguridad en Windows (último bloqueador de la certificación)
 
 Guía completa: `docs/09-copias-de-seguridad.md`.
 
-- [ ] **5. Contraseña de PostgreSQL en `%APPDATA%\postgresql\pgpass.conf`** (§1.1).
+- [x] **5. Contraseña de PostgreSQL en `%APPDATA%\postgresql\pgpass.conf`** (§1.1).
 - [ ] **6. Crear `scripts\backup\backup.config.ps1`** a partir de `backup.config.example.ps1` (§1.2). Configurar `CopyTo` con una carpeta de **OneDrive o Google Drive**.
-- [ ] **7. Primera copia y primera prueba a mano** (§1.3): `backup-db.ps1` y `restore-test.ps1` deben terminar en *"pasó todas las verificaciones"*.
-- [ ] **8. Programar las copias automáticas** (§1.4): `register-scheduled-tasks.ps1`. Comprobar en el *Programador de tareas* que aparecen **"MantasGuajiras - Copias del día"** y **"MantasGuajiras - Prueba semanal"**.
-- [ ] **9. Simulacro en tu PC:** restaurar una copia en una base nueva con `restore-db.ps1`, cronometrar y anotar el resultado en `docs/09` §7.
-- [ ] **10. Revisar que PostgreSQL protege contra cortes de luz** (§1.5): `SHOW fsync;`, `SHOW synchronous_commit;` y `SHOW full_page_writes;` deben decir `on`.
+- [x] **7. Primera copia y primera prueba a mano** (§1.3): `backup-db.ps1` y `restore-test.ps1` deben terminar en *"pasó todas las verificaciones"*.
+- [x] **8. Programar las copias automáticas** (§1.4): `register-scheduled-tasks.ps1`. Comprobar en el *Programador de tareas* que aparecen **"MantasGuajiras - Copias del día"** y **"MantasGuajiras - Prueba semanal"**.
+- [x] **9. Simulacro en tu PC:** restaurar una copia en una base nueva con `restore-db.ps1`, cronometrar y anotar el resultado en `docs/09` §7.
+- [x] **10. Revisar que PostgreSQL protege contra cortes de luz** (§1.5): `SHOW fsync;`, `SHOW synchronous_commit;` y `SHOW full_page_writes;` deben decir `on`.
 
 ## C. Decisiones de negocio
 
@@ -40,8 +40,8 @@ Guía completa: `docs/09-copias-de-seguridad.md`.
 
 ## D. GitHub
 
-- [ ] **13. Proteger `main`** (`docs/06-despliegue.md` §14.6): exigir pull request y que la CI esté en verde.
-- [ ] **14. Activar Dependabot:** *Settings → Code security → Dependabot alerts* y *Dependabot security updates*.
+- [x] **13. Proteger `main`** (`docs/06-despliegue.md` §14.6): exigir pull request y que la CI esté en verde.
+- [x] **14. Activar Dependabot:** *Settings → Code security → Dependabot alerts* y *Dependabot security updates*.
 
 ## E. Aceptación del negocio (al final)
 
@@ -69,4 +69,10 @@ El kit de instalación ya está listo y probado. Guía paso a paso: **`docs/13-p
 
 | Fecha | Tarea | Nota |
 | ----- | ----- | ---- |
-|       |       |      |
+| 24/11/2026 | 1, 2 | Copia manual con huella SHA-256 correcta y `git pull` hechos por la responsable. |
+| 24/11/2026 | 3 | Hay un nombre repetido: "manta 1" (PROD-00001 inactivo y PROD-00002 activo). **Falta cambiarle el nombre a uno.** |
+| 24/11/2026 | 4, 4A | `JWT_EXPIRATION=43200000`; compila; base en V21; `/actuator/health` en `UP`. |
+| 24/11/2026 | 5, 7, 8, 10 | Copia y prueba superadas; las dos tareas se ejecutaron desde el Programador con resultado 0; `fsync`, `synchronous_commit` y `full_page_writes` en `on`. |
+| 24/11/2026 | 6 | `backup.config.ps1` creado. **Falta `CopyTo`** (OneDrive o Google Drive). |
+| 24/11/2026 | 9 | Simulacro superado; ver `docs/09` §7. |
+| 24/11/2026 | 13, 14 | Regla "Proteger main" activa (pull request, 4 comprobaciones de la CI, sin push forzado ni borrado; sin excepciones). Alertas y actualizaciones de seguridad de Dependabot activas. |
