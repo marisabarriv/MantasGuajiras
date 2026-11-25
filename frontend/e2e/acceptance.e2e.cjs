@@ -440,7 +440,13 @@ async function finishSale(page) {
         };
         await seller.locator('input[type=file]').setInputFiles(png('a'));
         check(await visible(seller.getByRole('button', { name: 'Cambiar foto' }), 10000), 'foto subida: aparece "Cambiar foto"');
-        await seller.locator('input[type=file]').setInputFiles(png('b'));
+        // Esperar la respuesta: si el archivo inválido se envía antes, el
+        // "Foto actualizada" de esta subida puede llegar después y tapar el error.
+        await Promise.all([
+            seller.waitForResponse((r) => r.url().endsWith('/api/me/photo') && ['POST', 'PUT'].includes(r.request().method())),
+            seller.locator('input[type=file]').setInputFiles(png('b')),
+        ]);
+        await seller.getByText('Foto actualizada.').waitFor();
         check(await visible(seller.getByRole('button', { name: 'Quitar foto' })), 'se puede actualizar y quitar');
         await seller.locator('input[type=file]').setInputFiles({ name: 'no-es-foto.png', mimeType: 'image/png', buffer: Buffer.from('esto no es una imagen') });
         check(await visible(seller.locator('[role=alert], .result.error')), 'un archivo que no es imagen se rechaza aunque diga .png');
