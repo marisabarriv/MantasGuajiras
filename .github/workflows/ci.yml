@@ -94,11 +94,21 @@ jobs:
       # Revisa backend (pom.xml, incluidas las dependencias indirectas) y
       # frontend (package-lock.json) contra la base pública OSV. Si hay una
       # vulnerabilidad conocida, este paso falla y la lista aparece en el log.
+      # Código 127: el escáner no pudo terminar (casi siempre, la red al
+      # descargar de Maven); se reintenta. Una vulnerabilidad (código 1) o
+      # cualquier otro error falla de inmediato.
       - name: Escanear backend y frontend
         run: |
-          "$(go env GOPATH)/bin/osv-scanner" scan source \
-            --lockfile backend/pom.xml \
-            --lockfile frontend/package-lock.json
+          for intento in 1 2 3; do
+            codigo=0
+            "$(go env GOPATH)/bin/osv-scanner" scan source \
+              --lockfile backend/pom.xml \
+              --lockfile frontend/package-lock.json || codigo=$?
+            if [ "$codigo" -ne 127 ]; then exit "$codigo"; fi
+            echo "::warning::El escáner no pudo terminar (intento $intento de 3)."
+            if [ "$intento" -lt 3 ]; then sleep 30; fi
+          done
+          exit 127
 
   e2e:
     name: Punta a punta (ventas sin conexión)
