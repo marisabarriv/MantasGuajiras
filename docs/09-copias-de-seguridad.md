@@ -243,4 +243,19 @@ Estos valores deben aprobarse por la responsable del negocio y repetirse en el e
 
 * **Verificación:** conteos, totales e inventario por producto **idénticos** a los de antes del desastre; `integrity-check.sql` sin problemas; el vendedor inicia sesión y registra una venta nueva.
 * **Resultado:** ✅ superado.
-* **Pendiente:** repetir el simulacro en Windows con los scripts `.ps1` en el PC del negocio y anotar aquí fecha, tiempos y resultado.
+* **Pendiente:** repetir el simulacro en Windows con los scripts `.ps1` en el PC del negocio (hecho; ver abajo).
+
+### 24/11/2026 — Restauración en el PC del negocio (Windows 11, PostgreSQL 18.4)
+
+* **Datos:** copia de la base de trabajo en V20 (5 productos, 2 ventas, 18 movimientos, 3 personalizadas).
+* **Procedimiento:** copia con `backup-db.ps1` → `restore-db.ps1` en una base nueva (`mantas_guajiras_simulacro`) → versión 1.0.0-rc.1 arrancada sobre ella en otro puerto, con `SPRING_DATASOURCE_URL`. La base de trabajo no se borró ni se modificó.
+
+| Paso | Tiempo |
+| ---- | ------ |
+| Restaurar la base completa (incluye verificar la huella) | 1,5 s |
+| Arrancar el sistema sobre la base restaurada | 10,0 s |
+| **Recuperación técnica total** | **11,5 s** |
+
+* **Verificación:** V21 se aplicó sin errores; `/actuator/health` en `UP`; conteos, total de ventas e inventario idénticos a los de la base de trabajo; `integrity-check.sql` sin problemas.
+* **No se comprobó:** iniciar sesión y registrar una venta sobre la base restaurada. El primer arranque falló porque el puerto 8090 estaba ocupado por otro programa; se repitió en otro puerto.
+* **Resultado:** ✅ superado.
