@@ -52,7 +52,7 @@ jobs:
       # Informe de cobertura (abrir index.html del artefacto descargado).
       - name: Guardar informe de cobertura
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cobertura-backend
           path: backend/target/site/jacoco/
@@ -178,14 +178,14 @@ jobs:
 
       - name: Guardar capturas del ensayo
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ensayo-aceptacion
           path: ${{ runner.temp }}/aceptacion
 
       - name: Guardar registros y capturas si falla
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-registros
           path: |
@@ -279,7 +279,7 @@ jobs:
 
       - name: Subir registros si falla
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: kit-registros
           path: |
