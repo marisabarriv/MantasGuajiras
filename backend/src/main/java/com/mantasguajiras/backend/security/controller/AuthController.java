@@ -1,7 +1,8 @@
 package com.mantasguajiras.backend.security.controller;
 
-import com.mantasguajiras.backend.common.exception.TooManyLoginAttemptsException;
+import com.mantasguajiras.backend.security.service.ClientAddress;
 import com.mantasguajiras.backend.security.service.LoginAttemptService;
+import com.mantasguajiras.backend.security.service.RegistrationLimitService;
 import org.springframework.security.authentication.BadCredentialsException;
 
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import com.mantasguajiras.backend.user.dto.response.UserResponse;
 import com.mantasguajiras.backend.user.entity.User;
 import com.mantasguajiras.backend.user.repository.UserRepository;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
@@ -33,17 +35,19 @@ public class AuthController {
         private final UserRepository userRepository;
         private final UserService userService;
         private final LoginAttemptService loginAttemptService;
+        private final RegistrationLimitService registrationLimitService;
 
         @PostMapping("/login")
         public ResponseEntity<LoginResponse> login(
-                        @Valid @RequestBody LoginRequest request) {
+                        @Valid @RequestBody LoginRequest request,
+                        HttpServletRequest http) {
 
                 String identifier = request.getIdentifier();
 
+                String address = ClientAddress.of(http);
+
                 // Bloqueo temporal tras varios intentos fallidos (fuerza bruta).
-                loginAttemptService.remainingLock(identifier).ifPresent(remaining -> {
-                        throw new TooManyLoginAttemptsException(remaining);
-                });
+                loginAttemptService.checkAllowed(identifier, address);
 
                 Authentication authentication;
 
@@ -53,14 +57,11 @@ public class AuthController {
                                                         identifier,
                                                         request.getPassword()));
                 } catch (BadCredentialsException wrongPassword) {
-                        var lock = loginAttemptService.recordFailure(identifier);
-                        if (lock.isPresent()) {
-                                throw new TooManyLoginAttemptsException(lock.get());
-                        }
+                        loginAttemptService.recordFailure(identifier, address);
                         throw wrongPassword;
                 }
 
-                loginAttemptService.recordSuccess(identifier);
+                loginAttemptService.recordSuccess(identifier, address);
 
                 String username = authentication.getName();
 
@@ -82,7 +83,11 @@ public class AuthController {
 
         @PostMapping("/register")
         public ResponseEntity<LoginResponse> register(
-                        @Valid @RequestBody RegisterRequest request) {
+                        @Valid @RequestBody RegisterRequest request,
+                        HttpServletRequest http) {
+
+                // Límite de cuentas nuevas (registros automáticos).
+                registrationLimitService.checkAndRecord(ClientAddress.of(http));
 
                 UserResponse user = userService.register(request);
 

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.mantasguajiras.backend.common.exception.BusinessException;
+import com.mantasguajiras.backend.security.service.LoginAttemptService;
 import com.mantasguajiras.backend.user.dto.requests.UpdateUserRequest;
 import com.mantasguajiras.backend.user.entity.Role;
 import com.mantasguajiras.backend.user.entity.User;
@@ -41,7 +42,7 @@ class LastAdminRuleTest {
         when(repository.findAll()).thenReturn(List.of(onlyAdmin));
 
         UserServiceImpl service = new UserServiceImpl(repository, mock(UserProfileImageRepository.class),
-                mock(UserMapper.class), mock(PasswordEncoder.class));
+                mock(UserMapper.class), mock(PasswordEncoder.class), mock(LoginAttemptService.class));
 
         UpdateUserRequest demote = new UpdateUserRequest();
         demote.setUsername("unico"); demote.setPhone("3000000000");

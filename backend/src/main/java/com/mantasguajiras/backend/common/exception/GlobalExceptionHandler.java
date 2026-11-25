@@ -157,13 +157,18 @@ public class GlobalExceptionHandler {
                                 .body(response);
         }
 
-        /** Demasiados intentos fallidos de inicio de sesión (protección contra fuerza bruta). */
-        @ExceptionHandler(TooManyLoginAttemptsException.class)
+        /** Demasiados intentos (inicio de sesión o registro): esperar. */
+        @ExceptionHandler(TooManyAttemptsException.class)
         public ResponseEntity<ErrorResponse> handleTooManyAttempts(
-                        TooManyLoginAttemptsException ex,
+                        TooManyAttemptsException ex,
                         HttpServletRequest request) {
 
-                return build(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), request);
+                ResponseEntity<ErrorResponse> response = build(
+                                HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), request);
+
+                return ResponseEntity.status(response.getStatusCode())
+                                .header("Retry-After", String.valueOf(Math.max(1, ex.getRemaining().toSeconds())))
+                                .body(response.getBody());
         }
 
         /** Cuenta inactiva o pendiente de aprobación (registro con aprobación). */

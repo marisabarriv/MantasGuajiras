@@ -5,6 +5,7 @@
 #   2. Frontend: lint y compilación.
 #   3. Punta a punta: ventas sin conexión en un navegador real.
 #   4. Dependencias: vulnerabilidades conocidas en backend y frontend (OSV).
+#   5. Kit de producción: Docker, HTTPS, aceptación y restauración.
 # Todo usa bases de datos temporales de GitHub; nunca datos reales.
 # =========================================================
 name: CI
@@ -12,6 +13,11 @@ name: CI
 on:
   push:
   pull_request:
+
+# Mínimo privilegio: los trabajos solo leen el código. Las acciones van
+# fijadas a un commit exacto (Dependabot propone las versiones nuevas).
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -37,8 +43,8 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "21"
@@ -52,7 +58,7 @@ jobs:
       # Informe de cobertura (abrir index.html del artefacto descargado).
       - name: Guardar informe de cobertura
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cobertura-backend
           path: backend/target/site/jacoco/
@@ -64,8 +70,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
@@ -78,8 +84,8 @@ jobs:
     name: Dependencias (vulnerabilidades conocidas)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: "1.24"
           cache: false
@@ -113,13 +119,13 @@ jobs:
       E2E_ADMIN_USER: admine2e
       E2E_ADMIN_PASSWORD: Prueba123
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
@@ -178,14 +184,14 @@ jobs:
 
       - name: Guardar capturas del ensayo
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ensayo-aceptacion
           path: ${{ runner.temp }}/aceptacion
 
       - name: Guardar registros y capturas si falla
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: e2e-registros
           path: |
@@ -205,9 +211,9 @@ jobs:
       # y "Vendido hoy" daba $0 (escenario 13).
       TZ: America/Bogota
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm
@@ -249,12 +255,20 @@ jobs:
           npm install --no-save playwright
           npx playwright install --with-deps chromium
 
+      # Node comprueba el certificado local de Caddy con su autoridad.
+      - name: Autoridad del certificado local
+        working-directory: deploy
+        run: |
+          docker compose cp web:/data/caddy/pki/authorities/local/root.crt "$RUNNER_TEMP/caddy-root.crt"
+          curl -sf --cacert "$RUNNER_TEMP/caddy-root.crt" https://localhost/actuator/health
+
       - name: Prueba de punta a punta por HTTPS
         working-directory: frontend
         env:
           E2E_APP: https://localhost
           E2E_API: https://localhost
           E2E_INSECURE_TLS: "1"
+          NODE_EXTRA_CA_CERTS: ${{ runner.temp }}/caddy-root.crt
           E2E_SCREENSHOTS: ${{ runner.temp }}
         run: node e2e/offline-sync.e2e.cjs
 
@@ -264,7 +278,18 @@ jobs:
           E2E_APP: https://localhost
           E2E_API: https://localhost
           E2E_INSECURE_TLS: "1"
+          NODE_EXTRA_CA_CERTS: ${{ runner.temp }}/caddy-root.crt
         run: node e2e/acceptance.e2e.cjs
+
+      # Inventarse la dirección (X-Forwarded-For) no evita el bloqueo por
+      # intentos fallidos. Va al final: deja bloqueada esta conexión.
+      - name: La dirección de quien se conecta no se puede falsificar
+        run: |
+          for i in $(seq 1 50); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --cacert "$RUNNER_TEMP/caddy-root.crt" -H "X-Forwarded-For: 198.51.100.$i" -H 'Content-Type: application/json' -d '{"identifier":"nadie","password":"Mala123"}' https://localhost/auth/login)
+          done
+          echo "Último intento: $code"
+          test "$code" = 429
 
       - name: Copia y prueba de restauración dentro del kit
         working-directory: deploy
@@ -279,7 +304,7 @@ jobs:
 
       - name: Subir registros si falla
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: kit-registros
           path: |

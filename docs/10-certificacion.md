@@ -7,7 +7,7 @@
 | **Código**               | DOC-10                         |
 | **Versión**              | v1.0.0-rc.1                    |
 | **Estado**               | En curso                       |
-| **Última actualización** | 24/11/2026 (Fase 5)            |
+| **Última actualización** | 25/11/2026 (auditoría externa) |
 
 ---
 
@@ -33,7 +33,7 @@ Cada criterio tiene **prioridad**, **estado** y **evidencia**. Un criterio solo 
 
 | Clave | Evidencia | Dónde |
 | ----- | --------- | ----- |
-| `T-ctx` | `BackendApplicationTests`: las 21 migraciones desde una base vacía y validación del esquema | `backend/src/test` |
+| `T-ctx` | `BackendApplicationTests`: las 22 migraciones desde una base vacía y validación del esquema | `backend/src/test` |
 | `T-perm` | `RolePermissionsTest` (9 pruebas HTTP por rol) | `backend/src/test` |
 | `T-conc` | `ConcurrentSaleTest` (6): concurrencia, rechazo, rollback, idempotencia, cambio de unidad | `backend/src/test` |
 | `T-prod` | `ProductRulesTest` (11): categoría ↔ unidad, enteros, precios | `backend/src/test` |
@@ -45,16 +45,16 @@ Cada criterio tiene **prioridad**, **estado** y **evidencia**. Un criterio solo 
 | `T-mov` | `MovementFilterTest` (3): ajuste 15 → 12 con motivo y usuario; filtros por tipo, origen, usuario y fechas | `backend/src/test` |
 | `T-name` | `ProductNameTest` (4): nombres de producto únicos | `backend/src/test` |
 | `T-sim` | `SimultaneousRetryTest` (2): misma venta o compra enviada 4 veces a la vez | `backend/src/test` |
-| `T-auth` | `AuthenticationSecurityTest` (10): inicio de sesión real, tokens, usuarios desactivados, permisos por HTTP, registro, bloqueo por intentos | `backend/src/test` |
-| `T-lock` | `LoginAttemptServiceTest` (2): duración y vencimiento del bloqueo | `backend/src/test` |
+| `T-auth` | `AuthenticationSecurityTest` (13): inicio de sesión real, tokens, usuarios desactivados, permisos por HTTP, registro y su límite, bloqueo por intentos, desbloqueo al restablecer la contraseña | `backend/src/test` |
+| `T-lock` | `LoginAttemptServiceTest` (12): límites por cuenta, por conexión y por registro; sobreviven al reinicio; nadie bloquea a otra persona; fallos simultáneos; sin datos en claro | `backend/src/test` |
 | `T-api` | `ApiValidationTest` (10): datos inválidos por HTTP → 400/404/405, nunca 500 | `backend/src/test` |
 | `UPG` | Actualización V19 → V21 con datos reales de prueba (versión anterior `a6f5ada` → actual): datos idénticos, integridad y 12 comprobaciones funcionales | 24/11/2026; `docs/09` §4.2 |
 | `SIM` | Simulacro de pérdida total con 3 años de datos: recuperación técnica en 7,5 s, datos idénticos | 24/11/2026; `docs/09` §7 |
-| `OSV` | Escaneo de dependencias en CI (OSV-Scanner): la ejecución #6 encontró 32 avisos en el backend (Spring Boot 4.1.0); tras actualizar a 4.1.3, la #7 da **0** | GitHub Actions |
+| `OSV` | Escaneo de dependencias en CI (OSV-Scanner): la ejecución #6 encontró 32 avisos en el backend (Spring Boot 4.1.0); tras actualizar a 4.1.3, la #7 da **0**. Desde el 25/11, Spring Boot 4.2.0: **0** (159 paquetes del backend y 185 del frontend) | GitHub Actions |
 | `T-flow` | `BusinessFlowHttpTest`: recorrido completo del negocio por HTTP (todos los controladores) | `backend/src/test` |
 | `T-user` | `UserManagementTest` (6) y `LastAdminRuleTest` | `backend/src/test` |
 | `T-cat` | `CatalogAdminTest` (2) e `InventoryQueryTest` (3) | `backend/src/test` |
-| `COV` | JaCoCo: 92,5 % líneas / 73,9 % ramas global (119 pruebas; Fase 5: 92,1 % / 72,7 %); 91,2 % reglas críticas; 92,0 % servicios. Umbral en el build: 85 % / 65 % | 24/11/2026; artefacto `cobertura-backend` en la CI |
+| `COV` | JaCoCo: 93,0 % líneas / 74,4 % ramas global (135 pruebas, 25/11; Fase 6: 92,5 % / 73,9 %; Fase 5: 92,1 % / 72,7 %); el 24/11, 91,2 % reglas críticas; 92,0 % servicios. Umbral en el build: 85 % / 65 % | 24/11/2026; artefacto `cobertura-backend` en la CI |
 | `T-log` | `UnexpectedErrorLoggingTest`: error interno registrado con código, sin detalles al usuario | `backend/src/test` |
 | `T-per` | `DateRangeTest` (8), `HistoryAndMonitoringHttpTest` (4) y `MonitoringUnitTest` (3): historiales por periodo, estado del sistema, registro de operaciones y rechazos, peticiones lentas, alertas | `backend/src/test` |
 | `LOAD` | Prueba de carga con 3 años de datos (33.000 ventas): 15 y 40 usuarios simultáneos, antes y después de las correcciones; integridad comprobada | 24/11/2026; `docs/12` §2; `scripts/perf` |
@@ -84,10 +84,10 @@ Ninguno puede quedar abierto para dar 10/10.
 | 4 | Se pueden modificar precios históricos de ventas | ✅ No ocurre | `T-sale` (ventas inmodificables; la venta antigua conserva su precio tras cambiar el del producto) |
 | 5 | Una venta puede quedar guardada parcialmente | ✅ No ocurre | `T-conc` (rollback); `DRILL`: con la base caída de golpe y por corte de luz, ninguna venta sin productos |
 | 6 | La sincronización offline atribuye ventas al usuario equivocado | ✅ No ocurre | `E2E` escenario 4 |
-| 7 | Se exponen contraseñas o secretos | ✅ No ocurre | `.gitignore` revisado; `log-resolved-exception: false`; `T-log` (sin detalles al usuario); contraseñas con BCrypt |
+| 7 | Se exponen contraseñas o secretos | ✅ En la aplicación · ⏳ (claves de la instalación) | Ramas y etiquetas revisadas el 25/11: sin claves. Se cierra al instalar con claves nuevas (`docs/13` §3). `.gitignore` revisado; `log-resolved-exception: false`; `T-log` (sin detalles al usuario); contraseñas con BCrypt |
 | 8 | Se pierden datos al restaurar o actualizar | ✅ No ocurre | Restaurar nunca sobrescribe (`BKP`); actualización con datos sin pérdidas (`UPG`); recuperación total sin pérdidas (`SIM`) |
 | 9 | Las migraciones destruyen datos existentes | ✅ No ocurre | `UPG` (V19 → V21: datos idénticos) |
-| 10 | Los backups no pueden restaurarse | ✅ (Linux y servidor) · ⏳ (Windows) | `BKP` y `SIM` con los scripts `.sh` (pérdida total recuperada en 7,5 s); en el kit de producción, prueba de restauración en cada CI (`KIT`). Los `.ps1` deben ejecutarse una vez en el PC del negocio, mientras se use el PC. |
+| 10 | Los backups no pueden restaurarse | ✅ No ocurre | `BKP` y `SIM` con los scripts `.sh` (pérdida total recuperada en 7,5 s); en el kit de producción, prueba de restauración en cada CI (`KIT`). En el PC de Windows, copia, prueba de restauración y simulacro hechos el 24/11 (`docs/09` §7). |
 | 11 | Vulnerabilidades críticas sin resolver | ✅ No hay | `OSV`: se encontraron críticas (Tomcat, Spring Web) y se corrigieron con Spring Boot 4.1.3; la CI lo revisa en cada push |
 | 12 | Las pruebas modifican la base de trabajo | ✅ No ocurre | Perfil `test` con base propia; CI con bases temporales |
 
@@ -115,7 +115,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | ARQ-16 | Sin advertencias de compilación | M | ✅ | Compilación con `showDeprecation`: 0 advertencias |
 | ARQ-17 | Formato y estilo consistentes | Bj | ✅ | `.editorconfig`; corregida la sangría de `ProductCategoryController` y `DataInitializer` |
 | ARQ-18 | Operaciones complejas documentadas | M | ✅ | Comentarios en inventario, ventas y offline; `docs/08` §30A |
-| ARQ-19 | Dependencias justificadas y al día | M | ✅ | `OSV` en cada push + Dependabot semanal; Spring Boot 4.1.3 |
+| ARQ-19 | Dependencias justificadas y al día | M | ✅ | `OSV` en cada push + Dependabot semanal; Spring Boot 4.2.0 (25/11) |
 | ARQ-20 | Decisiones arquitectónicas documentadas | M | ✅ | `docs/03`, `docs/02` RN-24A y RN-27 |
 
 `BaseEntity` / `AuditableEntity`: no se considera defecto (decisión acordada).
@@ -157,7 +157,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | DB-04 | Restricciones UNIQUE | A | ✅ | Código interno, código de barras, usuario, teléfono, `client_request_id` |
 | DB-05 | NOT NULL en obligatorias | A | ✅ | `T-ctx` |
 | DB-06 | Índices en consultas importantes | M | ⏳ | Existen en movimientos; sin análisis de planes |
-| DB-07 | Migraciones versionadas | A | ✅ | V1–V21 |
+| DB-07 | Migraciones versionadas | A | ✅ | V1–V22 |
 | DB-08 | Migran desde base vacía | A | ✅ | `T-ctx`, `CI`, `E2E` |
 | DB-09 | Base existente se actualiza desde la versión anterior | B | ✅ | `UPG` |
 | DB-10 | Esquema = entidades | A | ✅ | `ddl-auto: validate` en `T-ctx` |
@@ -346,10 +346,10 @@ Ninguno puede quedar abierto para dar 10/10.
 | SEG-15 | Sesiones correctas | A | ✅ | `E2E` |
 | SEG-16 | Cierre de sesión | A | ✅ | `E2E` |
 | SEG-17 | Sin datos sensibles en logs | A | ✅ | `log-resolved-exception: false`; `T-log` |
-| SEG-18 | Sin secretos en git | B | ✅ | `.gitignore` y `git ls-files` revisados |
+| SEG-18 | Sin secretos en git | B | ⏳ | Ramas y etiquetas revisadas el 25/11: sin claves. Secret scanning y push protection activos. Se cierra al instalar con claves nuevas (`docs/13` §3) |
 | SEG-19 | CORS solo autorizados | A | ⏳ | Configurable (`CORS_ALLOWED_ORIGINS`); valor de producción pendiente |
 | SEG-20 | Endpoints sensibles protegidos | B | ✅ | `T-perm` |
-| SEG-21 | Protección contra fuerza bruta | A | ✅ | `T-auth`, `T-lock`: 5 fallos → bloqueo 15 min (429), configurable; corregido el 24/11 |
+| SEG-21 | Protección contra fuerza bruta | A | ✅ | `T-auth`, `T-lock`. Límites por ventana de 15 minutos: 5 fallos de una cuenta desde la misma conexión, 30 de una conexión con cualquier cuenta y 50 de una cuenta desde muchas conexiones → 429. Guardado en la base: sobrevive al reinicio (25/11). Registro público: 10 cuentas por conexión y 30 en total por hora |
 | SEG-22 | Sin inyección | A | ✅ | JPA con parámetros, Bean Validation (`REV`) |
 | SEG-23 | Sin XSS | A | ✅ | Sin HTML sin escapar (`REV`); CSP sin violaciones (`E2E`) |
 | SEG-24 | Dependencias revisadas | A | ✅ | `OSV` (backend y frontend: 0) + `AUD` |
@@ -462,7 +462,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | ID | Criterio | Pr. | Estado | Evidencia / nota |
 | -- | -------- | --- | ------ | ---------------- |
 | BKP-01 | Procedimiento automatizado | B | ✅ | `BKP` |
-| BKP-02 | Periódico | A | ⏳ | Tarea de Windows cada 2 h (6:00–21:00): confirmar en el PC del negocio |
+| BKP-02 | Periódico | A | ✅ | Tarea de Windows cada 2 h (6:00–21:00), comprobada en el PC el 24 y 25/11: copias correctas en el registro (requiere el equipo encendido) |
 | BKP-03 | Comprimido | M | ✅ | `--compress=9` |
 | BKP-04 | Integridad por archivo | A | ✅ | `pg_restore --list` + SHA-256 (`BKP`) |
 | BKP-05 | SHA-256 | A | ✅ | `BKP` |
@@ -529,7 +529,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | QA-19 | Pipeline: lint y build | A | ✅ | `CI` |
 | QA-20 | Pipeline: backend | A | ✅ | `CI` |
 | QA-21 | Un fallo bloquea el pipeline | A | ✅ | `CI` |
-| QA-22 | Revisión antes de integrar | M | ⏳ | La CI está lista; falta activar la protección de `main` en GitHub (pasos en `docs/06` §14.6, decisión de la dueña del repositorio) |
+| QA-22 | Revisión antes de integrar | M | ✅ | Regla "Proteger main" activa: pull request, rama actualizada y las 5 comprobaciones de la CI obligatorias; sin excepciones (25/11, `docs/06` §14.6) |
 | QA-23 | Sin pruebas desactivadas | A | ✅ | Ninguna |
 | QA-24 | Cobertura medida | M | ✅ | `COV` con umbral en el build |
 | QA-25 | Regresión antes de publicar | A | ✅ | `CI` en cada push y pull request |
@@ -615,7 +615,7 @@ Preparación ya hecha: los 24 escenarios del checklist de la auditoría se ensay
 
 ## Resumen
 
-Conteo automático de la matriz (24/11/2026, después de la Fase 8). Evolución: inicio 189 ✅ → Fase 1 256 → Fase 2 258 → Fases 3-4 275 → Fase 5 288 → Fase 6 315 → Fase 7 324 → Fase 8 335 ✅.
+Conteo de la matriz (25/11/2026, después de la auditoría externa). Evolución: inicio 189 ✅ → Fase 1 256 → Fase 2 258 → Fases 3-4 275 → Fase 5 288 → Fase 6 315 → Fase 7 324 → Fase 8 335 → auditoría externa 336 ✅ (BKP-02 y QA-22 comprobados; SEG-18 vuelve a pendiente hasta instalar con claves nuevas).
 
 | Área | Criterios | ✅ | ⏳ | ❌ |
 | ---- | --------- | -- | -- | -- |
@@ -627,21 +627,21 @@ Conteo automático de la matriz (24/11/2026, después de la Fase 8). Evolución:
 | 6. Ventas | 33 | 33 | 0 | 0 |
 | 7. Compras | 15 | 14 | 1 | 0 |
 | 8. Producción y pedidos personalizados | 18 | 17 | 1 | 0 |
-| 9. Usuarios, roles y seguridad | 25 | 24 | 1 | 0 |
+| 9. Usuarios, roles y seguridad | 25 | 23 | 2 | 0 |
 | 10. Funcionamiento offline y sincronización | 20 | 20 | 0 | 0 |
 | 11. Frontend y experiencia de usuario | 25 | 16 | 9 | 0 |
 | 12. Fotografías y archivos | 12 | 9 | 3 | 0 |
 | 13. Rendimiento | 15 | 13 | 2 | 0 |
-| 14. Copias de seguridad y recuperación | 20 | 16 | 4 | 0 |
+| 14. Copias de seguridad y recuperación | 20 | 17 | 3 | 0 |
 | 15. Logs, monitoreo y observabilidad | 15 | 14 | 1 | 0 |
-| 16. Pruebas automatizadas y calidad continua | 25 | 24 | 1 | 0 |
+| 16. Pruebas automatizadas y calidad continua | 25 | 25 | 0 | 0 |
 | 17. Infraestructura y despliegue | 20 | 14 | 6 | 0 |
 | 18. Errores y resiliencia | 12 | 12 | 0 | 0 |
 | 19. Documentación y operación | 20 | 20 | 0 | 0 |
 | 20. Aceptación del negocio | 14 | 0 | 14 | 0 |
-| **Total** | **387** | **335** (87 %) | **52** | **0** |
+| **Total** | **387** | **336** (87 %) | **51** | **0** |
 
-Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por comprobar en el equipo del negocio** (10: ejecutar las copias `.ps1` en Windows).
+Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por cerrar al instalar** (7: claves nuevas).
 
 ## Ruta propuesta
 
@@ -650,8 +650,9 @@ Bloqueadores absolutos (sección 0): **11 cerrados**, **0 abiertos** y **1 por c
 | **1. Reglas funcionales** ✅ | Hecha el 24/11/2026: identificador único en compras, producción, personalizadas y pagos (V21); 39 pruebas nuevas; motivo obligatorio; filtros del historial; 400 en lugar de 500 con datos mal escritos. Quedan 2 decisiones de negocio (nombres repetidos, estado "cancelada") | B-2, B-4, API-14, COM-*, PRO-*, DES-*, VEN-*, INV-14/17-19 |
 | **2. Offline** ✅ | Hecha el 24/11/2026: escenarios A–D más dos pestañas, envíos simultáneos, sesión vencida sin conexión y dispositivo sin espacio. Decisiones aplicadas: nombres únicos y sin estado "cancelada" | OFF-*, RES-08, PRO-10/18 |
 | **3. Seguridad** ✅ | Hecha el 24/11/2026: bloqueo tras 5 intentos; 12 pruebas de seguridad con inicio de sesión real; escaneo de dependencias en CI (encontró y se corrigieron vulnerabilidades críticas); Dependabot | SEG-*, B-11 |
-| **4. Recuperación** ✅ | Hecha el 24/11/2026: actualización V19 → V21 con datos sin pérdidas; simulacro de pérdida total con 3 años de datos (7,5 s); `restore-db.sh`; procedimiento de vuelta atrás; RPO/RTO propuestos. **Queda en manos del negocio:** ejecutar los `.ps1` en el PC de Windows | BKP-17/18, DB-09, DEP-14/15/19, B-8/9/11 |
-| **5. Calidad** ✅ | Hecha el 24/11/2026: cobertura 92 % con umbral en el build; 13 pruebas nuevas (104 en total) incluido el recorrido completo por HTTP; orden aleatorio; código muerto eliminado; `.editorconfig`; E2E por todas las páginas y roles. **Queda en manos de la dueña:** proteger `main` (`docs/06` §14.6) | QA-18/24, ARQ-09/13/17, UX-01/14 |
+| **4. Recuperación** ✅ | Hecha el 24/11/2026: actualización V19 → V21 con datos sin pérdidas; simulacro de pérdida total con 3 años de datos (7,5 s); `restore-db.sh`; procedimiento de vuelta atrás; RPO/RTO propuestos. Los `.ps1` se ejecutaron en el PC de Windows el 24/11 | BKP-17/18, DB-09, DEP-14/15/19, B-8/9/11 |
+| **5. Calidad** ✅ | Hecha el 24/11/2026: cobertura 92 % con umbral en el build; 13 pruebas nuevas (104 en total) incluido el recorrido completo por HTTP; orden aleatorio; código muerto eliminado; `.editorconfig`; E2E por todas las páginas y roles. `main` protegida desde el 24/11 | QA-18/24, ARQ-09/13/17, UX-01/14 |
 | **6. Rendimiento** ✅ | Hecha el 24/11/2026: prueba de carga con 3 años de datos y 40 usuarios (encontró que el servidor se quedaba sin memoria y daba 123 errores 500; corregido); historiales por periodo; N+1 eliminado; listas de a 100; estado del sistema (`/actuator/health`); log a archivo con rotación y una línea por operación; guía de incidentes (`docs/12`); 15 pruebas nuevas (119 en total). **Queda en manos de la dueña:** confirmar cuántas personas usan la app a la vez | REN-*, DB-17/18, API-12, OBS-*, RES-10, DOC-18 |
 | **7. Producción** ✅ | Hecha el 24/11/2026: kit `deploy/` (Docker, HTTPS automático, mismo dominio, PostgreSQL cerrado, copias, reinicio automático); `deploy.sh` con copia previa, verificación y vuelta atrás automática; `import-data.sh`; versión visible; simulacros de caída de la base, corte de luz y versión rota sin perder ventas; corregido el 401 con la base caída (ahora 503 y la venta queda en el dispositivo); CI instala el kit y repite la E2E por HTTPS. **Queda en manos de la dueña:** servidor, dominio e instalación (`docs/11` #17-23) | DEP-*, RES-01/09, DOC-15 |
+| **Auditoría externa** ✅ | Hecha el 25/11/2026 (82/100): 5 comprobaciones obligatorias y rama actualizada en `main`; CodeQL, secret scanning, push protection y reporte privado; permisos mínimos y acciones fijadas en la CI; `SECURITY.md`; límites de acceso por cuenta, conexión y registro guardados en la base (V22, 16 pruebas nuevas, 135 en total). **Por decisión de la dueña, para después:** copia externa y despliegue | SEG-21, QA-22, BKP-02 |
 | **8. Aceptación** ⏳ | Preparada el 24/11/2026: los 24 escenarios ensayados por la interfaz (24/24, `ACC`); manual de usuario con capturas (`docs/14`); guía, criterios del negocio y acta (`docs/15`); aviso al salir con datos sin guardar; copias legibles solo por su dueño; `CHANGELOG.md`. **Falta lo que solo hace la dueña:** recorrer los escenarios con datos reales y firmar el acta (`docs/11` #15-16) | NEG-*, DOC-11/12/17/20, UX-*, BKP-11 |

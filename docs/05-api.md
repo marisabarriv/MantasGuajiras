@@ -65,8 +65,8 @@ Endpoints implementados. Columna **Rol**: `Público` (sin sesión), `Todos` (cua
 
 | Método | Ruta              | Rol     | Descripción                                                    |
 | ------ | ----------------- | ------- | -------------------------------------------------------------- |
-| POST   | `/auth/login`     | Público | Inicia sesión con usuario o teléfono. Devuelve el token JWT. Mensaje único ante usuario o contraseña incorrectos. Tras 5 fallos seguidos, ese usuario queda bloqueado 15 minutos → `429`. |
-| POST   | `/auth/register`  | Público | Registro de vendedor. La cuenta queda pendiente de aprobación. |
+| POST   | `/auth/login`     | Público | Inicia sesión con usuario o teléfono. Devuelve el token JWT. Mensaje único ante usuario o contraseña incorrectos. Tras 5 fallos desde la misma conexión, ese acceso queda bloqueado 15 minutos → `429` con `Retry-After` (otros límites: `docs/06` §14.4A). |
+| POST   | `/auth/register`  | Público | Registro de vendedor. La cuenta queda pendiente de aprobación. Máximo 10 por conexión y 30 en total por hora → `429`. |
 
 ## Perfil propio — `/api/me`
 
@@ -220,7 +220,7 @@ La API utiliza códigos HTTP para indicar el resultado de las operaciones.
 | 405    | Método no permitido             |
 | 409    | Conflicto de información (duplicado o choque con un registro existente; se puede reintentar) |
 | 413    | Archivo demasiado grande (foto) |
-| 429    | Demasiados intentos de inicio de sesión |
+| 429    | Demasiados intentos de inicio de sesión o registros (`Retry-After` indica los segundos de espera) |
 | 500    | Error interno del servidor      |
 
 Un JSON mal formado, un tipo de dato incorrecto o un identificador o fecha mal escritos en la dirección (`/api/products/abc`, `?from=ayer`) responden `400` con un mensaje claro; una ruta que no existe, `404`; un método no permitido, `405`. Nunca `500`.

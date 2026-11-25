@@ -46,3 +46,6 @@ scripts/backup/backup.config.ps1
 deploy/backups/
 deploy/backups-copia/
 deploy/.version-actual
+
+# Autoridad local de Caddy (pruebas del kit)
+caddy-root.crt

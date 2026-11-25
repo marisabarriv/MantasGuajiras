@@ -23,8 +23,9 @@ const API = process.env.E2E_API || 'http://localhost:8080';
 const ADMIN_USER = process.env.E2E_ADMIN_USER || 'admine2e';
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'Prueba123';
 const SHOTS = process.env.ACCEPT_SHOTS || '';
+// Certificado local de Caddy: el navegador lo acepta; Node lo comprueba con
+// NODE_EXTRA_CA_CERTS (ver e2e/README.md).
 const INSECURE_TLS = process.env.E2E_INSECURE_TLS === '1';
-if (INSECURE_TLS) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 // Sufijo para que cada corrida use nombres nuevos. ACCEPT_RUN= (vacío) en una
 // base nueva da nombres naturales, para las capturas del manual.
