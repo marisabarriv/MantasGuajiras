@@ -48,20 +48,33 @@ public class RegistrationLimitService {
         this.clock = clock;
     }
 
-    /** Cuenta un intento de registro; lanza el aviso de espera si ya no se admiten más. */
+    /**
+     * Cuenta un intento de registro; lanza el aviso de espera si ya no se admiten más.
+     * La decisión sale del contador ya sumado (una sola instrucción SQL), así que
+     * varios registros a la vez no pueden pasar todos antes de que llegue el bloqueo.
+     */
     public void checkAndRecord(String address) {
         Instant now = clock.instant();
         String addressKey = AccessAttemptStore.hash("registro-conexion", address);
 
         for (String key : new String[] { addressKey, TOTAL_KEY }) {
-            store.lockedUntil(key, now).ifPresent(end -> {
-                log.warn("Registro público rechazado: demasiadas cuentas nuevas");
-                throw TooManyAttemptsException.registration(Duration.between(now, end));
-            });
+            store.lockedUntil(key, now).ifPresent(end -> reject(now, end));
         }
 
-        store.add(addressKey, AccessAttemptStore.REGISTER, null, maxPerAddress, window, now);
-        store.add(TOTAL_KEY, AccessAttemptStore.REGISTER, null, maxTotal, window, now);
+        admit(addressKey, maxPerAddress, now);
+        admit(TOTAL_KEY, maxTotal, now);
         store.cleanUp(now);
+    }
+
+    private void admit(String key, int limit, Instant now) {
+        var count = store.add(key, AccessAttemptStore.REGISTER, null, limit, window, now);
+        if (count.attempts() > limit) {
+            reject(now, count.lockedUntil().orElse(now.plus(window)));
+        }
+    }
+
+    private static void reject(Instant now, Instant end) {
+        log.warn("Registro público rechazado: demasiadas cuentas nuevas");
+        throw TooManyAttemptsException.registration(Duration.between(now, end));
     }
 }

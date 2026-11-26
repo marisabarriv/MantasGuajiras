@@ -47,7 +47,8 @@ public class AuthController {
                 String address = ClientAddress.of(http);
 
                 // Bloqueo temporal tras varios intentos fallidos (fuerza bruta).
-                loginAttemptService.checkAllowed(identifier, address);
+                // El intento se cuenta antes de revisar la contraseña.
+                var attempt = loginAttemptService.start(identifier, address);
 
                 Authentication authentication;
 
@@ -57,11 +58,14 @@ public class AuthController {
                                                         identifier,
                                                         request.getPassword()));
                 } catch (BadCredentialsException wrongPassword) {
-                        loginAttemptService.recordFailure(identifier, address);
+                        loginAttemptService.failed(attempt);
                         throw wrongPassword;
+                } catch (RuntimeException notChecked) {
+                        loginAttemptService.cancelled(attempt);
+                        throw notChecked;
                 }
 
-                loginAttemptService.recordSuccess(identifier, address);
+                loginAttemptService.succeeded(attempt);
 
                 String username = authentication.getName();
 
