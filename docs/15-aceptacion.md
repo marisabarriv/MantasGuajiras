@@ -103,44 +103,51 @@ Respóndelos después del recorrido. Son los que ninguna prueba automática pued
 
 | ID | Pregunta | Sí / No | Comentario |
 | -- | -------- | :-----: | ---------- |
-| NEG-01 | ¿Las vendedoras pueden hacer su trabajo sin pedir ayuda a cada rato? | ☐ | |
-| NEG-02 | ¿Los pasos coinciden con cómo se trabaja en la tienda? | ☐ | |
-| NEG-03 | ¿Los precios y descuentos son los que la tienda decide? | ☐ | |
-| NEG-04 | ¿El inventario del sistema coincide con lo que hay en el local, después de un conteo? | ☐ | |
-| NEG-05 | ¿Las ventas del día coinciden con el dinero recibido? | ☐ | |
-| NEG-06 | ¿Las compras suman bien al inventario? | ☐ | |
-| NEG-07 | ¿La producción refleja la tela que de verdad se usa? | ☐ | |
-| NEG-08 | ¿Los saldos de las personalizadas son los correctos? | ☐ | |
-| NEG-09 | ¿Lo que puede hacer cada rol corresponde a las responsabilidades reales? | ☐ | |
-| NEG-10 | ¿Se entienden los mensajes del sistema? | ☐ | |
-| NEG-11 | ¿Se puede saber quién hizo cada operación importante? | ☐ | |
-| NEG-12 | ¿Los resultados se pueden contrastar con facturas o cuadernos? | ☐ | |
-| NEG-13 | ¿Revisaste los flujos principales tú misma? | ☐ | |
-| NEG-14 | ¿Queda alguna diferencia conocida entre cómo trabaja la tienda y el sistema? (Debe ser **No**, o quedar anotada abajo con su decisión) | ☐ | |
+Respuestas de la responsable del negocio, 25/11/2026:
+
+| ID | Pregunta | Sí / No | Comentario |
+| -- | -------- | :-----: | ---------- |
+| NEG-01 | ¿Las vendedoras pueden hacer su trabajo sin pedir ayuda a cada rato? | Sí | Se las capacitará al empezar. Pide una ayuda (tutorial) en cada sección, disponible en cualquier momento: diferencia 1. |
+| NEG-02 | ¿Los pasos coinciden con cómo se trabaja en la tienda? | Sí | |
+| NEG-03 | ¿Los precios y descuentos son los que la tienda decide? | Sí | |
+| NEG-04 | ¿El inventario del sistema coincide con lo que hay en el local, después de un conteo? | Pendiente | Todavía no se ha cargado el inventario real: diferencia 2. |
+| NEG-05 | ¿Las ventas del día coinciden con el dinero recibido? | Pendiente | Todavía no se usa con ventas reales: diferencia 3. |
+| NEG-06 | ¿Las compras suman bien al inventario? | Sí | Según las pruebas realizadas. |
+| NEG-07 | ¿La producción refleja la tela que de verdad se usa? | Sí | |
+| NEG-08 | ¿Los saldos de las personalizadas son los correctos? | Sí | |
+| NEG-09 | ¿Lo que puede hacer cada rol corresponde a las responsabilidades reales? | Sí | |
+| NEG-10 | ¿Se entienden los mensajes del sistema? | Sí | |
+| NEG-11 | ¿Se puede saber quién hizo cada operación importante? | Sí | |
+| NEG-12 | ¿Los resultados se pueden contrastar con facturas o cuadernos? | Sí | |
+| NEG-13 | ¿Revisaste los flujos principales tú misma? | Sí | Recorrido en una base de prueba aparte, ya borrada. |
+| NEG-14 | ¿Queda alguna diferencia conocida entre cómo trabaja la tienda y el sistema? (Debe ser **No**, o quedar anotada abajo con su decisión) | No | |
 
 ## 5. Diferencias encontradas
 
 | # | Escenario o criterio | Qué pasó | Decisión (corregir / aceptar como está) | Fecha de cierre |
 | - | -------------------- | -------- | --------------------------------------- | --------------- |
-| | | | | |
+| 1 | NEG-01 | Se pide una ayuda paso a paso dentro de cada sección, que se pueda abrir en cualquier momento. | Corregir (mejora). Mientras tanto, capacitación y manual (`docs/14`). | |
+| 2 | NEG-04 | El inventario real aún no está cargado. | Comprobar después del primer conteo físico con el inventario real. | |
+| 3 | NEG-05 | La app aún no se usa con ventas y dinero reales. | Comprobar al cerrar los primeros días de venta real. | |
+| 4 | Escenarios 22–24 | La venta sin conexión en el **celular** necesita la instalación con HTTPS, aplazada (`docs/11` §F). | Probar con el celular en modo avión al instalar. | |
 
 ## 6. Acta de aceptación
 
 | | |
 | --- | --- |
 | **Sistema** | Mantas Guajiras |
-| **Versión** | (ver *Mi perfil* → "Versión de la app") |
-| **Dirección** | https:// |
+| **Versión** | `1.0.0-rc.1` |
+| **Dirección** | Copia local en el PC de la responsable (la instalación con `https://` está aplazada) |
 | **Fecha del recorrido** | |
 | **Participantes** | |
-| **Escenarios aprobados** | ___ / 24 |
-| **Criterios del negocio aprobados** | ___ / 14 |
-| **Diferencias abiertas** | |
+| **Escenarios aprobados** | 24 / 24 en el computador; 22–24 en el celular, pendientes (diferencia 4) |
+| **Criterios del negocio aprobados** | 12 / 14 (NEG-04 y NEG-05 pendientes de uso real) |
+| **Diferencias abiertas** | 1 a 4 (sección 5) |
 
 **Resultado:**
 
 - ☐ **Aceptado.** El sistema puede usarse con los datos reales del negocio.
-- ☐ **Aceptado con observaciones.** Se usa, y las diferencias de la sección 5 se corrigen en las fechas acordadas.
+- ☒ **Aceptado con observaciones.** Se usa, y las diferencias de la sección 5 se corrigen en las fechas acordadas.
 - ☐ **No aceptado.** Se corrigen las diferencias y se repite el recorrido.
 
 Firma de la responsable del negocio: ______________________________

@@ -10,7 +10,7 @@ Marca cada casilla cuando la completes y anota la fecha.
 
 - [x] **1. Copia de seguridad de tu base actual** (pgAdmin → clic derecho en la base → *Backup*, o `backup-db.ps1` si ya lo configuraste). Al arrancar, el backend aplicará las migraciones V20 y V21.
 - [x] **2. Traer los cambios:** en VS Code, en la rama del proyecto, `git pull`.
-- [ ] **3. Revisar si tienes productos con el mismo nombre** (antes se permitía; ahora no). En pgAdmin → *Query Tool*:
+- [x] **3. Revisar si tienes productos con el mismo nombre** (antes se permitía; ahora no). En pgAdmin → *Query Tool*:
 
   ```sql
   SELECT lower(name) AS nombre, count(*), string_agg(internal_code, ', ')
@@ -34,9 +34,9 @@ Guía completa: `docs/09-copias-de-seguridad.md`.
 
 ## C. Decisiones de negocio
 
-- [ ] **11. Aprobar los objetivos de recuperación** (`docs/09` §6): perder como máximo **2 horas** de información y volver a operar en **1 hora**. Si prefieres otros valores, indícalos.
-- [ ] **12. Considerar una UPS ("no break")** para el computador y el módem.
-- [ ] **12A. Confirmar cuántas personas usan la app a la vez** en el momento de más trabajo (contando vendedores y administradores). Se supuso **hasta 10** y se probó con 40 sin problemas (`docs/12-rendimiento-y-monitoreo.md` §2). Si esperas más de 40, avisa.
+- [x] **11. Aprobar los objetivos de recuperación** (`docs/09` §6): perder como máximo **2 horas** de información y volver a operar en **1 hora**. Si prefieres otros valores, indícalos.
+- [x] **12. Considerar una UPS ("no break")** para el computador y el módem.
+- [x] **12A. Confirmar cuántas personas usan la app a la vez** en el momento de más trabajo (contando vendedores y administradores). Se supuso **hasta 10** y se probó con 40 sin problemas (`docs/12-rendimiento-y-monitoreo.md` §2). Si esperas más de 40, avisa.
 
 ## D. GitHub
 
@@ -78,3 +78,8 @@ El kit de instalación ya está listo y probado. Guía paso a paso: **`docs/13-p
 | 24/11/2026 | 13, 14 | Regla "Proteger main" activa (pull request, 4 comprobaciones de la CI, sin push forzado ni borrado; sin excepciones). Alertas y actualizaciones de seguridad de Dependabot activas. |
 | 25/11/2026 | 13, 14 | Auditoría externa: ahora son 5 comprobaciones obligatorias y la rama debe estar actualizada. Encendidos CodeQL, secret scanning, push protection y reporte privado de vulnerabilidades. 0 alertas de Dependabot. |
 | 25/11/2026 | 6, 17–23 | Copia externa y despliegue: aplazados por decisión de la responsable. |
+| 25/11/2026 | 3 | El producto inactivo PROD-00001 pasó a llamarse "manta a" (desde *Productos → Editar*). Ya no hay nombres repetidos. |
+| 25/11/2026 | 11 | Aprobado. Si el computador falla, se sigue vendiendo con la app instalada (PWA) en los celulares: las ventas quedan guardadas en cada celular y se envían cuando el sistema vuelve. El inventario y el historial se recuperan de la última copia, que hoy está en el mismo PC: falta la copia externa (tarea 6). |
+| 25/11/2026 | 12 | No se comprará una UPS por ahora. La base ya está protegida contra cortes de luz (tarea 10). |
+| 25/11/2026 | 12A | Hasta **5 personas** a la vez; se probó con 40 sin problemas. |
+| 25/11/2026 | 15, 16 | Recorrido hecho por la responsable en una base de prueba aparte: todo funcionó. Criterios respondidos: 12 de 14 "Sí"; NEG-04 y NEG-05 quedan pendientes del uso real. Acta preparada como **"Aceptado con observaciones"** (`docs/15` §5 y §6); falta la firma. |
