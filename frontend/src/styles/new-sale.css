@@ -81,6 +81,10 @@
 
 .pos-layout .product-tabs {
     gap: 8px;
+
+    /* Sin la línea de las pestañas subrayadas de antes (index.css):
+       los botones redondeados ya se ven como un grupo. */
+    border-bottom: none;
 }
 
 .pos-layout .product-tab {

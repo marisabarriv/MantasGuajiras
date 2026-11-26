@@ -3,12 +3,13 @@ import { confirmLeave } from "../utils/unsavedChanges";
 
 import InstallAppButton from "./InstallAppButton";
 import UserAvatar from "./UserAvatar";
-import { clearSession, getUser, ROLE_LABELS } from "../utils/session";
-import { getPendingSales } from "../utils/offlineStore";
+import { getUser, ROLE_LABELS } from "../utils/session";
+import { logoutWithConfirm } from "../utils/logout";
 
 import "../styles/users.css";
 
-function Sidebar({ open = false, onNavigate }) {
+/** Menú lateral del computador. En celular se usa la barra inferior (BottomNav). */
+function Sidebar() {
 
     const navigate = useNavigate();
 
@@ -17,43 +18,13 @@ function Sidebar({ open = false, onNavigate }) {
     const isAdmin = user.role === "ADMIN";
 
     const handleLogout = () => {
-
-        if (!confirmLeave()) {
-            return;
+        if (logoutWithConfirm()) {
+            navigate("/", { replace: true });
         }
-        // Las ventas hechas sin conexión quedan guardadas a nombre de quien
-        // las hizo y solo se envían cuando esa persona vuelve a entrar.
-        const pending = getPendingSales().filter(
-            (sale) => sale.username === user.username
-        ).length;
-
-        if (
-            pending > 0 &&
-            !window.confirm(
-                `Tienes ${pending} venta(s) hecha(s) sin conexión que todavía no se envían.\n\n` +
-                "No se pierden: quedan guardadas en este dispositivo y se enviarán cuando " +
-                "vuelvas a iniciar sesión aquí con conexión. Mientras tanto NO aparecen en el sistema.\n\n" +
-                "¿Cerrar sesión de todas formas?"
-            )
-        ) {
-            return;
-        }
-
-        clearSession();
-        navigate("/", { replace: true });
     };
 
     return (
-        <aside
-            id="main-menu"
-            className={`sidebar ${open ? "open" : ""}`}
-            // En celular, el menú se cierra al elegir una opción.
-            onClick={(event) => {
-                if (event.target.closest("a, button.sidebar-logout")) {
-                    onNavigate?.();
-                }
-            }}
-        >
+        <aside id="main-menu" className="sidebar">
 
             <div className="sidebar-brand">
                 <h2>Mantas Guajiras</h2>

@@ -1,0 +1,232 @@
+/* =========================================================
+   BARRA INFERIOR (celular y ventanas angostas)
+   Reemplaza el botón "Menú": 4 secciones a la vista y el
+   resto en "Más". En el computador no se muestra.
+   ========================================================= */
+
+:root {
+    --bottom-nav-height: 68px;
+}
+
+.bottom-nav {
+    display: none;
+}
+
+@media (max-width: 900px) {
+
+    .bottom-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 900;
+
+        display: flex;
+        align-items: stretch;
+        justify-content: space-around;
+        gap: 2px;
+
+        height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+        padding: 6px 4px env(safe-area-inset-bottom, 0px);
+
+        box-sizing: border-box;
+
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        background: var(--mg-sidebar);
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.18);
+    }
+
+    .bottom-nav-item {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+
+        min-width: 0;
+        padding: 4px 6px;
+
+        border: none;
+        border-radius: 14px;
+        background: transparent;
+        color: #f3e3d3;
+
+        font-family: inherit;
+        font-size: 12.5px;
+        font-weight: 700;
+        line-height: 1.1;
+        text-decoration: none;
+        white-space: nowrap;
+
+        cursor: pointer;
+    }
+
+    .bottom-nav-item svg {
+        flex-shrink: 0;
+    }
+
+    .bottom-nav-item.active {
+        background: var(--mg-sidebar-active);
+        color: #ffffff;
+    }
+
+    .bottom-nav-item:focus-visible {
+        outline: 3px solid #ffffff;
+        outline-offset: -3px;
+    }
+}
+
+@media (max-width: 350px) {
+
+    .bottom-nav-item {
+        padding: 4px 3px;
+
+        font-size: 11px;
+    }
+}
+
+
+/* ---------- Panel "Más" ---------- */
+
+.more-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    display: flex;
+    align-items: flex-end;
+
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.more-sheet {
+    box-sizing: border-box;
+    width: 100%;
+    max-height: 85dvh;
+    overflow-y: auto;
+
+    padding: 10px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+
+    border-radius: 22px 22px 0 0;
+    background: var(--mg-bg);
+    color: var(--mg-text);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.more-sheet-handle {
+    width: 44px;
+    height: 5px;
+
+    margin: 0 auto 14px;
+
+    border-radius: 3px;
+    background: #b9a48f;
+}
+
+.more-sheet-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    margin-bottom: 16px;
+}
+
+.more-sheet-user > span {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+}
+
+.more-sheet-user strong {
+    overflow: hidden;
+
+    font-size: 18px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.more-sheet-user span span {
+    color: var(--mg-text-muted);
+
+    font-size: 15px;
+}
+
+.more-sheet-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+
+    margin-bottom: 16px;
+}
+
+.more-sheet-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    min-height: 84px;
+    padding: 10px 6px;
+
+    border: 1.5px solid var(--mg-line);
+    border-radius: 16px;
+    background: var(--mg-surface);
+    color: var(--mg-accent);
+
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+}
+
+.more-sheet-item span {
+    color: var(--mg-text);
+}
+
+.more-sheet-item.active {
+    border-color: var(--mg-accent);
+    background: var(--mg-accent);
+    color: var(--mg-on-accent);
+}
+
+.more-sheet-item.active span {
+    color: var(--mg-on-accent);
+}
+
+.more-sheet-item:focus-visible,
+.more-sheet-logout:focus-visible {
+    outline: 3px solid #1f1f1f;
+    outline-offset: 2px;
+}
+
+.more-sheet-actions {
+    display: grid;
+    gap: 10px;
+}
+
+.more-sheet-actions .install-app-button {
+    width: 100%;
+}
+
+.more-sheet-logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    min-height: 50px;
+
+    border: 1.5px solid #8a8a8a;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #1f1f1f;
+
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
