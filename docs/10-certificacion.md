@@ -349,7 +349,7 @@ Ninguno puede quedar abierto para dar 10/10.
 | SEG-18 | Sin secretos en git | B | ⏳ | Ramas y etiquetas revisadas el 25/11: sin claves. Secret scanning y push protection activos. Se cierra al instalar con claves nuevas (`docs/13` §3) |
 | SEG-19 | CORS solo autorizados | A | ⏳ | Configurable (`CORS_ALLOWED_ORIGINS`); valor de producción pendiente |
 | SEG-20 | Endpoints sensibles protegidos | B | ✅ | `T-perm` |
-| SEG-21 | Protección contra fuerza bruta | A | ✅ | `T-auth`, `T-lock`. Límites por ventana de 15 minutos: 5 fallos de una cuenta desde la misma conexión, 30 de una conexión con cualquier cuenta y 50 de una cuenta desde muchas conexiones → 429. Guardado en la base: sobrevive al reinicio (25/11). Registro público: 10 cuentas por conexión y 30 en total por hora |
+| SEG-21 | Protección contra fuerza bruta | A | ✅ | `T-auth`, `T-lock`. Límites por ventana de 15 minutos: 5 fallos de una cuenta desde la misma conexión, 30 de una conexión con cualquier cuenta y 50 de una cuenta desde muchas conexiones → 429. Guardado en la base: sobrevive al reinicio (25/11). El intento se cuenta antes de revisar la contraseña: 30 intentos simultáneos solo revisan los del límite (antes, todos). Registro público: 10 cuentas por conexión y 30 en total por hora |
 | SEG-22 | Sin inyección | A | ✅ | JPA con parámetros, Bean Validation (`REV`) |
 | SEG-23 | Sin XSS | A | ✅ | Sin HTML sin escapar (`REV`); CSP sin violaciones (`E2E`) |
 | SEG-24 | Dependencias revisadas | A | ✅ | `OSV` (backend y frontend: 0) + `AUD` |
