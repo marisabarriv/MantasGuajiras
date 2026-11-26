@@ -52,13 +52,13 @@ Si un vendedor abre una sección de administrador, ve **"Sección restringida"**
 
 ### Instalar la app en el celular
 
-Pulsa **Instalar app** (abajo en el menú). Queda como un ícono más del celular, abre a pantalla completa y **funciona sin internet** para vender.
+Pulsa **Instalar app** (en el computador, abajo en el menú; en el celular, en **Más**). Queda como un ícono más del celular, abre a pantalla completa y **funciona sin internet** para vender.
 
 ### El menú en el celular
 
-<img src="manual/02-menu-celular.webp" alt="Menú del vendedor en el celular" width="280">
+<img src="manual/02-menu-celular.webp" alt="Barra inferior y panel Más en el celular" width="280">
 
-Pulsa **☰ Menú** arriba a la izquierda. Abajo están tu nombre, *Mi perfil* y **Cerrar sesión**.
+En el celular las secciones están en la **barra de abajo**: *Vender*, *Personalizadas*, *Inventario* y *Producción* (el administrador ve *Ventas* en lugar de Producción). Pulsa **Más** para ver el resto (Productos, Mi perfil y, si eres administrador, Compras, Producción y Usuarios), **Instalar app** y **Cerrar sesión**.
 
 Los datos se **actualizan solos** cada minuto y al volver a la app. No hace falta recargar.
 

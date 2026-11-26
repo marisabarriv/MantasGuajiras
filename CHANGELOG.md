@@ -13,6 +13,9 @@ Versión candidata. Se llevó por las 8 fases de la certificación (`docs/10-cer
 ### Aceptación del negocio (26/11/2026)
 
 - **Nuevo:** botón **"¿Cómo se usa?"** junto al título de cada sección. Abre un recorrido que oscurece la pantalla, señala cada parte y explica en pocas palabras qué hacer, con los botones **Cancelar** y **Siguiente**. Muestra solo los pasos del rol de quien lo abre y funciona sin conexión. Lo pidió la responsable en la aceptación (diferencia 1 de `docs/15`).
+- **Nuevo diseño en el celular** (y en ventanas angostas): el botón "☰ Menú" se reemplaza por una **barra inferior** con íconos (Vender, Personalizadas, Inventario y Producción o, para el administrador, Ventas) y **Más**, un panel con el resto de secciones, Instalar app y Cerrar sesión. Pantallas más compactas: tarjetas de resumen en fila, buscador y "Escanear" en una línea, productos en dos columnas, sin bajar de 15–16 px en los textos. Lo pidió la responsable.
+- Nueva venta: sin la línea debajo de los botones Manta y Tela.
+- Manual: capturas actualizadas con el diseño nuevo.
 
 ### Auditoría externa (25/11/2026)
 

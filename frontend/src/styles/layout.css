@@ -1,132 +1,228 @@
 /* =========================================================
    ESTRUCTURA: menú lateral + contenido
-   En pantallas pequeñas (celular / tableta vertical) el menú
-   se oculta y se abre con el botón "Menú" de la barra superior.
+   En pantallas pequeñas (celular / tableta vertical / ventana
+   angosta) el menú lateral se oculta y se navega con la barra
+   inferior (components/BottomNav.jsx, styles/bottom-nav.css).
    ========================================================= */
-
-.mobile-topbar {
-    display: none;
-}
-
-.sidebar-backdrop {
-    display: none;
-}
 
 @media (max-width: 900px) {
 
-    /* Barra superior fija con el botón "Menú" */
-    .mobile-topbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 900;
-
-        display: flex;
-        align-items: center;
-        gap: 14px;
-
-        height: 64px;
-
-        padding: 0 12px;
-
-        background: var(--mg-sidebar);
-        color: #ffffff;
+    .app-layout .sidebar {
+        display: none;
     }
 
-    .mobile-menu-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+    /* El contenido ocupa todo el ancho; abajo deja libre la barra. */
+    .app-layout .app-content {
+        --app-content-padding: 12px;
 
-        min-height: 48px;
-
-        padding: 0 16px;
-
-        border: 1.5px solid rgba(255, 255, 255, 0.6);
-        border-radius: 10px;
-
-        background: transparent;
-        color: #ffffff;
-
-        font-family: inherit;
-        font-size: 18px;
-        font-weight: 700;
-
-        cursor: pointer;
-    }
-
-    .mobile-menu-button span {
-        font-size: 22px;
-        line-height: 1;
-    }
-
-    .mobile-menu-button:focus-visible {
-        outline: 3px solid #ffffff;
-        outline-offset: 2px;
-    }
-
-    .mobile-topbar-brand {
-        font-size: 19px;
-        font-weight: 700;
-    }
-
-    /* El menú lateral se desliza desde la izquierda */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 1000;
-
-        width: 280px;
-        max-width: 85vw;
-        height: 100vh;
-        height: 100dvh;
-        min-height: 0;
-
-        overflow-y: auto;
-
-        border: none;
-
-        transform: translateX(-100%);
-        transition: transform 0.2s ease;
-    }
-
-    .sidebar.open {
-        transform: translateX(0);
-    }
-
-    /* index.css ponía el menú en horizontal en pantallas pequeñas */
-    .sidebar .sidebar-nav {
-        flex-direction: column;
-        overflow-x: visible;
-    }
-
-    .sidebar .sidebar-link {
-        white-space: normal;
-    }
-
-    .sidebar-backdrop {
-        position: fixed;
-        inset: 0;
-        z-index: 950;
-
-        display: block;
-
-        background: rgba(0, 0, 0, 0.45);
-    }
-
-    /* El contenido ocupa todo el ancho, debajo de la barra superior */
-    .app-content {
         width: 100%;
 
         margin-left: 0;
-        padding-top: 84px;
+        padding: 14px 12px calc(var(--bottom-nav-height, 68px) + 16px + env(safe-area-inset-bottom, 0px));
     }
 
-    /* Nueva venta: descontar la barra superior de la altura */
-    .pos-layout {
-        height: calc(100vh - 104px);
-        height: calc(100dvh - 104px);
+    /* Nueva venta: descontar la barra inferior de la altura */
+    .app-layout .pos-layout {
+        height: calc(100vh - var(--bottom-nav-height, 68px) - 30px);
+        height: calc(100dvh - var(--bottom-nav-height, 68px) - 30px - env(safe-area-inset-bottom, 0px));
+    }
+
+
+    /* -----------------------------------------------------
+       CELULAR MÁS COMPACTO
+       Menos espacio vacío y tarjetas de resumen en fila, sin
+       bajar de 15–16 px en los textos (usuarios 45+).
+       ----------------------------------------------------- */
+
+    /* Encabezados */
+    .app-layout .inv-header h1,
+    .app-layout .pos-layout .pos-header h1 {
+        font-size: 24px;
+    }
+
+    .app-layout .inv-header p,
+    .app-layout .pos-layout .pos-header p {
+        margin-bottom: 14px;
+
+        font-size: 16px;
+        line-height: 1.4;
+    }
+
+    .app-layout .pos-layout .pos-header {
+        padding: 0 2px 12px;
+    }
+
+    .app-layout .purchases-header {
+        gap: 10px;
+
+        margin-bottom: 14px;
+    }
+
+    .app-layout .purchases-header p {
+        margin-bottom: 0;
+    }
+
+    .app-layout .purchases-new {
+        min-height: 46px;
+
+        font-size: 17px;
+    }
+
+    /* Botón de ayuda */
+    .app-layout .tour-button {
+        min-height: 40px;
+        padding: 0 14px 0 6px;
+
+        font-size: 15px;
+    }
+
+    .app-layout .tour-button-icon {
+        width: 28px;
+        height: 28px;
+
+        font-size: 17px;
+    }
+
+    /* Tarjetas de resumen: en fila, como indicadores */
+    .app-layout .inv-summary {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 8px;
+
+        margin-bottom: 16px;
+    }
+
+    .app-layout .inv-card {
+        gap: 2px;
+
+        padding: 10px 10px 10px 12px;
+
+        border-left-width: 5px;
+        border-radius: 12px;
+    }
+
+    .app-layout .inv-card-number {
+        font-size: 24px;
+    }
+
+    .app-layout .inv-card-label {
+        font-size: 15px;
+        line-height: 1.2;
+    }
+
+    .app-layout .inv-card-help {
+        font-size: 13px;
+        line-height: 1.25;
+    }
+
+    /* Listas */
+    .app-layout .inv-list {
+        gap: 10px;
+    }
+
+    .app-layout .inv-row {
+        gap: 10px 14px;
+
+        padding: 12px 14px;
+
+        border-left-width: 6px;
+        border-radius: 12px;
+    }
+
+    .app-layout .inv-row-product strong {
+        font-size: 17px;
+    }
+
+    .app-layout .inv-tabs {
+        margin-bottom: 12px;
+    }
+
+    /* Buscador y "Escanear" en una sola línea; filtros en fila deslizable */
+    .app-layout .inv-toolbar {
+        gap: 10px;
+
+        margin-bottom: 14px;
+    }
+
+    .app-layout .inv-search {
+        flex: 1 1 180px;
+
+        min-width: 0;
+        min-height: 46px;
+        padding: 8px 12px;
+
+        font-size: 17px;
+    }
+
+    .app-layout .inv-toolbar .scan-camera-button {
+        min-height: 46px;
+        padding: 0 14px;
+
+        font-size: 16px;
+    }
+
+    .app-layout .inv-toolbar .inv-filters {
+        flex: 1 1 100%;
+        flex-wrap: nowrap;
+
+        overflow-x: auto;
+
+        padding-bottom: 2px;
+
+        scrollbar-width: none;
+    }
+
+    .app-layout .inv-filters button {
+        flex-shrink: 0;
+
+        min-height: 42px;
+        padding: 0 16px;
+
+        font-size: 16px;
+        white-space: nowrap;
+    }
+
+    .app-layout .inv-button-primary,
+    .app-layout .inv-button-secondary {
+        min-height: 44px;
+        padding: 0 14px;
+
+        font-size: 16px;
+    }
+
+    /* Nueva venta */
+    .app-layout .pos-layout .search-area input {
+        min-height: 48px;
+    }
+
+    .app-layout .pos-layout .products-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .app-layout .pos-layout .product-card {
+        padding: 12px;
+    }
+
+    .app-layout .pos-layout .product-card h3,
+    .app-layout .pos-layout .product-card p {
+        font-size: 17px;
+    }
+
+    .app-layout .pos-layout .product-card button {
+        min-height: 44px;
+
+        font-size: 16px;
+    }
+
+    .app-layout .pos-scan-help {
+        font-size: 15px;
+    }
+}
+
+/* Celulares muy angostos: una sola columna de productos */
+@media (max-width: 339px) {
+
+    .app-layout .pos-layout .products-grid {
+        grid-template-columns: 1fr;
     }
 }

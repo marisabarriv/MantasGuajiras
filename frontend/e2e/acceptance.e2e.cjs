@@ -407,11 +407,13 @@ async function finishSale(page) {
     // ======================= USUARIOS Y SEGURIDAD =======================
 
     await scenario('19', 'Usuarios y seguridad', 'Comprobar restricciones de vendedor', seller, async () => {
-        const menu = await seller.locator('.sidebar-nav').innerText().catch(async () => {
-            await seller.getByRole('button', { name: /menú/i }).click().catch(() => {});
-            return seller.locator('.sidebar-nav').innerText();
-        });
-        check(!/Compras|Administrar usuarios/.test(menu) && !/^Ventas$/m.test(menu), 'el menú no muestra Ventas (montos), Compras ni Administrar usuarios');
+        // En el celular se navega con la barra inferior; el resto está en "Más".
+        await seller.goto(APP + '/sale');
+        const bar = await seller.locator('.bottom-nav').innerText();
+        await seller.locator('.bottom-nav').getByRole('button', { name: 'Más' }).click();
+        const menu = `${bar}\n${await seller.locator('.more-sheet').innerText()}`;
+        await seller.keyboard.press('Escape');
+        check(!/Compras|Usuarios/.test(menu) && !/^Ventas$/m.test(menu), 'la barra inferior y "Más" no muestran Ventas (montos), Compras ni Usuarios');
         for (const p of ['/sales', '/purchases', '/admin']) {
             await seller.goto(APP + p);
             check(await visible(seller.getByRole('heading', { name: 'Sección restringida' })), `${p}: "Sección restringida"`);
@@ -521,7 +523,7 @@ async function finishSale(page) {
         });
         await extra('m-menu', async () => {
             await seller.goto(APP + '/sale');
-            await seller.getByRole('button', { name: /Menú/ }).click();
+            await seller.locator('.bottom-nav').getByRole('button', { name: 'Más' }).click();
             await seller.waitForTimeout(400);
             await shot(seller, 'm02-menu-vendedor');
             await seller.keyboard.press('Escape');
