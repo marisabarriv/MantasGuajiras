@@ -118,8 +118,15 @@ function Confirm-OneDriveRunning($cfg) {
     ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 
     if ($exe) {
-        Start-Process $exe -ArgumentList '/background'
-        Start-Sleep -Seconds 10
+        # Si Windows no deja abrirlo, no debe interrumpir la copia: se
+        # anota y se sigue hasta la ALERTA de abajo.
+        try {
+            Start-Process $exe -ArgumentList '/background'
+            Start-Sleep -Seconds 10
+        }
+        catch {
+            Write-Log $cfg "No se pudo abrir OneDrive: $($_.Exception.Message)"
+        }
         if (Get-Process OneDrive -ErrorAction SilentlyContinue) {
             Write-Log $cfg 'ADVERTENCIA: OneDrive estaba cerrado; se abrió para que suba las copias a la nube.'
             return
