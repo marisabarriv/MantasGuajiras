@@ -21,7 +21,7 @@ Marca cada casilla cuando la completes y anota la fecha.
 - [x] **4. Actualizar `backend/.env`:** `JWT_EXPIRATION=43200000` (sesión de 12 horas, para que dure la jornada y sirva para vender sin conexión).
 - [x] **4A. Después del `git pull`, actualizar dependencias:** en VS Code, terminal en `backend`, ejecutar `./mvnw.cmd -DskipTests package` (descarga la librería nueva del estado del sistema). Al arrancar, comprobar en el navegador que `http://localhost:8080/actuator/health` dice `"status":"UP"`. El log queda en `backend\logs\mantasguajiras.log`.
 
-## B. Copias de seguridad en Windows (último bloqueador de la certificación)
+## B. Copias de seguridad en Windows
 
 Guía completa: `docs/09-copias-de-seguridad.md`.
 
