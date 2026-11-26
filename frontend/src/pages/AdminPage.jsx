@@ -10,6 +10,7 @@ import { getUser, ROLE_LABELS } from "../utils/session";
 
 import "../styles/inventory.css";
 import "../styles/users.css";
+import TourButton from "../components/TourButton";
 
 
 const EMPTY_FORM = {
@@ -305,7 +306,10 @@ function AdminPage() {
 
             <div className="inv-header purchases-header">
                 <div>
-                    <h1>Administrar usuarios</h1>
+                    <div className="tour-title-row">
+                        <h1>Administrar usuarios</h1>
+                        <TourButton />
+                    </div>
                     <p>Activa cuentas nuevas, cambia roles y restablece contraseñas.</p>
                 </div>
 

@@ -13,6 +13,7 @@ import "../styles/inventory.css";
 import "../styles/sales.css";
 import "../styles/purchases.css";
 import "../styles/custom-orders.css";
+import TourButton from "../components/TourButton";
 
 const money = (value) =>
     `$${Number(value || 0).toLocaleString("es-CO", { maximumFractionDigits: 2 })}`;
@@ -222,7 +223,10 @@ function CustomOrdersPage() {
 
             <div className="inv-header purchases-header">
                 <div>
-                    <h1>Mantas personalizadas</h1>
+                    <div className="tour-title-row">
+                        <h1>Mantas personalizadas</h1>
+                        <TourButton />
+                    </div>
                     <p>Encargos de clientes con diseño, abonos y pagos.</p>
                 </div>
 

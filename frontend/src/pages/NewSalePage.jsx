@@ -27,6 +27,7 @@ import {
 
 import "../styles/new-sale.css";
 import "../styles/offline.css";
+import TourButton from "../components/TourButton";
 
 const formatSavedAt = (iso) =>
   new Date(iso).toLocaleString("es-CO", {
@@ -679,7 +680,10 @@ function NewSalePage() {
 
         <header className="pos-header">
           <div>
-            <h1>Nueva venta</h1>
+            <div className="tour-title-row">
+              <h1>Nueva venta</h1>
+              <TourButton />
+            </div>
             <p>
               Hola, <b>{username}</b>. Agrega productos al carrito y pulsa
               "Finalizar venta".

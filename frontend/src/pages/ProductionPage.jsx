@@ -15,6 +15,7 @@ import "../styles/inventory.css";
 import "../styles/sales.css";
 import "../styles/purchases.css";
 import "../styles/production.css";
+import TourButton from "../components/TourButton";
 
 const isThisMonth = (value) => {
     if (!value) {
@@ -164,7 +165,10 @@ function ProductionPage() {
 
             <div className="inv-header purchases-header">
                 <div>
-                    <h1>Producción</h1>
+                    <div className="tour-title-row">
+                        <h1>Producción</h1>
+                        <TourButton />
+                    </div>
                     <p>
                         Mantas fabricadas con tela. Cada producción descuenta
                         la tela usada y suma las mantas al inventario.

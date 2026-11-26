@@ -10,6 +10,10 @@ Se publicará cuando la responsable del negocio firme el acta de aceptación (`d
 
 Versión candidata. Se llevó por las 8 fases de la certificación (`docs/10-certificacion.md`).
 
+### Aceptación del negocio (26/11/2026)
+
+- **Nuevo:** botón **"¿Cómo se usa?"** junto al título de cada sección. Abre un recorrido que oscurece la pantalla, señala cada parte y explica en pocas palabras qué hacer, con los botones **Cancelar** y **Siguiente**. Muestra solo los pasos del rol de quien lo abre y funciona sin conexión. Lo pidió la responsable en la aceptación (diferencia 1 de `docs/15`).
+
 ### Auditoría externa (25/11/2026)
 
 - **Inicio de sesión:** los bloqueos se guardan en la base (V22) y sobreviven a un reinicio. Límites por cuenta y conexión, por conexión y por cuenta: nadie puede bloquear a otra persona a propósito.
