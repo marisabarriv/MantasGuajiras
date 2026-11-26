@@ -14,6 +14,7 @@ import {
 import "../styles/inventory.css";
 import "../styles/sales.css";
 import "../styles/purchases.css";
+import TourButton from "../components/TourButton";
 
 const money = (value) =>
     `$${Number(value || 0).toLocaleString("es-CO", {
@@ -144,7 +145,10 @@ function PurchasesPage() {
 
             <div className="inv-header purchases-header">
                 <div>
-                    <h1>Compras</h1>
+                    <div className="tour-title-row">
+                        <h1>Compras</h1>
+                        <TourButton />
+                    </div>
                     <p>
                         Mercancía comprada. Cada compra suma sus cantidades
                         al inventario.

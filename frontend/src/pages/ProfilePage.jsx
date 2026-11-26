@@ -8,6 +8,7 @@ import { getUser, ROLE_LABELS } from "../utils/session";
 
 import "../styles/inventory.css";
 import "../styles/users.css";
+import TourButton from "../components/TourButton";
 
 /** Regla de negocio: la foto pesa como máximo 20 MB. */
 const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
@@ -193,7 +194,10 @@ function ProfilePage() {
         <div className="inv-page profile-page">
 
             <div className="inv-header">
-                <h1>Mi perfil</h1>
+                <div className="tour-title-row">
+                    <h1>Mi perfil</h1>
+                    <TourButton />
+                </div>
                 <p>Tu foto, tus datos y tu contraseña.</p>
             </div>
 

@@ -62,6 +62,15 @@ Pulsa **☰ Menú** arriba a la izquierda. Abajo están tu nombre, *Mi perfil* y
 
 Los datos se **actualizan solos** cada minuto y al volver a la app. No hace falta recargar.
 
+### Ayuda en cada sección
+
+Junto al título de cada sección está el botón **¿Cómo se usa?**. Abre un recorrido corto que señala en la pantalla, paso a paso, qué hacer y para qué sirve cada parte:
+
+- **Siguiente** pasa al paso que sigue; en el último dice **Terminar**.
+- **Cancelar** (o la tecla Esc) cierra la ayuda en cualquier momento.
+
+Cada persona ve solo los pasos de lo que puede hacer con su rol. La ayuda también funciona sin conexión.
+
 ---
 
 ## 2. Vender

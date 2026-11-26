@@ -17,6 +17,7 @@ import { DEFAULT_DAYS, MAX_DAYS, inPeriod, lastDays, periodProblem, toInputDate 
 import "../styles/inventory.css";
 import "../styles/sales.css";
 import "../styles/custom-orders.css";
+import TourButton from "../components/TourButton";
 
 const money = (value) =>
     `$${Number(value || 0).toLocaleString("es-CO", {
@@ -265,7 +266,10 @@ function SalesPage() {
         <div className="inv-page">
 
             <div className="inv-header">
-                <h1>Ventas</h1>
+                <div className="tour-title-row">
+                    <h1>Ventas</h1>
+                    <TourButton />
+                </div>
                 <p>
                     Ventas y mantas personalizadas, de la más reciente a la más antigua.
                 </p>

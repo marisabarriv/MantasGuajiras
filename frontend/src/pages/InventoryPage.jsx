@@ -14,6 +14,7 @@ import {
 } from "../utils/inventoryFormat";
 
 import "../styles/inventory.css";
+import TourButton from "../components/TourButton";
 
 
 const FILTERS = [
@@ -185,7 +186,10 @@ function InventoryPage() {
                ============================= */}
 
             <div className="inv-header">
-                <h1>Inventario</h1>
+                <div className="tour-title-row">
+                    <h1>Inventario</h1>
+                    <TourButton />
+                </div>
                 <p>
                     Existencias actuales, alertas de reposición e
                     historial de entradas y salidas.

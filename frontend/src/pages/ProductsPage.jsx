@@ -11,6 +11,7 @@ import { isAdmin as isAdminUser } from "../utils/session";
 
 import "../styles/inventory.css";
 import "../styles/purchases.css";
+import TourButton from "../components/TourButton";
 
 const money = (value) =>
     `$${Number(value || 0).toLocaleString("es-CO", { maximumFractionDigits: 2 })}`;
@@ -196,7 +197,10 @@ function ProductsPage() {
 
             <div className="inv-header purchases-header">
                 <div>
-                    <h1>Productos</h1>
+                    <div className="tour-title-row">
+                        <h1>Productos</h1>
+                        <TourButton />
+                    </div>
                     <p>
                         {isAdmin
                             ? "Crea y edita mantas y telas. Las cantidades se ven en Inventario."

@@ -126,7 +126,7 @@ Respuestas de la responsable del negocio, 25/11/2026:
 
 | # | Escenario o criterio | Qué pasó | Decisión (corregir / aceptar como está) | Fecha de cierre |
 | - | -------------------- | -------- | --------------------------------------- | --------------- |
-| 1 | NEG-01 | Se pide una ayuda paso a paso dentro de cada sección, que se pueda abrir en cualquier momento. | Corregir (mejora). Mientras tanto, capacitación y manual (`docs/14`). | |
+| 1 | NEG-01 | Se pide una ayuda paso a paso dentro de cada sección, que se pueda abrir en cualquier momento. | Corregido: botón **"¿Cómo se usa?"** en cada sección, con un recorrido que señala paso a paso qué hacer, con los botones Cancelar y Siguiente. | 26/11/2026 |
 | 2 | NEG-04 | El inventario real aún no está cargado. | Comprobar después del primer conteo físico con el inventario real. | |
 | 3 | NEG-05 | La app aún no se usa con ventas y dinero reales. | Comprobar al cerrar los primeros días de venta real. | |
 | 4 | Escenarios 22–24 | La venta sin conexión en el **celular** necesita la instalación con HTTPS, aplazada (`docs/11` §F). | Probar con el celular en modo avión al instalar. | |
@@ -142,7 +142,7 @@ Respuestas de la responsable del negocio, 25/11/2026:
 | **Participantes** | |
 | **Escenarios aprobados** | 24 / 24 en el computador; 22–24 en el celular, pendientes (diferencia 4) |
 | **Criterios del negocio aprobados** | 12 / 14 (NEG-04 y NEG-05 pendientes de uso real) |
-| **Diferencias abiertas** | 1 a 4 (sección 5) |
+| **Diferencias abiertas** | 2 a 4 (sección 5); la 1 se corrigió el 26/11/2026 |
 
 **Resultado:**
 
