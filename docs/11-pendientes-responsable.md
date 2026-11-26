@@ -26,7 +26,7 @@ Marca cada casilla cuando la completes y anota la fecha.
 Guía completa: `docs/09-copias-de-seguridad.md`.
 
 - [x] **5. Contraseña de PostgreSQL en `%APPDATA%\postgresql\pgpass.conf`** (§1.1).
-- [ ] **6. Crear `scripts\backup\backup.config.ps1`** a partir de `backup.config.example.ps1` (§1.2). Configurar `CopyTo` con una carpeta de **OneDrive o Google Drive**.
+- [x] **6. Crear `scripts\backup\backup.config.ps1`** a partir de `backup.config.example.ps1` (§1.2). Configurar `CopyTo` con una carpeta de **OneDrive o Google Drive**.
 - [x] **7. Primera copia y primera prueba a mano** (§1.3): `backup-db.ps1` y `restore-test.ps1` deben terminar en *"pasó todas las verificaciones"*.
 - [x] **8. Programar las copias automáticas** (§1.4): `register-scheduled-tasks.ps1`. Comprobar en el *Programador de tareas* que aparecen **"MantasGuajiras - Copias del día"** y **"MantasGuajiras - Prueba semanal"**.
 - [x] **9. Simulacro en tu PC:** restaurar una copia en una base nueva con `restore-db.ps1`, cronometrar y anotar el resultado en `docs/09` §7.
@@ -78,6 +78,7 @@ El kit de instalación ya está listo y probado. Guía paso a paso: **`docs/13-p
 | 24/11/2026 | 13, 14 | Regla "Proteger main" activa (pull request, 4 comprobaciones de la CI, sin push forzado ni borrado; sin excepciones). Alertas y actualizaciones de seguridad de Dependabot activas. |
 | 25/11/2026 | 13, 14 | Auditoría externa: ahora son 5 comprobaciones obligatorias y la rama debe estar actualizada. Encendidos CodeQL, secret scanning, push protection y reporte privado de vulnerabilidades. 0 alertas de Dependabot. |
 | 25/11/2026 | 6, 17–23 | Copia externa y despliegue: aplazados por decisión de la responsable. |
+| 26/11/2026 | 6 | `CopyTo` configurado en el **OneDrive personal** de la responsable (carpeta `MantasGuajiras-copias`); la cuenta de Uninorte no se pudo agregar en este PC. La copia de prueba es idéntica a la original (huella SHA-256) y se ve en onedrive.com. OneDrive debe estar abierto para subir las copias (arranca con Windows). |
 | 25/11/2026 | 3 | El producto inactivo PROD-00001 pasó a llamarse "manta a" (desde *Productos → Editar*). Ya no hay nombres repetidos. |
 | 25/11/2026 | 11 | Aprobado. Si el computador falla, se sigue vendiendo con la app instalada (PWA) en los celulares: las ventas quedan guardadas en cada celular y se envían cuando el sistema vuelve. El inventario y el historial se recuperan de la última copia, que hoy está en el mismo PC: falta la copia externa (tarea 6). |
 | 25/11/2026 | 12 | No se comprará una UPS por ahora. La base ya está protegida contra cortes de luz (tarea 10). |
