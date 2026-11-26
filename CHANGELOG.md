@@ -21,6 +21,8 @@ Versión candidata. Se llevó por las 8 fases de la certificación (`docs/10-cer
 
 - **Inicio de sesión:** los bloqueos se guardan en la base (V22) y sobreviven a un reinicio. Límites por cuenta y conexión, por conexión y por cuenta: nadie puede bloquear a otra persona a propósito.
 - **Registro público:** límite de cuentas nuevas por conexión y en total.
+- **Corregido:** con muchos registros simultáneos se podía pasar el límite (30 a la vez lograban 18 con un límite de 5). Ahora la decisión sale del contador ya sumado, en una sola instrucción de la base.
+- **Corregido:** lo mismo en el inicio de sesión: 30 intentos simultáneos con contraseñas distintas se revisaban todos, aunque el límite era menor. Ahora cada intento se cuenta antes de revisar la contraseña y se devuelve si era correcta o si la cuenta estaba inactiva.
 - **Corregido:** restablecer la contraseña no quitaba el bloqueo, aunque el aviso lo prometía. Ahora la persona entra de inmediato.
 - `main` exige las 5 comprobaciones de la CI y la rama actualizada. CI con permisos mínimos y acciones fijadas a un commit.
 - CodeQL, secret scanning, push protection y reporte privado de vulnerabilidades (`SECURITY.md`).

@@ -31,6 +31,12 @@ import com.mantasguajiras.backend.common.exception.TooManyAttemptsException;
  *
  * Un inicio correcto reinicia los contadores de la cuenta; el de la
  * conexión no, para que nadie lo limpie entrando con su propia cuenta.
+ *
+ * <p>Cada intento se cuenta <b>antes</b> de revisar la contraseña
+ * ({@link #start}), en una sola instrucción SQL por contador: aunque lleguen
+ * muchos a la vez, no se revisan más contraseñas que las del límite. Si la
+ * contraseña era correcta ({@link #succeeded}) o el intento no llegó a
+ * revisarla ({@link #cancelled}), se devuelve.</p>
  */
 @Service
 public class LoginAttemptService {
@@ -82,40 +88,84 @@ public class LoginAttemptService {
                 });
     }
 
-    /** Registra un fallo. Lanza el aviso de espera si con este se alcanzó un límite. */
-    public void recordFailure(String identifier, String address) {
+    /**
+     * Un intento en curso, ya contado. Dice si con él se alcanzó cada límite,
+     * para avisarlo si la contraseña resulta incorrecta.
+     */
+    public record Attempt(String identifier, String address,
+            boolean connectionLimit, boolean pairLimit, boolean accountLimit) {
+    }
+
+    /**
+     * Cuenta el intento antes de revisar la contraseña. Lanza el aviso de
+     * espera si el acceso está bloqueado o si este intento pasaría un límite.
+     */
+    public Attempt start(String identifier, String address) {
+        checkAllowed(identifier, address);
+
         Instant now = clock.instant();
         String account = accountHash(identifier);
 
         var connection = store.add(addressKey(address), AccessAttemptStore.FAIL, null,
                 maxPerAddress, window, now);
+        if (connection.attempts() > maxPerAddress) {
+            throw TooManyAttemptsException.loginFromConnection(remaining(connection, now));
+        }
         var pair = store.add(pairKey(identifier, address), AccessAttemptStore.FAIL, account,
                 maxAttempts, window, now);
+        if (pair.attempts() > maxAttempts) {
+            throw TooManyAttemptsException.login(remaining(pair, now));
+        }
         var wholeAccount = store.add(accountKey(identifier), AccessAttemptStore.FAIL, account,
                 maxPerAccount, window, now);
-
-        store.cleanUp(now);
-
-        if (wholeAccount.isPresent()) {
-            log.warn("Inicio de sesión bloqueado {} min para '{}' desde conexiones nuevas: {} fallos repartidos",
-                    window.toMinutes(), mask(identifier), maxPerAccount);
+        if (wholeAccount.attempts() > maxPerAccount && !store.trusted(trustKey(identifier, address), now)) {
+            throw TooManyAttemptsException.login(remaining(wholeAccount, now));
         }
-        if (connection.isPresent()) {
+
+        return new Attempt(identifier, address, connection.lockedUntil().isPresent(),
+                pair.lockedUntil().isPresent(), wholeAccount.lockedUntil().isPresent());
+    }
+
+    /** La contraseña era incorrecta. Lanza el aviso de espera si con este intento se alcanzó un límite. */
+    public void failed(Attempt attempt) {
+        store.cleanUp(clock.instant());
+
+        if (attempt.accountLimit()) {
+            log.warn("Inicio de sesión bloqueado {} min para '{}' desde conexiones nuevas: {} fallos repartidos",
+                    window.toMinutes(), mask(attempt.identifier()), maxPerAccount);
+        }
+        if (attempt.connectionLimit()) {
             log.warn("Inicio de sesión bloqueado {} min para una conexión con {} fallos",
                     window.toMinutes(), maxPerAddress);
             throw TooManyAttemptsException.loginFromConnection(window);
         }
-        if (pair.isPresent()) {
+        if (attempt.pairLimit()) {
             log.warn("Inicio de sesión bloqueado {} min para '{}' desde una conexión tras {} intentos fallidos",
-                    window.toMinutes(), mask(identifier), maxAttempts);
+                    window.toMinutes(), mask(attempt.identifier()), maxAttempts);
             throw TooManyAttemptsException.login(window);
         }
     }
 
-    public void recordSuccess(String identifier, String address) {
+    /** La contraseña era correcta: reinicia la cuenta y devuelve el intento a la conexión. */
+    public void succeeded(Attempt attempt) {
+        String identifier = attempt.identifier();
+        String address = attempt.address();
+        store.giveBack(addressKey(address), maxPerAddress);
         store.remove(pairKey(identifier, address));
         store.remove(accountKey(identifier));
         store.trust(trustKey(identifier, address), accountHash(identifier), clock.instant());
+    }
+
+    /** No se llegó a revisar la contraseña (por ejemplo, cuenta inactiva): el intento no cuenta. */
+    public void cancelled(Attempt attempt) {
+        String identifier = attempt.identifier();
+        store.giveBack(addressKey(attempt.address()), maxPerAddress);
+        store.giveBack(pairKey(identifier, attempt.address()), maxAttempts);
+        store.giveBack(accountKey(identifier), maxPerAccount);
+    }
+
+    private static Duration remaining(AccessAttemptStore.Count count, Instant now) {
+        return count.lockedUntil().map(end -> Duration.between(now, end)).orElse(Duration.ZERO);
     }
 
     /** Al restablecer la contraseña: la persona puede entrar de inmediato. */

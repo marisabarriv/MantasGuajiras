@@ -55,10 +55,20 @@ class LoginAttemptServiceTest {
         return new LoginAttemptService(store, 3, 6, 9, 15, clock);
     }
 
+    /** Un intento con contraseña incorrecta, como lo hace el inicio de sesión. */
+    private static void failure(LoginAttemptService service, String identifier, String address) {
+        service.failed(service.start(identifier, address));
+    }
+
+    /** Un intento con la contraseña correcta. */
+    private static void success(LoginAttemptService service, String identifier, String address) {
+        service.succeeded(service.start(identifier, address));
+    }
+
     private static void fail(LoginAttemptService service, String identifier, String address, int times) {
         for (int i = 0; i < times; i++) {
             try {
-                service.recordFailure(identifier, address);
+                failure(service, identifier, address);
             } catch (TooManyAttemptsException locked) {
                 // Es lo esperado en el último intento.
             }
@@ -69,9 +79,9 @@ class LoginAttemptServiceTest {
     void bloqueaTrasElLimiteYSeLevantaAlPasarElTiempo() {
         LoginAttemptService service = service();
 
-        service.recordFailure(user, HOME);
-        service.recordFailure(user.toUpperCase() + " ", HOME);
-        assertThatThrownBy(() -> service.recordFailure(user, HOME))
+        failure(service, user, HOME);
+        failure(service, user.toUpperCase() + " ", HOME);
+        assertThatThrownBy(() -> failure(service, user, HOME))
                 .as("mismo usuario sin importar mayúsculas")
                 .isInstanceOf(TooManyAttemptsException.class).hasMessageContaining("15 minutos");
 
@@ -80,7 +90,7 @@ class LoginAttemptServiceTest {
 
         clock.advance(Duration.ofMinutes(6));
         assertThatCode(() -> service.checkAllowed(user, HOME)).doesNotThrowAnyException();
-        assertThatCode(() -> service.recordFailure(user, HOME))
+        assertThatCode(() -> failure(service, user, HOME))
                 .as("vuelve a contar desde 1").doesNotThrowAnyException();
     }
 
@@ -91,7 +101,7 @@ class LoginAttemptServiceTest {
         fail(service, user, HOME, 2);
         clock.advance(Duration.ofMinutes(20));
 
-        assertThatCode(() -> service.recordFailure(user, HOME)).doesNotThrowAnyException();
+        assertThatCode(() -> failure(service, user, HOME)).doesNotThrowAnyException();
         assertThatCode(() -> service.checkAllowed(user, HOME)).doesNotThrowAnyException();
     }
 
@@ -117,11 +127,11 @@ class LoginAttemptServiceTest {
     void unaConexionQueFallaConMuchasCuentasQuedaBloqueadaAunqueEntreConLaSuya() {
         LoginAttemptService service = service();
         for (int i = 0; i < 5; i++) {
-            service.recordFailure(user + i, ATTACKER);
+            failure(service, user + i, ATTACKER);
         }
-        service.recordSuccess("propia" + user, ATTACKER);
+        success(service, "propia" + user, ATTACKER);
 
-        assertThatThrownBy(() -> service.recordFailure(user + 5, ATTACKER))
+        assertThatThrownBy(() -> failure(service, user + 5, ATTACKER))
                 .hasMessageContaining("desde esta conexión");
         assertThatThrownBy(() -> service.checkAllowed("otra" + user, ATTACKER))
                 .hasMessageContaining("desde esta conexión");
@@ -131,7 +141,7 @@ class LoginAttemptServiceTest {
     @Test
     void ataqueRepartidoBloqueaLaCuentaSalvoEnLasConexionesConocidas() {
         LoginAttemptService service = service();
-        service.recordSuccess(user, HOME);
+        success(service, user, HOME);
 
         for (int i = 0; i < 9; i++) {
             fail(service, user, "198.51.100." + i, 1);
@@ -150,7 +160,7 @@ class LoginAttemptServiceTest {
     void unInicioCorrectoReiniciaLaCuentaYRestablecerLaContrasenaLaDesbloquea() {
         LoginAttemptService service = service();
         fail(service, user, HOME, 2);
-        service.recordSuccess(user, HOME);
+        success(service, user, HOME);
         assertThatCode(() -> fail(service, user, HOME, 2)).doesNotThrowAnyException();
         assertThatCode(() -> service.checkAllowed(user, HOME)).doesNotThrowAnyException();
 
@@ -165,7 +175,7 @@ class LoginAttemptServiceTest {
         LoginAttemptService service = new LoginAttemptService(store, 100, 100, 100, 15, clock);
         try (var pool = Executors.newFixedThreadPool(8)) {
             List<Callable<Void>> tasks = IntStream.range(0, 20).<Callable<Void>>mapToObj(i -> () -> {
-                service.recordFailure(user, HOME);
+                failure(service, user, HOME);
                 return null;
             }).toList();
             for (var done : pool.invokeAll(tasks)) {
@@ -177,10 +187,57 @@ class LoginAttemptServiceTest {
     }
 
     @Test
+    void losIntentosSimultaneosNoRevisanMasContrasenasQueElLimite() throws Exception {
+        LoginAttemptService service = service();
+        var start = new java.util.concurrent.CountDownLatch(1);
+        try (var pool = Executors.newFixedThreadPool(30)) {
+            var futures = IntStream.range(0, 30).mapToObj(i -> pool.submit(() -> {
+                start.await();
+                try {
+                    service.start(user, ATTACKER);
+                    return true;
+                } catch (TooManyAttemptsException blocked) {
+                    return false;
+                }
+            })).toList();
+            start.countDown();
+            int checked = 0;
+            for (var done : futures) {
+                if (done.get()) {
+                    checked++;
+                }
+            }
+            assertThat(checked).as("contraseñas que se llegan a revisar").isEqualTo(3);
+        }
+    }
+
+    @Test
+    void losIniciosCorrectosNoCuentanParaLaConexion() {
+        LoginAttemptService service = service();
+        for (int i = 0; i < 20; i++) {
+            success(service, "persona" + i + user, HOME);
+        }
+
+        assertThatCode(() -> service.checkAllowed("otra" + user, HOME)).doesNotThrowAnyException();
+        assertThatCode(() -> failure(service, "otra" + user, HOME)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void unIntentoQueNoLlegaARevisarLaContrasenaNoCuenta() {
+        LoginAttemptService service = service();
+        for (int i = 0; i < 10; i++) {
+            service.cancelled(service.start(user, HOME));
+        }
+
+        assertThatCode(() -> service.checkAllowed(user, HOME)).doesNotThrowAnyException();
+        assertThat(jdbc.queryForList("SELECT attempts FROM access_attempt", Integer.class)).containsOnly(0);
+    }
+
+    @Test
     void noSeGuardanUsuariosNiDireccionesEnClaro() {
         LoginAttemptService service = service();
-        service.recordFailure(user, HOME);
-        service.recordSuccess(user, HOME);
+        failure(service, user, HOME);
+        success(service, user, HOME);
 
         assertThat(jdbc.queryForList("SELECT * FROM access_attempt").toString())
                 .doesNotContain(user).doesNotContain(HOME);
@@ -189,18 +246,18 @@ class LoginAttemptServiceTest {
     @Test
     void loVencidoSeBorraSolo() {
         LoginAttemptService service = service();
-        service.recordFailure(user, HOME);
-        service.recordSuccess("conocida" + user, HOME);
+        failure(service, user, HOME);
+        success(service, "conocida" + user, HOME);
 
         clock.advance(Duration.ofDays(2));
-        service.recordFailure("otra" + user, ATTACKER);
+        failure(service, "otra" + user, ATTACKER);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM access_attempt WHERE kind = 'TRUST'", Integer.class))
                 .isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM access_attempt WHERE kind = 'FAIL'", Integer.class))
                 .as("solo los de la última falla").isEqualTo(3);
 
         clock.advance(Duration.ofDays(31));
-        service.recordFailure("otra" + user, ATTACKER);
+        failure(service, "otra" + user, ATTACKER);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM access_attempt WHERE kind = 'TRUST'", Integer.class))
                 .isZero();
     }
@@ -221,6 +278,44 @@ class LoginAttemptServiceTest {
 
         clock.advance(Duration.ofMinutes(61));
         assertThatCode(() -> registrations.checkAndRecord(HOME)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void losRegistrosSimultaneosNoSuperanElLimite() throws Exception {
+        RegistrationLimitService registrations = new RegistrationLimitService(store, 5, 8, 60, clock);
+
+        assertThat(simultaneousRegistrations(registrations, i -> HOME, 30))
+                .as("por conexión").isEqualTo(5);
+
+        jdbc.update("DELETE FROM access_attempt");
+        assertThat(simultaneousRegistrations(registrations, i -> "198.51.100." + i, 30))
+                .as("en total").isEqualTo(8);
+    }
+
+    /** Lanza {@code count} registros a la vez y devuelve cuántos se admitieron. */
+    private static int simultaneousRegistrations(RegistrationLimitService registrations,
+            java.util.function.IntFunction<String> address, int count) throws Exception {
+        var start = new java.util.concurrent.CountDownLatch(1);
+        try (var pool = Executors.newFixedThreadPool(count)) {
+            List<Callable<Boolean>> tasks = IntStream.range(0, count).<Callable<Boolean>>mapToObj(i -> () -> {
+                start.await();
+                try {
+                    registrations.checkAndRecord(address.apply(i));
+                    return true;
+                } catch (TooManyAttemptsException rejected) {
+                    return false;
+                }
+            }).toList();
+            var futures = tasks.stream().map(pool::submit).toList();
+            start.countDown();
+            int admitted = 0;
+            for (var done : futures) {
+                if (done.get()) {
+                    admitted++;
+                }
+            }
+            return admitted;
+        }
     }
 
     @Test
