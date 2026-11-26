@@ -56,14 +56,21 @@ public class AccessAttemptStore {
     }
 
     /**
+     * Resultado de sumar un intento: cuántos lleva la clave en la ventana,
+     * contando este, y hasta cuándo quedó bloqueada (si llegó al límite).
+     */
+    record Count(int attempts, Optional<Instant> lockedUntil) {
+    }
+
+    /**
      * Suma un intento. Al llegar a {@code limit} dentro de {@code window},
      * la clave queda bloqueada {@code window} más. Pasada la ventana, la
      * cuenta vuelve a empezar.
      */
-    Optional<Instant> add(String key, String kind, String accountHash, int limit, Duration window, Instant now) {
+    Count add(String key, String kind, String accountHash, int limit, Duration window, Instant now) {
         OffsetDateTime lockEnd = utc(now.plus(window));
         OffsetDateTime cutoff = utc(now.minus(window));
-        OffsetDateTime locked = jdbc.queryForObject("""
+        return jdbc.queryForObject("""
                 INSERT INTO access_attempt AS a
                     (attempt_key, kind, account_hash, attempts, window_start, locked_until)
                 VALUES (?, ?, ?, 1, ?, CASE WHEN 1 >= ? THEN ?::timestamptz END)
@@ -73,11 +80,25 @@ public class AccessAttemptStore {
                     locked_until = CASE
                         WHEN (CASE WHEN a.window_start <= ? THEN 1 ELSE a.attempts + 1 END) >= ?
                         THEN ?::timestamptz END
-                RETURNING locked_until
-                """, OffsetDateTime.class,
+                RETURNING attempts, locked_until
+                """, (row, n) -> new Count(row.getInt("attempts"),
+                        Optional.ofNullable(row.getObject("locked_until", OffsetDateTime.class))
+                                .map(OffsetDateTime::toInstant)),
                 key, kind, accountHash, utc(now), limit, lockEnd,
                 cutoff, cutoff, cutoff, limit, lockEnd);
-        return Optional.ofNullable(locked).map(OffsetDateTime::toInstant);
+    }
+
+    /**
+     * Devuelve un intento que no resultó fallido. Si con él se había llegado
+     * a {@code limit}, el bloqueo se levanta.
+     */
+    void giveBack(String key, int limit) {
+        jdbc.update("""
+                UPDATE access_attempt
+                SET attempts = attempts - 1,
+                    locked_until = CASE WHEN attempts - 1 >= ? THEN locked_until END
+                WHERE attempt_key = ? AND attempts > 0
+                """, limit, key);
     }
 
     /** Recuerda que la cuenta entró bien desde esta conexión. */
