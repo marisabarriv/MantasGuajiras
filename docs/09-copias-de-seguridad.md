@@ -124,7 +124,8 @@ Si alguna dice `off`, cámbiala a `on` en `postgresql.conf` y reinicia el servic
 
 - **Historial:** `backup.log` dentro de la carpeta de copias. Cada copia y cada prueba dejan una línea con fecha.
 - **Alerta:** si una copia o una prueba falla, aparece en el Escritorio el archivo **`ALERTA - Copia de seguridad MantasGuajiras.txt`** con el motivo. Bórralo cuando lo soluciones.
-- **Revisión mensual (2 minutos):** abre la carpeta de copias y confirma que hay archivos `mantas_AAAA-MM-DD_....dump` recientes, y que también están en `CopyTo`.
+- **OneDrive:** si `CopyTo` es una carpeta de OneDrive, cada copia comprueba que OneDrive esté abierto (si está cerrado, las copias no suben a la nube). Si lo encuentra cerrado, lo abre y lo anota en `backup.log`; si no puede abrirlo, deja la ALERTA. La copia de esa hora sigue siendo válida.
+- **Revisión mensual (2 minutos):** abre la carpeta de copias y confirma que hay archivos `mantas_AAAA-MM-DD_....dump` recientes, y que también están en `CopyTo`. Si `CopyTo` es OneDrive, entra a **onedrive.com** y confirma que esos mismos archivos están en la carpeta: es la única forma segura de saber que subieron. El estado de sincronización que muestra Windows no sirve para esto: en la prueba del 26/11/2026 marcaba "pendiente" archivos que ya estaban en la nube.
 
 ### Qué verifica la prueba de restauración
 

@@ -7,7 +7,8 @@
     - Comprueba que el archivo se pueda leer (pg_restore --list).
     - Guarda su huella SHA-256 para detectar archivos dañados.
     - Borra las copias viejas según RetentionDays / MinKeep, también en CopyTo.
-    - Opcional: deja una segunda copia en CopyTo (OneDrive, USB...).
+    - Opcional: deja una segunda copia en CopyTo (OneDrive, USB...). Si es
+      una carpeta de OneDrive, comprueba que OneDrive esté abierto.
 
     Uso:  powershell -ExecutionPolicy Bypass -File scripts\backup\backup-db.ps1
 #>
@@ -42,7 +43,10 @@ try {
             New-Item -ItemType Directory -Path $cfg.CopyTo | Out-Null
         }
         Copy-Item $file, "$file.sha256" -Destination $cfg.CopyTo -Force
-        Write-Log $cfg "Segunda copia guardada en $($cfg.CopyTo)."
+        Write-Log $cfg "Segunda copia guardada en la carpeta $($cfg.CopyTo)."
+
+        # Si esa carpeta es de OneDrive, OneDrive debe estar abierto para subirla.
+        Confirm-OneDriveRunning $cfg
     }
 
     # ---- Limpieza de copias viejas (carpeta principal y segunda copia) ----
